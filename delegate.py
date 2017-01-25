@@ -186,7 +186,7 @@ def isForging():
 					return False
 			else:
 				height_diff = block_height - peer['height']
-				elif height_diff > 20:
+				if height_diff > 20:
 					logging.info('%s seems not to be forging, peer height is %d blocks late', options.ip, height_diff)
 					return False
 
