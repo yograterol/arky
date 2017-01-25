@@ -2,13 +2,13 @@
 
 This package aims to provide python developpers a usefull interface to [ARK](https://ark.io/) platform.
 
-## Install (for now not available on Pypi)
+## Install
 
 ### Ubuntu
 
-Open a shell and type: `sudo pip install arky`
+`sudo -H pip install git+https://github.com/Moustikitos/arky.git`
 
-### Windows
+### Windows (for now not available on Pypi for windows)
 
 Run a command as Administrator and type : `pip install arky`
 

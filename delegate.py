@@ -79,21 +79,24 @@ class ArkLog:
 	def getLastSyncTime():
 		search = re.compile(".* ([0-9]{2,4})-([0-9][0-9])-([0-9][0-9]) ([0-9][0-9]):([0-9][0-9]):([0-9][0-9]) .*")
 		catch = os.popen('cat %s | grep "Finished sync" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		return slots.datetime.datetime(*[int(e) for e in search.match(catch).groups()], tzinfo=slots.UTC)
+		if catch:
+			return slots.datetime.datetime(*[int(e) for e in search.match(catch).groups()], tzinfo=slots.UTC)
+		else:
+			return slots.BEGIN
 
 	@staticmethod
 	def getBlockchainHeight():
 		search = re.compile(".* height: ([0-9]*) .*")
 		catch = os.popen('cat %s | grep "Received height" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		return search.match(catch).groups()[0]
+		return int(search.match(catch).groups()[0])
 
 	@staticmethod
 	def getPeerHeight():
 		search = re.compile(".* height: ([0-9]*) .*")
 		catch = os.popen('cat %s | grep "Received new block id" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		return search.match(catch).groups()[0]
+		return int(search.match(catch).groups()[0])
 
-# get usefull info to analyse delegate
+# retrieve info from ark.api
 def isActiveDelegate():
 	search = [dlgt for dlgt in api.Delegate.getDelegates().get("delegates", []) if dlgt['publicKey'] == publicKey]
 	if not len(search): return False
@@ -166,23 +169,14 @@ last_block = getLastForgedBlock()
 # 'height': 37330, 
 # 'id': '12753529974450248758'}
 
-# # if on linux platform, get data from ark.log
-# if "linux" in sys.platform:
-# 	log_peer_height = ArkLog.getPeerHeight()
-# 	log_block_height = ArkLog.getBlockchainHeight()
-# 	log_last_sync = ArkLog.getLastSyncTime()
-# else:
-# 	log_peer_height = False
-# 	log_height = False
-# 	log_last_sync = False
-
-
+# testing functions
 def isForging():
 	if delegate:
 		logging.info('%s is an active delegate : name=%s rate=%s productivity=%s%%', options.ip, delegate["username"], delegate["rate"], delegate['productivity'])
 		if last_block or "blockheader" in peer:
+
 			if "linux" in sys.platform:
-				height_diff = height - peer['height']
+				height_diff = block_height - ArkLog.getPeerHeight()
 				sync_delay = (slots.datetime.datetime.now(tzinfo=slots.UTC) - ArkLog.getLastSyncTime()).to_seconds() / 60
 				if sync_delay > (8*51*3):
 					logging.info('%s seems not to be forging, peer synced %d minutes ago', options.ip, delay)
@@ -190,24 +184,26 @@ def isForging():
 				elif height_diff > 20:
 					logging.info('%s seems not to be forging, peer height is %d blocks late', options.ip, height_diff)
 					return False
+			else:
+				height_diff = block_height - peer['height']
+				elif height_diff > 20:
+					logging.info('%s seems not to be forging, peer height is %d blocks late', options.ip, height_diff)
+					return False
+
 			logging.info('%s is forging!', options.ip)
 			return True
+
 		else:
 			logging.info('%s seems not to be forging, last block not found', options.ip)
 			return False
 	else:
 		logging.info('%s is not an active delegate', options.ip)
-		return False
+		return None
 
 def isUpToDate():
-	version = (json_testnet if options.testnet else json_mainnet)["version"]
-	test = version >= peer_version
-	if test:
-		logging.info('%s runs last node version %s', options.ip, version)
-	else:
-		logging.info('%s runs node version %s, %s is required', options.ip, version, peer_version)
-	return test
+	return "is up-to-date" in os.popen("git checkout").read().strip()
 
+# action functions
 def restartNode():
 	logging.info('Restarting the node %s', options.ip)
 	logging.info('EXECUTE> %s [%s]', "forever stopall", os.popen("forever stopall").read().strip())
@@ -217,15 +213,19 @@ def updateNode(droptable=False):
 	logging.info('Checking if %s is up to date', options.ip)
 	if not isUpToDate():
 		logging.info(    'Updading node:')
-		logging.info(    'EXECUTE> %s [%s]', "forever stopall",           os.popen("forever stopall").read().strip())
+		logging.info(    'EXECUTE> %s [%s]', "forever stopall",        os.popen("forever stopall").read().strip())
 		if droptable:
-			logging.info('EXECUTE> %s [%s]', "droptable %s" % db_table,   os.popen("droptable %s" % db_table).read().strip())
-			logging.info('EXECUTE> %s [%s]', "createtable %s" % db_table, os.popen("createtable %s" % db_table).read().strip())
-		logging.info(    'EXECUTE> %s [%s]', "git pull",                  os.popen("git pull").read().strip())
+			logging.info('EXECUTE> %s [%s]', "dropdb %s" % db_table,   os.popen("dropdb %s" % db_table).read().strip())
+			logging.info('EXECUTE> %s [%s]', "createdb %s" % db_table, os.popen("createdb %s" % db_table).read().strip())
+		filename = os.path.join(json_folder, "config.testnet.json")
+		logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
+		filename = os.path.join(json_folder, "config.main.json")
+		logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
+		logging.info(    'EXECUTE> %s [%s]', "git pull",               os.popen("git pull").read().strip())
 		putSecrets()
-		logging.info(    'EXECUTE> %s [%s]', forever_start,               os.popen(forever_start).read().strip())
+		logging.info(    'EXECUTE> %s [%s]', forever_start,            os.popen(forever_start).read().strip())
 		return True # node updated
-	return False # node already up to date
+	return False    # node already up to date
 
 if "update" in args:
 	updateNode()
