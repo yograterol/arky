@@ -87,22 +87,22 @@ class ArkLog:
 	def getLastSyncTime():
 		search = re.compile(".* ([0-9]{2,4})-([0-9][0-9])-([0-9][0-9]) ([0-9][0-9]):([0-9][0-9]):([0-9][0-9]) .*")
 		catch = os.popen('cat %s | grep "Finished sync" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		if catch:
-			return slots.datetime.datetime(*[int(e) for e in search.match(catch).groups()], tzinfo=slots.UTC)
-		else:
-			return slots.BEGIN
+		if catch: return slots.datetime.datetime(*[int(e) for e in search.match(catch).groups()], tzinfo=slots.UTC)
+		else: return slots.BEGIN_TIME
 
 	@staticmethod
 	def getBlockchainHeight():
 		search = re.compile(".* height: ([0-9]*) .*")
 		catch = os.popen('cat %s | grep "Received height" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		return int(search.match(catch).groups()[0])
+		if catch: return int(search.match(catch).groups()[0])
+		else: return 0
 
 	@staticmethod
 	def getPeerHeight():
 		search = re.compile(".* height: ([0-9]*) .*")
 		catch = os.popen('cat %s | grep "Received new block id" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
-		return int(search.match(catch).groups()[0])
+		if catch: return int(search.match(catch).groups()[0])
+		else: return 0
 
 
 
@@ -197,9 +197,9 @@ def isForging():
 
 			if "linux" in sys.platform:
 				height_diff = block_height - ArkLog.getPeerHeight()
-				sync_delay = (slots.datetime.datetime.now(tzinfo=slots.UTC) - ArkLog.getLastSyncTime()).to_seconds() / 60
+				sync_delay = (slots.datetime.datetime.now(slots.UTC) - ArkLog.getLastSyncTime()).total_seconds() / 60
 				if sync_delay > (8*51*3):
-					logging.info('%s seems not to be forging, peer synced %d minutes ago', options.ip, delay)
+					logging.info('%s seems not to be forging, peer synced %d minutes ago', options.ip, sync_delay)
 					return False
 
 				elif height_diff > 20:
@@ -269,7 +269,7 @@ if "check" in args:
 	if not isForging():
 		message += "<p>%s is not forging</p>\n" % options.ip
 		notify = True
-		if not updateNode():
+		if updateNode():
 			message += "<p>%s have been updated</p>\n" % options.ip
 			restartNode()
 
