@@ -51,15 +51,15 @@ def putSecrets():
 	new_json_mainnet = getConfig(path_2)
 	new_json_testnet["forging"]["secret"] = json_testnet["forging"]["secret"]
 	new_json_mainnet["forging"]["secret"] = json_mainnet["forging"]["secret"]
-	in_1 = open(path_1)
-	json.dump(new_json_testnet, in_1, ident=2)
+	in_1 = open(path_1, "w")
+	json.dump(new_json_testnet, in_1, indent=2)
 	in_1.close()
-	in_2 = open(path_2)
-	json.dump(new_json_mainnet, in_2, ident=2)
+	in_2 = open(path_2, "w")
+	json.dump(new_json_mainnet, in_2, indent=2)
 	in_2.close()
 
 # move to ark node directory
-os.chdir(os.path.dirname(json_folder))
+os.chdir(json_folder)
 
 # open the log file
 logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -217,10 +217,10 @@ def updateNode(droptable=False):
 		if droptable:
 			logging.info('EXECUTE> %s [%s]', "dropdb %s" % db_table,   os.popen("dropdb %s" % db_table).read().strip())
 			logging.info('EXECUTE> %s [%s]', "createdb %s" % db_table, os.popen("createdb %s" % db_table).read().strip())
-		filename = os.path.join(json_folder, "config.testnet.json")
-		logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
-		filename = os.path.join(json_folder, "config.main.json")
-		logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
+		#filename = os.path.join(json_folder, "config.testnet.json")
+		#logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
+		#filename = os.path.join(json_folder, "config.main.json")
+		#logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
 		logging.info(    'EXECUTE> %s [%s]', "git pull",               os.popen("git pull").read().strip())
 		putSecrets()
 		logging.info(    'EXECUTE> %s [%s]', forever_start,            os.popen(forever_start).read().strip())
