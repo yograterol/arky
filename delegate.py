@@ -74,7 +74,11 @@ else: options.ip = '45.63.114.19'
 
 peer_version = api.Peer.getPeerVersion().get("version", "0.0.0")
 block_height = api.Block.getBlockchainHeight().get("height", False)
-publicKey = binascii.hexlify(core.getKeys((json_testnet if options.testnet else json_mainnet)["forging"]["secret"][0]).public)
+try:
+	publicKey = binascii.hexlify(core.getKeys((json_testnet if options.testnet else json_mainnet)["forging"]["secret"][0]).public)
+except:
+	logging.info('Can not find any secret')
+	sys.exit()
 if isinstance(publicKey, bytes): publicKey = publicKey.decode()
 
 # retrieve info from ark.log
@@ -272,18 +276,18 @@ if "check" in args:
 if len(sys.argv) > 1:
 	logging.info('### end ###')
 
-print(notify)
-
 if notify:
-	# 'smtp.gmail.com:587'
 	server = smtplib.SMTP(options.smtp_port)
 	server.ehlo()
 	server.starttls()
-	server.login(options.email, options.password)
-	server.sendmail(
-		options.email, 
-		options.email, 
-		'''from: Arky delegate manager <delegate@arky>
+	try:
+		server.login(options.email, options.password)
+		server.sendmail(
+			options.email, 
+			options.email, 
+			'''from: Arky delegate manager <delegate@arky>
 to: ARK delegate <%(email)s>
 Content-Type: text/html
 ''' % {"email":options.email} + message)
+	except:
+		pass
