@@ -267,10 +267,10 @@ if "update" in args:
 if "check" in args:
 	message += 'Subject: Forging status\n\n'
 	if not isForging():
-		message += "<h1>%s is not forging</h1>\n" % options.ip
+		message += "<p>%s is not forging</p>\n" % options.ip
 		notify = True
 		if not updateNode():
-			message += "<h1>%s have been updated</h1>\n" % options.ip
+			message += "<p>%s have been updated</p>\n" % options.ip
 			restartNode()
 
 if len(sys.argv) > 1:
