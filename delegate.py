@@ -1,14 +1,18 @@
 # -*- encoding:utf-8 -*-
 from arky import core, api, slots
-import os, re, sys, json, logging, binascii
+import os, re, sys, json, logging, binascii, smtplib 
+
 
 # screen command line
 from optparse import OptionParser
 parser = OptionParser()
 parser.set_usage("usage: %prog arg1 ....argN [options]")
-parser.add_option("-t", "--testnet", action="store_true", dest="testnet", default=True, help="work with testnet delegate")
+parser.add_option("-t", "--testnet", action="store_true",  dest="testnet", default=True, help="work with testnet delegate")
 parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", default=True, help="work with mainnet delegate")
-parser.add_option("-i", "--ip", dest="ip", help="peer ip you want to check")
+parser.add_option("-i", "--ip",                            dest="ip",                    help="peer ip you want to check")
+parser.add_option("-e", "--email",                         dest="email",                 help="email for notification")
+parser.add_option("-p", "--password",                      dest="password",              help="email password")
+parser.add_option("-s", "--smtp-port",                     dest="smtp_port",             help="smtp to connect with")
 (options, args) = parser.parse_args()
 
 # deal with network
@@ -96,13 +100,15 @@ class ArkLog:
 		catch = os.popen('cat %s | grep "Received new block id" | tail -1' % os.path.join(json_folder, "logs", "ark.log")).read().strip()
 		return int(search.match(catch).groups()[0])
 
+
+
 # retrieve info from ark.api
 def isActiveDelegate():
 	search = [dlgt for dlgt in api.Delegate.getDelegates().get("delegates", []) if dlgt['publicKey'] == publicKey]
 	if not len(search): return False
 	else: return search[0]
 
-def getPeerByIp():
+def getPeerInfo():
 	search = [peer for peer in api.Peer.getPeersList().get("peers", []) if peer["ip"] == options.ip]
 	if not len(search): return False
 	else: return search[0]
@@ -112,9 +118,12 @@ def getLastForgedBlock():
 	if not len(search): return False
 	else: return search[0]
 
+update_notify = False
+forging_notify = False
+delegate_notify = False
+message = ""
 
 delegate = isActiveDelegate()
-# info about delegate (False if not registered)
 # {'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac5c26a43111472614bcf6c65a377', 
 # 'productivity': 90.28, 
 # 'missedblocks': 74, 
@@ -125,10 +134,7 @@ delegate = isActiveDelegate()
 # 'username': 'arky', 
 # 'rate': 33}
 
-peer = getPeerByIp()
-# if 'blockheader' not in peer --> not forging
-# if 'height' not in peer --> not forging
-# verion in peer to be compared with version
+peer = getPeerInfo()
 # {'port': 4000, 
 # 'blockheader': {
 # 	'totalFee': 110000000, 
@@ -151,7 +157,6 @@ peer = getPeerByIp()
 # 'version': '0.2.0'}
 
 last_block = getLastForgedBlock()
-# if False --> not forging
 # {'totalForged': '200000000', 
 # 'totalFee': 0, 
 # 'blockSignature': '30450221009272f3dbe8af36db9c6f05e7044a6f0ae5a9002ec82aed458b83c9f95a04722602205808ef8c71b363197e763a0cb1819ee80dc3c232208ebc4c85fb034037db58f7', 
@@ -170,10 +175,21 @@ last_block = getLastForgedBlock()
 # 'id': '12753529974450248758'}
 
 # testing functions
+def isUpToDate():
+	return "is up-to-date" in os.popen("git checkout").read().strip()
+
+def nodeIsRuning():
+	search = re.compile(".* app.js .* STOPPED.*")
+	for line in os.popen('forever list').read().split("\n"):
+		if search.match(line): return False
+	return True
+
 def isForging():
+	logging.info('Checking peer delegate %s :', options.ip)
 	if delegate:
 		logging.info('%s is an active delegate : name=%s rate=%s productivity=%s%%', options.ip, delegate["username"], delegate["rate"], delegate['productivity'])
-		if last_block or "blockheader" in peer:
+
+		if "blockheader" in peer:
 
 			if "linux" in sys.platform:
 				height_diff = block_height - ArkLog.getPeerHeight()
@@ -181,27 +197,39 @@ def isForging():
 				if sync_delay > (8*51*3):
 					logging.info('%s seems not to be forging, peer synced %d minutes ago', options.ip, delay)
 					return False
+
 				elif height_diff > 20:
 					logging.info('%s seems not to be forging, peer height is %d blocks late', options.ip, height_diff)
 					return False
+
 			else:
 				height_diff = block_height - peer['height']
 				if height_diff > 20:
 					logging.info('%s seems not to be forging, peer height is %d blocks late', options.ip, height_diff)
 					return False
 
-			logging.info('%s is forging!', options.ip)
+			logging.info('%s is forging !', options.ip)
+
 			return True
+
+		elif last_block:
+			height_diff = block_height - last_block['height']
+			block_delay = (slots.datetime.datetime.now(tzinfo=slots.UTC) - slots.getRealTime(int(last_block["timestamp"]))).to_seconds() / 60
+			logging.info('%s seems not to be forging, last block synced %d minutes ago and is %d blocks late', options.ip, height_diff, block_delay)
+			return False
+
+		elif not nodeIsRuning():
+			logging.info('%s seems is not forging, app.js just stopped', options.ip)
+			logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
+			return False
 
 		else:
 			logging.info('%s seems not to be forging, last block not found', options.ip)
 			return False
+
 	else:
 		logging.info('%s is not an active delegate', options.ip)
 		return None
-
-def isUpToDate():
-	return "is up-to-date" in os.popen("git checkout").read().strip()
 
 # action functions
 def restartNode():
@@ -217,24 +245,45 @@ def updateNode(droptable=False):
 		if droptable:
 			logging.info('EXECUTE> %s [%s]', "dropdb %s" % db_table,   os.popen("dropdb %s" % db_table).read().strip())
 			logging.info('EXECUTE> %s [%s]', "createdb %s" % db_table, os.popen("createdb %s" % db_table).read().strip())
-		#filename = os.path.join(json_folder, "config.testnet.json")
-		#logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
-		#filename = os.path.join(json_folder, "config.main.json")
-		#logging.info(    'EXECUTE> %s [%s]', "rm %s" % filename,       os.popen("rm %s" % filename).read().strip())
 		logging.info(    'EXECUTE> %s [%s]', "git pull",               os.popen("git pull").read().strip())
-		putSecrets()
+		# putSecrets()
 		logging.info(    'EXECUTE> %s [%s]', forever_start,            os.popen(forever_start).read().strip())
 		return True # node updated
 	return False    # node already up to date
 
+
+# command line actions
+notify = False
 if "update" in args:
-	updateNode()
+	message += 'Subject: Update status\n\n'
+	if updateNode():
+		notify = True
+		message += '<p>%s have been updated</p>\n' % options.ip
 
 if "check" in args:
-	logging.info('Checking if %s is forging :', options.ip)
+	message += 'Subject: Forging status\n\n'
 	if not isForging():
+		message += "<h1>%s is not forging</h1>\n" % options.ip
+		notify = True
 		if not updateNode():
+			message += "<h1>%s have been updated</h1>\n" % options.ip
 			restartNode()
 
 if len(sys.argv) > 1:
 	logging.info('### end ###')
+
+print(notify)
+
+if notify:
+	# 'smtp.gmail.com:587'
+	server = smtplib.SMTP(options.smtp_port)
+	server.ehlo()
+	server.starttls()
+	server.login(options.email, options.password)
+	server.sendmail(
+		options.email, 
+		options.email, 
+		'''from: Arky delegate manager <delegate@arky>
+to: ARK delegate <%(email)s>
+Content-Type: text/html
+''' % {"email":options.email} + message)

@@ -1,5 +1,5 @@
 # -*- encoding: utf8 -*-
-# created by Toons on 01/05/2017
+# © Toons
 
 from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der
@@ -8,7 +8,9 @@ from ecdsa.curves import SECP256k1
 from . import __PY3__, __URL_BASE__, __NETWORK__, __FEES__, __HEADERS__, StringIO, slots, base58, api, ArkyDict
 import struct, hashlib, binascii, requests, json
 
+
 # define core exceptions 
+class NotGrantedAttribute(Exception): pass
 class NoSecretDefinedError(Exception): pass
 class NoSenderDefinedError(Exception): pass
 class NotSignedTransactionError(Exception): pass
@@ -160,123 +162,6 @@ Returns sequence bytes
 	buf.close()
 	return result.encode() if not isinstance(result, bytes) else result
 
-
-class Transaction(api.Transaction):
-	"""
-Transaction object is the core of the API.
-"""
-
-	senderPublicKey = property(lambda obj:obj.key_one.public, None, None, "alias for public key, read-only attribute")
-
-	def __init__(self, **kwargs):
-		# the four minimum attributes that defines a transaction
-		self.type = kwargs.pop("type", 0)
-		self.amount = kwargs.pop("amount", 0)
-		self.timestamp = slots.getTime()
-		self.asset = kwargs.pop("asset", ArkyDict())
-		for attr,value in kwargs.items():
-			setattr(self, attr, value)
-
-	def __setattr__(self, attr, value):
-		self._unsign()
-		if attr == "secret":
-			keys = getKeys(value)
-			object.__setattr__(self, "key_one", keys)
-			object.__setattr__(self, "address", getAddress(keys))
-		elif attr == "secondSecret":
-			object.__setattr__(self, "key_two", getKeys(value))
-		elif attr == "type":
-			# when doing `tx.type = number` automaticaly set the associated fees
-			if value == 0:   self.fee = __FEES__.send
-			elif value == 1: self.fee = __FEES__.secondsignature
-			elif value == 2: self.fee = __FEES__.delegate
-			elif value == 3: self.fee = __FEES__.vote
-			elif value == 4: self.fee = __FEES__.multisignature
-			object.__setattr__(self, attr, value)
-		else:
-			object.__setattr__(self, attr, value)
-
-	def __del__(self):
-		if hasattr(self, "key_one"): delattr(self, "key_one")
-		if hasattr(self, "key_two"): delattr(self, "key_two")
-
-	def __repr__(self):
-		return "<%(amount).8f ARK %(signed)s Transaction from %(from)s to %(to)s>" % {
-			"signed": "signed" if hasattr(self, "signature") else \
-			          "double-signed" if hasattr(self, "signSignature") else \
-			          "unsigned",
-			"amount": self.amount//100000000,
-			"from": getattr(self, "address", '"No one"'),
-			"to": getattr(self, "recipientId", '"No one"')
-		}
-
-	def _unsign(self):
-		if hasattr(self, "signature"): delattr(self, "signature")
-		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		if hasattr(self, "id"): delattr(self, "id")
-
-	def sign(self, secret=None):
-		if secret != None:
-			self.secret = secret
-		elif not hasattr(self, "key_one"):
-			raise NoSecretDefinedError("No secret defined for %r" % self)
-		self._unsign()
-		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
-		# checkStrictDER(stamp)
-		object.__setattr__(self, "signature", stamp)
-		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
-
-	def seconSign(self, secondSecret=None):
-		if not hasattr(self, "signature"):
-			raise NotSignedTransactionError("%r must be signed first" % self)
-		if secondSecret != None:
-			self.secondSecret = secondSecret
-		elif not hasattr(self, "key_two"):
-			raise NoSecretDefinedError("No second secret defined for %r" % self)
-		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
-		# checkStrictDER(stamp)
-		object.__setattr__(self, "signSignature", stamp)
-		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
-
-	def serialize(self):
-		data = ArkyDict()
-		for attr in [a for a in [
-			"id", "timestamp", "type", "fee", "amount", 
-			"recipientId", "senderPublicKey", "requesterPublicKey", "vendorField",
-			"asset", "signature", "signSignature"
-		] if hasattr(self, a)]:
-			value = getattr(self, attr)
-			if isinstance(value, bytes):
-				value = binascii.hexlify(value)
-				if isinstance(value, bytes):
-					value = value.decode()
-			elif attr in ["amount", "timestamp", "fee"]: value = int(value)
-			setattr(data, attr, value)
-		return data
-
-
-def sendTransaction(secret, transaction, n=10):
-	attempt = 1
-	while n: # yes i know, it is brutal :)
-		transaction.sign(secret)
-		result = ArkyDict(json.loads(requests.post(
-			__URL_BASE__+"/peer/transactions",
-			data=json.dumps({"transactions": [transaction.serialize()]}),
-			headers=__HEADERS__
-		).text))
-		if result["success"]:
-			break
-		else:
-			n -= 1
-			attempt += 1
-			# 1s shift timestamp for hash change
-			transaction.timestamp -= 1
-
-	result.attempt = attempt
-	return result
-
-
 def checkStrictDER(sig):
 	"""
 https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki#der-encoding-reference
@@ -285,9 +170,8 @@ Check strict DER signature compliance.
 Argument:
 sig (bytes) -- signature sequence bytes
 
-Raises StrictDerSignatureError exception or returns None
+Raises StrictDerSignatureError exception or return sig
 """
-
 	sig_len = len(sig)
 	# Extract the length of the R element.
 	r_len = sig[3]
@@ -333,3 +217,133 @@ Raises StrictDerSignatureError exception or returns None
 	# Null bytes at the start of S are not allowed, unless S would otherwise be interpreted as a negative number.
 	if s_len > 1 and sig[r_len+6] == 0x00 and not sig[r_len+7] & 0x80:
 		raise StrictDerSignatureError("Null bytes at the start of S element is not allowed")
+	return sig
+
+
+class Transaction(object):
+	"""
+Transaction object is the core of the API. This object is a container with smart
+behaviour according to attribute value that are settled in. 
+
+Attributes that can be set using object interface :
+type               (int)
+amount             (int)
+timestamp          (float)
+asset              (ArkyDict)
+secret             (str)
+vendorField        (str)
+recipientId        (str)
+requesterPublicKey (str)
+"""
+	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "recipientId", "requesterPublicKey"]
+	senderPublicKey = property(lambda obj:obj.key_one.public, None, None, "alias for public key, read-only attribute")
+
+	def __init__(self, **kwargs):
+		# the four minimum attributes that defines a transaction
+		self.type = kwargs.pop("type", 0)
+		self.amount = kwargs.pop("amount", 0)
+		self.timestamp = slots.getTime()
+		self.asset = kwargs.pop("asset", ArkyDict())
+		for attr,value in kwargs.items():
+			setattr(self, attr, value)
+
+	def __setattr__(self, attr, value):
+		if attr not in Transaction.attr:
+			raise NotGrantedAttribute("%s attribute can not be set using object interface" % attr)
+		self._unsign()
+		if attr == "secret":
+			keys = getKeys(value)
+			object.__setattr__(self, "key_one", keys)
+			object.__setattr__(self, "address", getAddress(keys))
+		elif attr == "secondSecret":
+			object.__setattr__(self, "key_two", getKeys(value))
+		elif attr == "type":
+			# when doing `tx.type = number` automaticaly set the associated fees
+			if value == 0:   object.__setattr__(self, "fee", __FEES__.send)
+			elif value == 1: object.__setattr__(self, "fee", __FEES__.secondsignature)
+			elif value == 2: object.__setattr__(self, "fee", __FEES__.delegate)
+			elif value == 3: object.__setattr__(self, "fee", __FEES__.vote)
+			elif value == 4: object.__setattr__(self, "fee", __FEES__.multisignature)
+			object.__setattr__(self, attr, value)
+		else:
+			object.__setattr__(self, attr, value)
+
+	def __del__(self):
+		if hasattr(self, "key_one"): delattr(self, "key_one")
+		if hasattr(self, "key_two"): delattr(self, "key_two")
+
+	def __repr__(self):
+		return "<%(amount).8f ARK %(signed)s Transaction from %(from)s to %(to)s>" % {
+			"signed": "signed" if hasattr(self, "signature") else \
+			          "double-signed" if hasattr(self, "signSignature") else \
+			          "unsigned",
+			"amount": self.amount//100000000,
+			"from": getattr(self, "address", '"No one"'),
+			"to": getattr(self, "recipientId", '"No one"')
+		}
+
+	def _unsign(self):
+		if hasattr(self, "signature"): delattr(self, "signature")
+		if hasattr(self, "signSignature"): delattr(self, "signSignature")
+		if hasattr(self, "id"): delattr(self, "id")
+
+	def sign(self, secret=None):
+		if secret != None:
+			self.secret = secret
+		elif not hasattr(self, "key_one"):
+			raise NoSecretDefinedError("No secret defined for %r" % self)
+		self._unsign()
+		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+		object.__setattr__(self, "signature", checkStrictDER(stamp))
+		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+
+	def seconSign(self, secondSecret=None):
+		if not hasattr(self, "signature"):
+			raise NotSignedTransactionError("%r must be signed first" % self)
+		if secondSecret != None:
+			self.secondSecret = secondSecret
+		elif not hasattr(self, "key_two"):
+			raise NoSecretDefinedError("No second secret defined for %r" % self)
+		if hasattr(self, "signSignature"): delattr(self, "signSignature")
+		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
+		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+
+	def serialize(self):
+		data = ArkyDict()
+		for attr in [a for a in [
+			"id", "timestamp", "type", "fee", "amount", 
+			"recipientId", "senderPublicKey", "requesterPublicKey", "vendorField",
+			"asset", "signature", "signSignature"
+		] if hasattr(self, a)]:
+			value = getattr(self, attr)
+			if isinstance(value, bytes):
+				value = binascii.hexlify(value)
+				if isinstance(value, bytes):
+					value = value.decode()
+			elif attr in ["amount", "timestamp", "fee"]: value = int(value)
+			setattr(data, attr, value)
+		return data
+
+
+def sendTransaction(secret, transaction, n=10):
+	attempt = 1
+	while n-1: # yes i know, it is brutal :)
+		transaction.sign(secret)
+		result = ArkyDict(json.loads(requests.post(
+			__URL_BASE__+"/peer/transactions",
+			data=json.dumps({"transactions": [transaction.serialize()]}),
+			headers=__HEADERS__
+		).text))
+		if result["success"]:
+			break
+		else:
+			n -= 1
+			attempt += 1
+			# 1s shift timestamp for hash change
+			transaction.timestamp -= 1
+
+	result.attempt = attempt
+	return result
+
+

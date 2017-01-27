@@ -10,7 +10,7 @@ This package aims to provide python developpers a usefull interface to [ARK](htt
 
 ### Windows (for now not available on Pypi for windows)
 
-Run a command as Administrator and type : `pip install arky`
+Run a command as Administrator and type : `pip install git+https://github.com/Moustikitos/arky.git`
 
 ## `arky`
 
