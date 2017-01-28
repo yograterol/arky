@@ -285,6 +285,9 @@ if len(sys.argv) > 1:
 # print (options.smtp)
 # send email notification
 if notify and options.smtp:
+	if "linux" in sys.platform:
+		message += "<p>last log lines&nbsp;:</p>\n<pre>%s</pre>" % os.popen('cat %s | tail -30' % os.path.join(home_path, 'delegate.log')).read()
+
 	server = smtplib.SMTP(options.smtp)
 	server.ehlo()
 	server.starttls()
