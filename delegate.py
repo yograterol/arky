@@ -6,17 +6,19 @@ import os, re, sys, json, logging, binascii, smtplib
 # screen command line
 from optparse import OptionParser
 parser = OptionParser()
-parser.set_usage("usage: %prog arg1 ....argN [options]")
+parser.set_usage("""usage: %prog actions [options]
+
+Actions:
+ update                 update node running on peer
+
+ check                  check if node is running and forging""")
 parser.add_option("-i", "--ip",                            dest="ip",                    help="peer ip you want to check")
 parser.add_option("-e", "--email",                         dest="email",                 help="email for notification")
 parser.add_option("-p", "--password",                      dest="password",              help="email password")
-parser.add_option("-s", "--smtp-port",                     dest="smtp_port",             help="smtp to connect with")
-parser.add_option("-t", "--testnet", action="store_true",  dest="testnet", default=True, help="work with testnet delegate")
-parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", default=True, help="work with mainnet delegate")
+parser.add_option("-s", "--smtp-port",                     dest="smtp",                  help="smtp address+port to use")
+parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", default=True, help="switch on mainnet")
 # parse command line
 (options, args) = parser.parse_args()
-# open the log file
-logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 
 # deal with network
 if options.testnet:
@@ -31,6 +33,9 @@ if "win" in sys.platform:
 	home_path = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"])
 elif "linux" in sys.platform:
 	home_path = os.environ["HOME"]
+	
+# open the log file
+logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 
 # first of all get delegate json data
 # it automaticaly searches json configuration file in "/home/username/ark-node" folder
@@ -274,8 +279,8 @@ if len(sys.argv) > 1:
 	logging.info('### end ###')
 
 # send email notification
-if notify:
-	server = smtplib.SMTP(options.smtp_port)
+if notify and options.smtp:
+	server = smtplib.SMTP(options.smtp)
 	server.ehlo()
 	server.starttls()
 	try:
