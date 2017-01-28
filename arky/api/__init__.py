@@ -4,7 +4,6 @@
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import ArkyDict, get
 
-
 class Loader:
 
 	@staticmethod
@@ -61,8 +60,8 @@ class Account:
 class Delegate:
 
 	@staticmethod
-	def getDelegates():
-		return get('/api/delegates')
+	def getDelegates(offset=0):
+		return get('/api/delegates', offset=offset)
 
 	@staticmethod
 	def getDelegate(username):
@@ -71,6 +70,15 @@ class Delegate:
 	@staticmethod
 	def getVoters(publicKey):
 		return get('/api/delegates/voters', publicKey=publicKey)
+
+	@staticmethod
+	def getCandidates():
+		delegates = []
+		while 1:
+			found = Delegate.getDelegates(offset=len(delegates)).get("delegates", [])
+			delegates += found
+			if len(found) < 51: break
+		return delegates
 
 
 class Transaction(object):

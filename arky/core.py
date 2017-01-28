@@ -142,13 +142,13 @@ Returns sequence bytes
 	if typ == 1 and "signature" in transaction.asset:
 		pack_bytes(buf, transaction.asset.signature)
 	elif typ == 2 and "delegate" in transaction.asset:
-		pack_bytes(buf, transaction.asset.delegate.username)
-	elif typ == 3 and "vote" in transaction.asset:
-		pack_bytes(buf, b"".join(transaction.asset.vote))
+		pack_bytes(buf, transaction.asset.delegate.username.encode())
+	elif typ == 3 and "votes" in transaction.asset:
+		pack_bytes(buf, ("".join(transaction.asset.votes)).encode())
 	elif typ == 4 and "multisignature" in transaction.asset:
 		pack("<b", buf, (transaction.asset.multisignature.min,))
 		pack("<b", buf, (transaction.asset.multisignature.lifetime,))
-		pack_bytes(buf, b"".join(transaction.asset.multisignature.keysgroup))
+		pack_bytes(buf, "".join(transaction.asset.multisignature.keysgroup))
 
 	# if there is a signature
 	if hasattr(transaction, "signature"):
@@ -221,7 +221,7 @@ Raises StrictDerSignatureError exception or return sig
 
 
 class Transaction(object):
-	"""
+	r'''
 Transaction object is the core of the API. This object is a container with smart
 behaviour according to attribute value that are settled in. 
 
@@ -234,7 +234,41 @@ secret             (str)
 vendorField        (str)
 recipientId        (str)
 requesterPublicKey (str)
-"""
+
+Public address attribute can only be set by secret passphrase, there are three way to do it:
+>>> import arky.core as core
+>>> tx1 = core.Transaction(secret="secret") # first way
+>>> tx1.address
+'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
+>>> tx2 = core.Transaction()
+>>> tx2.address = 'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "C:\Users\Bruno\Python\../GitHub/arky\arky\core.py", line 268, in __setattr__
+    self.amount = kwargs.pop("amount", 0)
+arky.core.NotGrantedAttribute: address attribute can not be set using object interface
+>>> tx2.secret = 'secret'                   # second way
+>>> tx2.address
+'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
+>>> tx3 = core.Transaction()
+>>> tx3.sign(secret)                        # third way
+>>> tx3.address
+'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
+
+Note that if secret is set, signature is done so:
+>>> tx1.sing()
+>>> tx2.sign()
+
+If no secret defined:
+>>> bad_tx = core.Transaction()
+>>> bad_tx.sign()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "C:\Users\Bruno\Python\../GitHub/arky\arky\core.py", line 316, in sign
+    raise NoSecretDefinedError("No secret defined for %r" % self)
+arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned Transaction from "No one" to "No one">
+'''
+	# here are attribute that can be set through object interface
 	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "recipientId", "requesterPublicKey"]
 	senderPublicKey = property(lambda obj:obj.key_one.public, None, None, "alias for public key, read-only attribute")
 
@@ -250,20 +284,27 @@ requesterPublicKey (str)
 	def __setattr__(self, attr, value):
 		if attr not in Transaction.attr:
 			raise NotGrantedAttribute("%s attribute can not be set using object interface" % attr)
+		# if one of granted attribute is modified, it change signature in-fine
+		# so unsign transaction to delete id, signature and signSignature
 		self._unsign()
 		if attr == "secret":
+			# secret is not stored
+			# associated ecdsa object and ARK address are instead
 			keys = getKeys(value)
 			object.__setattr__(self, "key_one", keys)
 			object.__setattr__(self, "address", getAddress(keys))
 		elif attr == "secondSecret":
+			# second secret is not stored
+			# associated ecdsa object is instead
 			object.__setattr__(self, "key_two", getKeys(value))
 		elif attr == "type":
-			# when doing `tx.type = number` automaticaly set the associated fees
+			# when doing `<object>.type = value` automaticaly set the associated fees
 			if value == 0:   object.__setattr__(self, "fee", __FEES__.send)
 			elif value == 1: object.__setattr__(self, "fee", __FEES__.secondsignature)
 			elif value == 2: object.__setattr__(self, "fee", __FEES__.delegate)
 			elif value == 3: object.__setattr__(self, "fee", __FEES__.vote)
 			elif value == 4: object.__setattr__(self, "fee", __FEES__.multisignature)
+			elif value == 5: object.__setattr__(self, "fee", __FEES__.get("ipfs", 0))
 			object.__setattr__(self, attr, value)
 		else:
 			object.__setattr__(self, attr, value)
@@ -297,17 +338,18 @@ requesterPublicKey (str)
 		object.__setattr__(self, "signature", checkStrictDER(stamp))
 		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
 
-	def seconSign(self, secondSecret=None):
-		if not hasattr(self, "signature"):
-			raise NotSignedTransactionError("%r must be signed first" % self)
-		if secondSecret != None:
-			self.secondSecret = secondSecret
-		elif not hasattr(self, "key_two"):
-			raise NoSecretDefinedError("No second secret defined for %r" % self)
-		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
-		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
-		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+	# --> should be moved into wallet class
+	# def seconSign(self, secondSecret=None):
+	# 	if not hasattr(self, "signature"):
+	# 		raise NotSignedTransactionError("%r must be signed first" % self)
+	# 	if secondSecret != None:
+	# 		self.secondSecret = secondSecret
+	# 	elif not hasattr(self, "key_two"):
+	# 		raise NoSecretDefinedError("No second secret defined for %r" % self)
+	# 	if hasattr(self, "signSignature"): delattr(self, "signSignature")
+	# 	stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+	# 	object.__setattr__(self, "signSignature", checkStrictDER(stamp))
+	# 	object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
 
 	def serialize(self):
 		data = ArkyDict()
@@ -327,8 +369,8 @@ requesterPublicKey (str)
 
 
 def sendTransaction(secret, transaction, n=10):
-	attempt = 1
-	while n-1: # yes i know, it is brutal :)
+	attempt = 0
+	while n: # yes i know, it is brutal :)
 		transaction.sign(secret)
 		result = ArkyDict(json.loads(requests.post(
 			__URL_BASE__+"/peer/transactions",
@@ -347,3 +389,15 @@ def sendTransaction(secret, transaction, n=10):
 	return result
 
 
+def sendMultiple(secret, *transactions, n=10):
+	result = ArkyDict()
+	i = 1
+	for transaction in transactions:
+		data = sendTransaction(secret, transaction, n=10)
+		if data['success']:
+			key = data.pop('transactionId')
+			result[key] = data
+		else:
+			result["tx%03d" % i] = data
+		i += 1
+	return result
