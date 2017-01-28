@@ -7,13 +7,16 @@ import os, re, sys, json, logging, binascii, smtplib
 from optparse import OptionParser
 parser = OptionParser()
 parser.set_usage("usage: %prog arg1 ....argN [options]")
-parser.add_option("-t", "--testnet", action="store_true",  dest="testnet", default=True, help="work with testnet delegate")
-parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", default=True, help="work with mainnet delegate")
 parser.add_option("-i", "--ip",                            dest="ip",                    help="peer ip you want to check")
 parser.add_option("-e", "--email",                         dest="email",                 help="email for notification")
 parser.add_option("-p", "--password",                      dest="password",              help="email password")
 parser.add_option("-s", "--smtp-port",                     dest="smtp_port",             help="smtp to connect with")
+parser.add_option("-t", "--testnet", action="store_true",  dest="testnet", default=True, help="work with testnet delegate")
+parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", default=True, help="work with mainnet delegate")
+# parse command line
 (options, args) = parser.parse_args()
+# open the log file
+logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 
 # deal with network
 if options.testnet:
@@ -26,10 +29,8 @@ else:
 # deal with home directory
 if "win" in sys.platform:
 	home_path = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"])
-	move_cmd = "move"
 elif "linux" in sys.platform:
 	home_path = os.environ["HOME"]
-	move_cmd = "mv"
 
 # first of all get delegate json data
 # it automaticaly searches json configuration file in "/home/username/ark-node" folder
@@ -41,11 +42,14 @@ def getConfig(json_path):
 	return json.loads(content.decode() if isinstance(content, bytes) else content)
 
 json_folder = os.environ.get("ARKNODEPATH", os.path.join(home_path, "ark-node"))
+# move to ark node directory
+os.chdir(json_folder)
+
 try:
 	json_testnet = getConfig(os.path.join(json_folder, "config.testnet.json"))
 	json_mainnet = getConfig(os.path.join(json_folder, "config.main.json"))
 except:
-	logging.info('Can not find any peer ', slots.datetime.datetime.now(slots.UTC), args, options)
+	logging.info('Can not find any peer')
 	sys.exit()
 
 def putSecrets():
@@ -62,24 +66,21 @@ def putSecrets():
 	json.dump(new_json_mainnet, in_2, indent=2)
 	in_2.close()
 
-# move to ark node directory
-os.chdir(json_folder)
 
-# open the log file
-logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 # deal if launch from command line
 if len(sys.argv) > 1: logging.info('### %s : delegate.py %s %s ###', slots.datetime.datetime.now(slots.UTC), args, options)
-# add my peer ip here for test purpose only...
+# add your peer ip here
 else: options.ip = '45.63.114.19'
 
 peer_version = api.Peer.getPeerVersion().get("version", "0.0.0")
 block_height = api.Block.getBlockchainHeight().get("height", False)
 try:
-	publicKey = binascii.hexlify(core.getKeys((json_testnet if options.testnet else json_mainnet)["forging"]["secret"][0]).public)
+	public_key = binascii.hexlify(core.getKeys((json_testnet if options.testnet else json_mainnet)["forging"]["secret"][0]).public)
 except:
 	logging.info('Can not find any secret')
 	sys.exit()
-if isinstance(publicKey, bytes): publicKey = publicKey.decode()
+
+if isinstance(public_key, bytes): public_key = public_key.decode()
 
 # retrieve info from ark.log
 class ArkLog:
@@ -104,11 +105,9 @@ class ArkLog:
 		try: return int(search.match(catch).groups()[0])
 		except: return 0
 
-
-
 # retrieve info from ark.api
 def isActiveDelegate():
-	search = [dlgt for dlgt in api.Delegate.getDelegates().get("delegates", []) if dlgt['publicKey'] == publicKey]
+	search = [dlgt for dlgt in api.Delegate.getDelegates().get("delegates", []) if dlgt['publicKey'] == public_key]
 	if not len(search): return False
 	else: return search[0]
 
@@ -118,14 +117,9 @@ def getPeerInfo():
 	else: return search[0]
 
 def getLastForgedBlock():
-	search = [blck for blck in api.Block.getBlocks().get("blocks", []) if blck["generatorPublicKey"] == publicKey]
+	search = [blck for blck in api.Block.getBlocks().get("blocks", []) if blck["generatorPublicKey"] == public_key]
 	if not len(search): return False
 	else: return search[0]
-
-update_notify = False
-forging_notify = False
-delegate_notify = False
-message = ""
 
 delegate = isActiveDelegate()
 # {'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac5c26a43111472614bcf6c65a377', 
@@ -182,7 +176,7 @@ last_block = getLastForgedBlock()
 def isUpToDate():
 	return "is up-to-date" in os.popen("git checkout").read().strip()
 
-def nodeIsRuning():
+def isRunning():
 	search = re.compile(".* app.js .* STOPPED.*")
 	for line in os.popen('forever list').read().split("\n"):
 		if search.match(line): return False
@@ -222,7 +216,7 @@ def isForging():
 			logging.info('%s seems not to be forging, last block synced %d minutes ago and is %d blocks late', options.ip, height_diff, block_delay)
 			return False
 
-		elif not nodeIsRuning():
+		elif not isRunning():
 			logging.info('%s seems is not forging, app.js just stopped', options.ip)
 			logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
 			return False
@@ -253,11 +247,14 @@ def updateNode(droptable=False):
 		# putSecrets()
 		logging.info(    'EXECUTE> %s [%s]', forever_start,            os.popen(forever_start).read().strip())
 		return True # node updated
+	logging.info('%s is up to date', options.ip)
 	return False    # node already up to date
 
+# email notification variable
+notify = False
+message = ""
 
 # command line actions
-notify = False
 if "update" in args:
 	message += 'Subject: Update status\n\n'
 	if updateNode():
@@ -276,6 +273,7 @@ if "check" in args:
 if len(sys.argv) > 1:
 	logging.info('### end ###')
 
+# send email notification
 if notify:
 	server = smtplib.SMTP(options.smtp_port)
 	server.ehlo()
