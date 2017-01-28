@@ -77,3 +77,62 @@ More on `arky.core` ?
 >>> util.getKrakenPair("ETHEUR")
 9.661
 ```
+
+### `delegate.py`
+
+If arky is installed on python distribution
+
+`python -m delegate -h`
+
+
+Else
+
+`python path/ot/script/delegate.py -h`
+
+```cmd
+Usage: delegate.py actions [options]
+
+Actions:
+ update                 update node running on peer
+
+ check                  check if node is running and forging
+
+Options:
+  -h, --help            show this help message and exit
+  -i IP, --ip=IP        peer ip you want to check
+  -e EMAIL, --email=EMAIL
+                        email for notification
+  -p PASSWORD, --password=PASSWORD
+                        email password
+  -s SMTP, --smtp-port=SMTP
+                        smtp address+port to use
+  -m, --mainnet         switch on mainnet
+```
+
+To use `delegate.py` as node monitoring tool on Ubuntu, type `crontab -e`:
+```bash
+# Edit this file to introduce tasks to be run by cron.
+#
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+#
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').#
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+#
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+#
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+#
+# For more information see the manual pages of crontab(5) and cron(8)
+#
+# m    h    dom mon dow   command
+  0    */6  *   *   *     python3 ~/arky/delegate.py update -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
+  */31 *    *   *   *     python3 ~/arky/delegate.py check  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
+```
