@@ -33,7 +33,7 @@ if "win" in sys.platform:
 	home_path = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"])
 elif "linux" in sys.platform:
 	home_path = os.environ["HOME"]
-	
+
 # open the log file
 logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -192,6 +192,10 @@ def isForging():
 	if delegate:
 		logging.info('%s is an active delegate : name=%s rate=%s productivity=%s%%', options.ip, delegate["username"], delegate["rate"], delegate['productivity'])
 
+		if not peer:
+			logging.info('It seems delegate network have some issues')
+			return False
+
 		if "blockheader" in peer:
 
 			if "linux" in sys.platform:
@@ -278,6 +282,7 @@ if "check" in args:
 if len(sys.argv) > 1:
 	logging.info('### end ###')
 
+# print (options.smtp)
 # send email notification
 if notify and options.smtp:
 	server = smtplib.SMTP(options.smtp)
