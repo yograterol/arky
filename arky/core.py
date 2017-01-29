@@ -424,11 +424,11 @@ def sendTransaction(secret, transaction, n=10):
 	return result
 
 
-def sendMultiple(secret, *transactions, n=10):
+def sendMultiple(secret, *transactions, **kw):
 	result = ArkyDict()
 	i = 1
 	for transaction in transactions:
-		data = sendTransaction(secret, transaction, n=10)
+		data = sendTransaction(secret, transaction, n=kw.get("n", 10))
 		if data['success']:
 			key = data.pop('transactionId')
 			result[key] = data

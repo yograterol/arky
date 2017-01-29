@@ -76,7 +76,7 @@ More on ``arky.core`` ?
 ``arky.wallet``
 ^^^^^^^^^^^^^^^
 
-``Wallet`` class allows developper to send ARK, to register wallet as delegate and to vote for delegates.
+``Wallet`` class allows developper to send ARK, to register address as delegate and to vote for delegates.
 For now, this class is highly experimental and should be used carefully.
 
 >>> import arky.wallet as wlt
@@ -117,7 +117,7 @@ More on ``arky.wallet`` ?
 ^^^^^^^^^^^^^^^
 
 For the lucky 51 delegates forging on the ARK mainnet, ``arky`` package provides command line python script to monitor running peer.
-``delegate.py`` is experimental and use it knowing what you do and how ARK net works.
+``delegate.py`` is experimental. Use it knowing what you do and how ARK net works.
 
 ``python -m delegate -h``
 
