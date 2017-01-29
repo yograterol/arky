@@ -172,6 +172,7 @@ Support this project
 
 ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
+``16SPHzxaxjCYccnJCRY3RG711oybQj4KZ4``
 
 .. _ARK ecosystem: https://github.com/ArkEcosystem
-.. _BSD licence: https://raw.githubusercontent.com/Moustikitos/arky/master/arky.html
+.. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
