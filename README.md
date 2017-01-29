@@ -66,6 +66,46 @@ More on `arky.core` ?
 >>> help(core)
 ```
 
+### `arky.wallet`
+
+```python
+>>> import arky.wallet as wlt
+>>> w = wlt.Wallet("secret")
+>>> w.delegate
+False
+>>> w.registered
+False
+>>> w.balance
+1076464600000
+>>> w.candidates # valid username that can be up/down voted
+['techbytes', '4miners.net', 'kostik', 'boldninja', 'sonobit', 'marco229', 'dotnet70', 'arkfuturesma
+rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', 'lamar', 'thrice.pi', 'doweig', '
+forrest', 'axente', 'dafricash', 'hagie', 'bioly', 'xujian', 'raspi3', 'arkomatic', 'samuray_test', 
+'bcboilermaker', 'kushed.delegate', 'arkseed', 'jakethepanda', 'frank', 'frank2', 'ravelou', 'arky',
+ 'cannabanana', 'ondin', 'genesis_14', 'superwoot112', 'genesis_41', 'jamiec79rsp', 'genesis_38', 'g
+enesis_7', 'genesis_35', 'ilgio', 'fanilla', 'nuevax', 'wes3', 'genesis_1', 'arkshare', 'lidware', '
+atlass', 'genesis_27', 'genesis_20', 'genesis_36', 'genesis_48', 'genesis_29', 'genesis_45', 'genesi
+s_39', 'genesis_8', 'genesis_18', 'genesis_6', 'genesis_32', 'genesis_4', 'genesis_19', 'genesis_16'
+, 'genesis_30', 'genesis_42', 'genesis_22', 'genesis_51', 'genesis_44', 'genesis_9', 'genesis_21', '
+genesis_37', 'genesis_46', 'genesis_5', 'genesis_49', 'genesis_24', 'genesis_43', 'genesis_25', 'gen
+esis_15', 'wes', 'standby2', 'thatisme', 'genesis_2', 'genesis_31', 'genesis_33', 'genesis_50', 'bra
+d', 'grajson', 'genesis_34', 'arkeology', 'genesis_23', 'trustament', 'arkwhale', 'genesis_12', 'gen
+esis_3', 'bull', 'cryptonite', 'deskbob', 'vega', 'dafty2', 'wishxy', 'bcboilermaker1', 'genesis_17'
+, 'genesis_26', 'genesis_40', 'genesis_10', 'blockexp', 'standby', 'ghaarte', 'genesis_47', 'genesis
+_11', 'ark_taurus', 'globe', 'ghaarte2', 'genesis_28', 'arkonprime_odsejen', 'densmirnov', 'ark_fauc
+et', 'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
+>>> w.save("secret.wlt")
+>>> w2 = wlt.Wallet.open("secret.wlt")
+>>> w2.balance
+1076464600000
+```
+
+More on `arky.wallet` ?
+
+```python
+>>> help(wlt)
+```
+
 ### `arky.util`
 
 ```python

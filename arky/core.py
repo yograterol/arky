@@ -62,6 +62,40 @@ Returns ArkyDict
 	return keys
 
 
+def serializeKeys(keys):
+	"""
+Serialize `keys`.
+
+Argument:
+keys (ArkyDict) -- keyring returned by `getKeys`
+
+Returns ArkyDict
+"""
+	skeys = ArkyDict()
+	sk = binascii.hexlify(keys.signingKey.to_pem())
+	skeys.signingKey = sk.decode() if isinstance(sk, bytes) else sk
+	skeys.wif = keys.wif
+	return skeys
+
+
+def unserializeKeys(serial, network=None):
+	"""
+Unserialize serial.
+
+Argument:
+keys (dict) -- serialized keyring returned by `serializeKeys`
+
+Returns ArkyDict ready to be used as keyring.
+"""
+	keys = ArkyDict()
+	keys.network = __NETWORK__ if network == None else network # use __NETWORK__ network by default
+	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["signingKey"]))
+	keys.checkingKey = keys.signingKey.get_verifying_key()
+	keys.public = _compressEcdsaPublicKey(keys.checkingKey.to_string())
+	keys.wif = serial["wif"]
+	return keys
+
+
 def getAddress(keys):
 	"""
 Computes ARK address from keyring.
@@ -334,7 +368,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		elif not hasattr(self, "key_one"):
 			raise NoSecretDefinedError("No secret defined for %r" % self)
 		self._unsign()
-		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode_der)
 		object.__setattr__(self, "signature", checkStrictDER(stamp))
 		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
 

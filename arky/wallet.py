@@ -1,7 +1,7 @@
 # -*- encoding: utf8 -*-
 # © Toons
-from . import core, api, slots, ArkyDict
-import hashlib, binascii
+from . import core, api, slots, ArkyDict, StringIO
+import json, hashlib, binascii
 
 
 class Wallet(object):
@@ -13,16 +13,47 @@ class Wallet(object):
 	# get total ARK in wallet
 	balance = property(lambda obj: int(api.Account.getBalance(obj.address).get("balance", 0)), None, None, "")
 
-	def __init__(self, secret, secondSecret=None):
-		self.__tx = core.Transaction(secret=secret)
-		if secondSecret: self.__tx.secondSecret = secondSecret
+	@staticmethod
+	def open(filename):
+		in_ = open(filename, "r")
+		serial = json.load(in_)
+		in_.close()
 
+		obj = Wallet()
+		key_one = core.unserializeKeys(serial)
+		object.__setattr__(obj._Wallet__tx, "key_one", key_one)
+		object.__setattr__(obj._Wallet__tx, "address", core.getAddress(key_one))
+		Wallet.init(obj)
+		Wallet.update(obj)
+		return obj
+
+	@staticmethod
+	def create(secret):
+		pass
+# Account.openAccount = function(secretKey, callback) {
+#   Api.post({
+#     url: options.url + '/api/accounts/open',
+#     form: {
+#       secret: secretKey
+#     },
+#     json: true
+#   }, callback);
+# };
+
+	def __init__(self, secret=None): #, secondSecret=None):
+		self.__tx = core.Transaction()
+		if secret:
+			self.__tx.secret = secret
+			self.init()
+			self.update()
+		# if secondSecret:
+		# 	self.__tx.secondSecret = secondSecret
+
+	def init(self):
 		public_key = binascii.hexlify(self.__tx.key_one.public)
 		self.publicKey = public_key.decode() if isinstance(public_key, bytes) else public_key
 		self.address = core.getAddress(self.__tx.key_one)
 		self.wif = self.__tx.key_one.wif
-
-		self.update()
 
 	def update(self):
 		all_delegates = api.Delegate.getCandidates()
@@ -37,9 +68,8 @@ class Wallet(object):
 		object.__setattr__(self, attr, value)
 
 	def reset(self):
-		for attr in core.Transaction.attr:
-			if hasattr(self.__tx, attr):
-				delattr(self.__tx, attr)
+		for attr in [a for a in core.Transaction.attr if hasattr(self.__tx, a)]:
+			delattr(self.__tx, attr)
 		self.__tx.type = 0
 		self.__tx.amount = 0
 		self.__tx.timestamp = slots.getTime()
@@ -53,6 +83,12 @@ class Wallet(object):
 			setattr(self.__tx, attr, kw[attr])
 		return core.sendTransaction(secret, self.__tx)
 
+	def registerAsDelegate(self, secret, username):
+		self.reset()
+		self.__tx.type = 2
+		self.__tx.asset.delegate = ArkyDict(username=username, publicKey=self.publicKey)
+		return core.sendTransaction(secret, self.__tx)
+
 	def voteDelegate(self, secret, up=[], down=[]):
 		self.reset()
 		votes = self.votes
@@ -64,13 +100,9 @@ class Wallet(object):
 			self.__tx.asset.votes = usernames
 			return core.sendTransaction(secret, self.__tx)
 
-	def registerAsDelegate(self, secret, username):
-		self.reset()
-		self.__tx.type = 2
-		self.__tx.asset.delegate = ArkyDict(username=username, publicKey=self.publicKey)
-		return core.sendTransaction(secret, self.__tx)
-
-	def serialize(self):
-		return self.__tx.serialize()
+	def save(self, filename):
+		in_ = open(filename, "w")
+		json.dump(core.serializeKeys(self.__tx.key_one), in_, indent=2)
+		in_.close()
 
 #	registerSecondSingature(secondSign)
