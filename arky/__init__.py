@@ -77,8 +77,6 @@ Swich between mainnet and testnet
 			'nethash': "8b2e548078a2b0d6a382e4d75ea9205e7afc1857d31bf15cc035e8664c5dd038"
 		})
 
-swich(False)
-
 
 # ARK fees according to transactions in SATOSHI
 __FEES__ = ArkyDict({
@@ -89,3 +87,5 @@ __FEES__ = ArkyDict({
 	"multisignature": 500000000,
 	"dapp": 2500000000
 })
+
+switch(False)

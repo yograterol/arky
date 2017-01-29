@@ -22,7 +22,7 @@ Run a command as Administrator and type : ``pip install arky``
 Using ``arky``
 ==============
 
-``arky`` allow python developpers to interact with ARK ecosystem. Testnet and mainnet are linkable
+``arky`` allows python developpers to interact with ARK ecosystem. Testnet and mainnet are linkable
 through ``switch`` function available at root of ``arky`` package.
 
 >>> import arky

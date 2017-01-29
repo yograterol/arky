@@ -15,6 +15,8 @@ class Wallet(object):
 
 	@staticmethod
 	def open(filename):
+		"""
+"""
 		in_ = open(filename, "r")
 		serial = json.load(in_)
 		in_.close()

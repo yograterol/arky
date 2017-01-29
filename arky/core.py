@@ -5,8 +5,8 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der
 from ecdsa.curves import SECP256k1
 
-from . import __PY3__, __URL_BASE__, __NETWORK__, __FEES__, __HEADERS__, StringIO, slots, base58, api, ArkyDict
-import struct, hashlib, binascii, requests, json
+from . import __PY3__, __URL_BASE__, __NETWORK__, __FEES__, __HEADERS__, StringIO, slots, api, ArkyDict
+import base58, struct, hashlib, binascii, requests, json
 
 
 # define core exceptions 
@@ -85,7 +85,7 @@ Unserialize serial.
 Argument:
 keys (dict) -- serialized keyring returned by `serializeKeys`
 
-Returns ArkyDict ready to be used as keyring.
+Returns ArkyDict ready to be used as keyring
 """
 	keys = ArkyDict()
 	keys.network = __NETWORK__ if network == None else network # use __NETWORK__ network by default
