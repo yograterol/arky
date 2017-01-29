@@ -127,7 +127,7 @@ If arky is installed on python distribution
 
 Else
 
-`python path/ot/script/delegate.py -h`
+`python path/to/script/delegate.py -h`
 
 ```cmd
 Usage: delegate.py actions [options]
