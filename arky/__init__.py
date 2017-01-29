@@ -33,7 +33,7 @@ Python dict with javascript behaviour.
 	__delattr__ = lambda obj,*a,**k: dict.__delitem__(obj, *a, **k)
 
 
-def swich(net=False):
+def switch(net=False):
 	"""
 Swich between mainnet and testnet
 >>> swich(True) # use mainnet

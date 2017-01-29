@@ -2,9 +2,9 @@
    :target: https://ark.io
    :width: 100
 
-``Arky`` is the Python API for `ARK ecosystem`_.
+**Arky** is the Python API for `ARK ecosystem`_.
 
-Copyright 2015-2016, ``Toons``, `BSD licence`_
+Copyright 2015-2016, **Toons**, `BSD licence`_
 
 Install
 =======
@@ -19,9 +19,15 @@ Windows
 
 Run a command as Administrator and type : ``pip install arky``
 
-
 Using ``arky``
 ==============
+
+``arky`` allow python developpers to interact with ARK ecosystem. Testnet and mainnet are linkable
+through ``switch`` function available at root of ``arky`` package.
+
+>>> import arky
+>>> arky.switch(False) # work on testnet (default)
+>>> arky.switch(True)  # work on main net
 
 ``arky.api``
 ^^^^^^^^^^^^
@@ -32,7 +38,6 @@ Using ``arky``
 ance': '1101375294113', 'unconfirmedBalance': '1101375294113', 'u_multisignatures': [], 'unconfirmed
 Signature': 0, 'secondSignature': 0, 'address': 'AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU', 'secondPublicK
 ey': None, 'multisignatures': []}, 'success': True}
-
 
 More on ``arky.api`` ?
 
@@ -71,6 +76,9 @@ More on ``arky.core`` ?
 ``arky.wallet``
 ^^^^^^^^^^^^^^^
 
+``Wallet`` class allows developper to send ARK, to register wallet as delegate and to vote for delegates.
+For now, this class is highly experimental and should be used carefully.
+
 >>> import arky.wallet as wlt
 >>> w = wlt.Wallet("secret")
 >>> w.delegate
@@ -108,7 +116,8 @@ More on ``arky.wallet`` ?
 ``delegate.py``
 ^^^^^^^^^^^^^^^
 
-``arky`` package provides command line python script :
+For the lucky 51 delegates forging on the ARK mainnet, ``arky`` package provides command line python script to monitor running peer.
+``delegate.py`` is experimental and use it knowing what you do and how ARK net works.
 
 ``python -m delegate -h``
 
