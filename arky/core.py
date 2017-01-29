@@ -182,7 +182,7 @@ Returns sequence bytes
 	elif typ == 4 and "multisignature" in transaction.asset:
 		pack("<b", buf, (transaction.asset.multisignature.min,))
 		pack("<b", buf, (transaction.asset.multisignature.lifetime,))
-		pack_bytes(buf, "".join(transaction.asset.multisignature.keysgroup))
+		pack_bytes(buf, ("".join(transaction.asset.multisignature.keysgroup)).encode())
 
 	# if there is a signature
 	if hasattr(transaction, "signature"):
@@ -195,6 +195,7 @@ Returns sequence bytes
 	result = buf.getvalue()
 	buf.close()
 	return result.encode() if not isinstance(result, bytes) else result
+
 
 def checkStrictDER(sig):
 	"""

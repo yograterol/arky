@@ -1,16 +1,26 @@
 # `Arky`
 
 This package aims to provide python developpers a usefull interface to [ARK](https://ark.io/) platform.
+_For now not available on Pypi_
 
 ## Install
 
 ### Ubuntu
 
+`sudo pip install requests`
+`sudo pip install ecdsa`
+`sudo pip install pytz`
+`sudo pip install base58`
 `sudo -H pip install git+https://github.com/Moustikitos/arky.git`
 
-### Windows (for now not available on Pypi for windows)
+### Windows 
 
-Run a command as Administrator and type : `pip install git+https://github.com/Moustikitos/arky.git`
+Run a command as Administrator and type :
+`pip install requests`
+`pip install ecdsa`
+`pip install pytz`
+`pip install base58`
+`pip install git+https://github.com/Moustikitos/arky.git`
 
 ## `arky`
 
@@ -123,7 +133,6 @@ More on `arky.wallet` ?
 If arky is installed on python distribution
 
 `python -m delegate -h`
-
 
 Else
 
