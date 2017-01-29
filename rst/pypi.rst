@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/Moustikitos/arky/master/ark-logo.png
+.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
    :target: https://ark.io
    :width: 100
 
