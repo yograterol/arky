@@ -300,6 +300,7 @@ elif "check" in args:
 			restartNode()
 
 elif "clean" in args:
+	restartNode()
 	message += 'Subject: Cleaning status\n\n'
 	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if l != "ark.log"]:
 		logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % file, os.popen('rm -f "%s"' % file).read().strip())
