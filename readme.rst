@@ -23,11 +23,11 @@ Using ``arky``
 ==============
 
 ``arky`` allows python developpers to interact with ARK ecosystem. Testnet and mainnet are linkable
-through ``switch`` function available at root of ``arky`` package.
+through ``use`` function available at root of ``arky`` package.
 
 >>> import arky
->>> arky.switch(False) # work on testnet (default)
->>> arky.switch(True)  # work on main net
+>>> arky.use('testnet') # work on testnet (default)
+>>> arky.use('mainnet')  # work on mainnet
 
 ``arky.api``
 ^^^^^^^^^^^^

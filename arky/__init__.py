@@ -33,7 +33,7 @@ Python dict with javascript behaviour.
 	__delattr__ = lambda obj,*a,**k: dict.__delitem__(obj, *a, **k)
 
 
-def switch(net=False):
+def use(net="testnet"):
 	"""
 Swich between mainnet and testnet
 >>> swich(True) # use mainnet
@@ -44,7 +44,7 @@ Swich between mainnet and testnet
 	__NETWORK__ = ArkyDict()
 	__HEADERS__ = ArkyDict()
 
-	if net:
+	if net == "testnet":
 		# values are not all correct
 		__URL_BASE__ = "http://node1.arknet.cloud:4000"
 		__NETWORK__.update(
@@ -61,7 +61,7 @@ Swich between mainnet and testnet
 			'nethash': "ed14889723f24ecc54871d058d98ce91ff2f973192075c0155ba2b7b70ad2511"
 		})
 
-	else:
+	elif net == "mainnet":
 		__URL_BASE__ = "http://node1.arknet.cloud:4000"
 		__NETWORK__.update(
 			messagePrefix = b"\x18Testnet Ark Signed Message:\n",
@@ -77,6 +77,9 @@ Swich between mainnet and testnet
 			'nethash': "8b2e548078a2b0d6a382e4d75ea9205e7afc1857d31bf15cc035e8664c5dd038"
 		})
 
+	else:
+		raise Exception("%s net properties not known" % net)
+
 
 # ARK fees according to transactions in SATOSHI
 __FEES__ = ArkyDict({
@@ -88,4 +91,5 @@ __FEES__ = ArkyDict({
 	"dapp": 2500000000
 })
 
-switch(False)
+
+use("testnet")

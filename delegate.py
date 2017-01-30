@@ -2,7 +2,6 @@
 from arky import core, api, slots
 import os, re, sys, json, logging, binascii, smtplib 
 
-
 # screen command line
 from optparse import OptionParser
 parser = OptionParser()
@@ -10,6 +9,8 @@ parser.set_usage("""usage: %prog actions [options]
 
 Actions:
  update                 update node running on peer
+
+ clean                  delete unused forever log files
 
  check                  check if node is running and forging""")
 parser.add_option("-i", "--ip",                            dest="ip",                    help="peer ip you want to check")
@@ -36,6 +37,15 @@ elif "linux" in sys.platform:
 
 # open the log file
 logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
+
+lockfile = os.path.join(home_path, ".lock")
+if os.path.exists(lockfile):
+	logging.info('>>> Automation locked by previous command line')
+	sys.exit()
+else:
+	logging.info('>>> Locking automation to prevent from other command line')
+	open(lockfile, "w")
+
 
 # first of all get delegate json data
 # it automaticaly searches json configuration file in "/home/username/ark-node" folder
@@ -73,9 +83,10 @@ def putSecrets():
 
 
 # deal if launch from command line
-if len(sys.argv) > 1: logging.info('### %s : delegate.py %s %s ###', slots.datetime.datetime.now(slots.UTC), args, options)
+if len(sys.argv) > 1: logging.info('@%s # %s %s', slots.datetime.datetime.now(slots.UTC).strftime("%Y-%m-%d %H:%M"), args, options)
 # add your peer ip here
-else: options.ip = '45.63.114.19'
+if not options.ip:
+	options.ip = '45.63.114.19'
 
 peer_version = api.Peer.getPeerVersion().get("version", "0.0.0")
 block_height = api.Block.getBlockchainHeight().get("height", False)
@@ -181,6 +192,13 @@ last_block = getLastForgedBlock()
 def isUpToDate():
 	return "is up-to-date" in os.popen("git checkout").read().strip()
 
+def foreverCurentLog():
+	search = re.compile(".* app.js .* ([0-9a-zA-Z]{4}.log) .*")
+	for line in os.popen('forever list').read().split("\n"):
+		match = search.match(line)
+		if match: return match.groups()[0]
+	return True
+
 def isRunning():
 	search = re.compile(".* app.js .* STOPPED.*")
 	for line in os.popen('forever list').read().split("\n"):
@@ -253,7 +271,7 @@ def updateNode(droptable=False):
 			logging.info('EXECUTE> %s [%s]', "dropdb %s" % db_table,   os.popen("dropdb %s" % db_table).read().strip())
 			logging.info('EXECUTE> %s [%s]', "createdb %s" % db_table, os.popen("createdb %s" % db_table).read().strip())
 		logging.info(    'EXECUTE> %s [%s]', "git pull",               os.popen("git pull").read().strip())
-		# putSecrets()
+		#putSecrets()
 		logging.info(    'EXECUTE> %s [%s]', forever_start,            os.popen(forever_start).read().strip())
 		return True # node updated
 	logging.info('%s is up to date', options.ip)
@@ -279,10 +297,12 @@ if "check" in args:
 			message += "<p>%s have been updated</p>\n" % options.ip
 			restartNode()
 
-if len(sys.argv) > 1:
-	logging.info('### end ###')
+if "clean" in args:
+	curent_log = foreverCurentLog()
+	for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
+		logging.info('EXECUTE> %s [%s]', "rm -f %s" % log, os.popen("rm -f %s" % log).read().strip())
 
-# print (options.smtp)
+
 # send email notification
 if notify and options.smtp:
 	if "linux" in sys.platform:
@@ -302,3 +322,7 @@ Content-Type: text/html
 ''' % {"email":options.email} + message)
 	except:
 		pass
+
+if "linux" in sys.platform: os.system('rm -f "%s"' % lockfile)
+elif "win" in sys.platform: os.system('del /F "%s"' % lockfile)
+logging.info('>>> Automation unlocked for next command line')
