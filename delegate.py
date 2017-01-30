@@ -300,8 +300,11 @@ if "check" in args:
 			restartNode()
 
 if "clean" in args:
+	message += 'Subject: Cleaning status\n\n'
+	restartNode()
 	curent_log = foreverCurentLog()
 	if curent_log:
+		notify = True
 		for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
 			logging.info('EXECUTE> %s [%s]', "rm -f %s" % log, os.popen("rm -f %s" % log).read().strip())
 
