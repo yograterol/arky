@@ -193,11 +193,13 @@ def isUpToDate():
 	return "is up-to-date" in os.popen("git checkout").read().strip()
 
 def foreverCurentLog():
-	search = re.compile(".* app.js .* ([0-9a-zA-Z]{4}.log) .*")
+	search = re.compile(".*forever/([0-9a-zA-Z]{4}.log).*")
 	for line in os.popen('forever list').read().split("\n"):
+		#print ("%r" % line)
 		match = search.match(line)
+		#print(match)
 		if match: return match.groups()[0]
-	return True
+	return False
 
 def isRunning():
 	search = re.compile(".* app.js .* STOPPED.*")
@@ -299,8 +301,9 @@ if "check" in args:
 
 if "clean" in args:
 	curent_log = foreverCurentLog()
-	for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
-		logging.info('EXECUTE> %s [%s]', "rm -f %s" % log, os.popen("rm -f %s" % log).read().strip())
+	if curent_log:
+		for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
+			logging.info('EXECUTE> %s [%s]', "rm -f %s" % log, os.popen("rm -f %s" % log).read().strip())
 
 
 # send email notification
