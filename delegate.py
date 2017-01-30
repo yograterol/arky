@@ -44,8 +44,8 @@ if os.path.exists(lockfile):
 	sys.exit()
 else:
 	logging.info('>>> Locking automation to prevent from other command line')
-	open(lockfile, "w")
-
+	_lockfile = open(lockfile, "w")
+	_lockfile.close()
 
 # first of all get delegate json data
 # it automaticaly searches json configuration file in "/home/username/ark-node" folder
@@ -290,7 +290,7 @@ if "update" in args:
 		notify = True
 		message += '<p>%s have been updated</p>\n' % options.ip
 
-if "check" in args:
+elif "check" in args:
 	message += 'Subject: Forging status\n\n'
 	if not isForging():
 		message += "<p>%s is not forging</p>\n" % options.ip
@@ -299,15 +299,15 @@ if "check" in args:
 			message += "<p>%s have been updated</p>\n" % options.ip
 			restartNode()
 
-if "clean" in args:
+elif "clean" in args:
 	message += 'Subject: Cleaning status\n\n'
-	restartNode()
+	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if l != "ark.log"]:
+		logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % file, os.popen('rm -f "%s"' % file).read().strip())
 	curent_log = foreverCurentLog()
 	if curent_log:
 		notify = True
 		for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
-			logging.info('EXECUTE> %s [%s]', "rm -f %s" % log, os.popen("rm -f %s" % log).read().strip())
-
+			logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % log, os.popen('rm -f "%s"' % log).read().strip())
 
 # send email notification
 if notify and options.smtp:
