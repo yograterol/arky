@@ -28,7 +28,7 @@ How speed can be improved ?
 Rationale
 =========
 
-In fact, transactions are sent as `json data`_ via REST protocol, using POST method, on the ARK net.
+In fact, transactions are sent as [json data](http://www.w3schools.com/js/js_json.asp) via REST protocol, using POST method, on the ARK net.
 
 ARK defines 5 types of transaction:
 
@@ -41,33 +41,34 @@ ARK defines 5 types of transaction:
 
 Transaction is a set of information (acount, amount, name, fees and so on...) tied in a javascript object, signed using a private key and identified by an id. Note that singature and id are also stored in the same javascript object.
 
-::
 
-  Example used for this AIP : AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff send 1 ARK to AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU
-  This transaction is defined by a js object :
-  {
-    senderPublicKey = '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933';
-    timestamp       = 21781590;
-    asset           = {};
-    type            = 0;
-    amount          = 100000000;
-    fee             = 10000000;
-    recipientId     = 'AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU';
-    signature       = '3045022100dc3ba689329c38aa5b76d186511d5123fbf3d4638d577cdf92c017a0db927ad502
-  201ba724bd978b347217c1418653604215f1ef343e809df1084360c13a75540352';
-    id              = '3570708643510389756'
-  }
+```
+Example used for this AIP : AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff send 1 ARK to AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU
+This transaction is defined by a js object :
+{
+  senderPublicKey = '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933';
+  timestamp       = 21781590;
+  asset           = {};
+  type            = 0;
+  amount          = 100000000;
+  fee             = 10000000;
+  recipientId     = 'AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU';
+  signature       = '3045022100dc3ba689329c38aa5b76d186511d5123fbf3d4638d577cdf92c017a0db927ad502
+201ba724bd978b347217c1418653604215f1ef343e809df1084360c13a75540352';
+  id              = '3570708643510389756'
+}
+```
 
 When doing a POST request via REST protocol, javascript object is serialized into json before going on the Internet. Basicly, it is sent as string describing the js object, gzipped or not according to what is asked in the request headder :
 
-::
-
-  serialized transaction -> 318 chars = 1.272 ko with utf-8 charset defined in request header
-  '{"id":"3570708643510389756","senderPublicKey":"03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
-  4c4a05e79f19de933","timestamp":21781590,"asset":{},"type":0,"amount":100000000,"fee":10000000,"re
-  cipientId":"AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU","signature":"3045022100dc3ba689329c38aa5b76d18651
-  1d5123fbf3d4638d577cdf92c017a0db927ad502201ba724bd978b347217c1418653604215f1ef343e809df1084360c13
-  a75540352"}'
+```
+serialized transaction -> 318 chars = 1.272 ko with utf-8 charset defined in request header
+'{"id":"3570708643510389756","senderPublicKey":"03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
+4c4a05e79f19de933","timestamp":21781590,"asset":{},"type":0,"amount":100000000,"fee":10000000,"re
+cipientId":"AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU","signature":"3045022100dc3ba689329c38aa5b76d18651
+1d5123fbf3d4638d577cdf92c017a0db927ad502201ba724bd978b347217c1418653604215f1ef343e809df1084360c13
+a75540352"}'
+```
 
 When a delegate receive json data it has to:
 
@@ -79,17 +80,16 @@ When a delegate receive json data it has to:
   6. save transaction with the ``id``
 
 
-In my opignon, a transaction can be reduced to its ``signature`` and its ``getbyte`` computed on client side. Knowing `structure`_ of ``signature``, it is possible to quicly separate it from the ``getbytes``.  
+In my opignon, a transaction can be reduced to its ``signature`` and its ``getbyte`` computed on client side. Knowing [structure](https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki#der-encoding-reference) of ``signature``, it is possible to quicly separate it from the ``getbytes``.  
 
-::
-
-  signature + getbytes = 202 bytes = 0.202 ko (1.272 ko for json data)
-  30450221009a97b331d4f28a2000552005100b38ddbf556b350f615bb554e7195ab6ea84d502206108bed6d08d72247298
-  d7c0309ac30268029caf05750075234303e67bbf242c00e0624c0103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb
-  3f3a44c4a05e79f19de933176545207451d8191c61047bef96d29581563b36910000000000000000000000000000000000
-  000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e1
-  f50500000000
-
+```
+signature + getbytes = 202 bytes = 0.202 ko (1.272 ko for json data)
+30450221009a97b331d4f28a2000552005100b38ddbf556b350f615bb554e7195ab6ea84d502206108bed6d08d72247298
+d7c0309ac30268029caf05750075234303e67bbf242c00e0624c0103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb
+3f3a44c4a05e79f19de933176545207451d8191c61047bef96d29581563b36910000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e1
+f50500000000
+```
 
 When a delegate receive json data it has to:
 
@@ -98,12 +98,8 @@ When a delegate receive json data it has to:
   3. retrieve transaction info and apply it
   4. save transaction with the ``id``
 
-
 So what ?
-^^^^^^^^^
+=========
 
   - on server side : less operation to do
   - within ARK net : smaller data size per transaction
-
-.. _json data : http://www.w3schools.com/js/js_json.asp
-.. _structure : https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki#der-encoding-reference
