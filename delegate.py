@@ -195,9 +195,7 @@ def isUpToDate():
 def foreverCurentLog():
 	search = re.compile(".*forever/([0-9a-zA-Z]{4}.log).*")
 	for line in os.popen('forever list').read().split("\n"):
-		#print ("%r" % line)
 		match = search.match(line)
-		#print(match)
 		if match: return match.groups()[0]
 	return False
 
@@ -300,17 +298,18 @@ elif "check" in args:
 			restartNode()
 
 elif "clean" in args:
-	restartNode()
 	message += 'Subject: Cleaning status\n\n'
-	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if l != "ark.log"]:
+	notify = True
+	logging.info('Cleaning log files')
+	logging.info('EXECUTE> %s [%s]', "forever stopall", os.popen("forever stopall").read().strip())
+	logging.info('EXECUTE> %s [%s]', "forever cleanlogs", os.popen('forever cleanlogs').read().strip())
+	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if l != "ark.log" and not l.startswith(".")]:
 		logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % file, os.popen('rm -f "%s"' % file).read().strip())
-	curent_log = foreverCurentLog()
-	if curent_log:
-		notify = True
-		for log in [os.path.join(home_path, ".forever", l) for l in os.listdir(os.path.join(home_path, ".forever")) if l.endswith(".log") and l != curent_log]:
-			logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % log, os.popen('rm -f "%s"' % log).read().strip())
+	logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
+	message += "<p>Log files wipped</p>\n"
 
 # send email notification
+print(notify)
 if notify and options.smtp:
 	if "linux" in sys.platform:
 		message += "<p>last log lines&nbsp;:</p>\n<pre>%s</pre>" % os.popen('cat %s | tail -30' % os.path.join(home_path, 'delegate.log')).read()
