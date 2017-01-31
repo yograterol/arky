@@ -44,7 +44,7 @@ Swich between mainnet and testnet
 	__NETWORK__ = ArkyDict()
 	__HEADERS__ = ArkyDict()
 
-	if net == "testnet":
+	if net == "mainnet":
 		# values are not all correct
 		__URL_BASE__ = "http://node1.arknet.cloud:4000"
 		__NETWORK__.update(
@@ -61,7 +61,7 @@ Swich between mainnet and testnet
 			'nethash': "ed14889723f24ecc54871d058d98ce91ff2f973192075c0155ba2b7b70ad2511"
 		})
 
-	elif net == "mainnet":
+	elif net == "testnet":
 		__URL_BASE__ = "http://node1.arknet.cloud:4000"
 		__NETWORK__.update(
 			messagePrefix = b"\x18Testnet Ark Signed Message:\n",
