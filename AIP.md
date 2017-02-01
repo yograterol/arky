@@ -1,11 +1,11 @@
 <pre>
-  AIP: *3*
-  Title: *toonsbuf : an improvement of transaction protocol*
-  Authors: *toons <moustikitos@gmail.com>*
-  Status: *Draft*
-  Type: *Standards Track*
-  Created: *2017-01-29*
-  Last Update: *2017-01-29*
+  AIP: 3
+  Title: toonsbuf : an improvement of transaction protocol
+  Authors: toons <moustikitos@gmail.com>
+  Status: Draft
+  Type: Standards Track
+  Created: 2017-01-29
+  Last Update: 2017-02-01
 </pre>
 
 Abstract
