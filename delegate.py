@@ -303,7 +303,7 @@ elif "clean" in args:
 	logging.info('Cleaning log files')
 	logging.info('EXECUTE> %s [%s]', "forever stopall", os.popen("forever stopall").read().strip())
 	logging.info('EXECUTE> %s [%s]', "forever cleanlogs", os.popen('forever cleanlogs').read().strip())
-	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if l != "ark.log" and not l.startswith(".")]:
+	for file in [os.path.join(json_folder, "logs", l) for l in os.listdir(os.path.join(json_folder, "logs")) if not l.startswith(".")]:
 		logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % file, os.popen('rm -f "%s"' % file).read().strip())
 	logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
 	message += "<p>Log files wipped</p>\n"
