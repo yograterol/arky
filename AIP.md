@@ -1,5 +1,5 @@
 <pre>
-  AIP: 3
+  AIP: 8
   Title: toonsbuf : an improvement of transaction protocol
   Authors: toons <moustikitos@gmail.com>
   Status: Draft
