@@ -171,7 +171,7 @@ To use ``delegate.py`` as node monitoring tool on Ubuntu, edit your cron tasks :
   # m    h    dom mon dow   command
     0    */6  *   *   *     python3 ~/arky/delegate.py update -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
     */31 *    *   *   *     python3 ~/arky/delegate.py check  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
-    45   12   1   *   *     python3 ~/arky/delegate.py clean  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
+    45   12   *   *   1     python3 ~/arky/delegate.py clean  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
 
 Support this project
 ====================

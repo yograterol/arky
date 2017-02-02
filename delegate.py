@@ -308,8 +308,12 @@ elif "clean" in args:
 	logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
 	message += "<p>Log files wipped</p>\n"
 
+if "linux" in sys.platform: os.system('rm -f "%s"' % lockfile)
+elif "win" in sys.platform: os.system('del /F "%s"' % lockfile)
+logging.info('>>> Automation unlocked for next command line')
+
+
 # send email notification
-print(notify)
 if notify and options.smtp:
 	if "linux" in sys.platform:
 		message += "<p>last log lines&nbsp;:</p>\n<pre>%s</pre>" % os.popen('cat %s | tail -30' % os.path.join(home_path, 'delegate.log')).read()
@@ -329,6 +333,3 @@ Content-Type: text/html
 	except:
 		pass
 
-if "linux" in sys.platform: os.system('rm -f "%s"' % lockfile)
-elif "win" in sys.platform: os.system('del /F "%s"' % lockfile)
-logging.info('>>> Automation unlocked for next command line')

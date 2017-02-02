@@ -217,6 +217,7 @@ Returns sequence bytes
 
 	# write amount value
 	pack("<Q", buf, (transaction.amount,))
+	pack("<Q", buf, (transaction.fee,))
 
 	# more test to confirm the good bytification of type 1 to 4...
 	typ  = transaction.type
@@ -418,9 +419,8 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		self._unsign()
 		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode_der)
 		object.__setattr__(self, "signature", checkStrictDER(stamp))
-		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
-	# --> should be moved into wallet class
 	def seconSign(self, secondSecret=None):
 		if not hasattr(self, "signature"):
 			raise NotSignedTransactionError("%r must be signed first" % self)
@@ -431,7 +431,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		if hasattr(self, "signSignature"): delattr(self, "signSignature")
 		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
 		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
-		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
 	def serialize(self):
 		data = ArkyDict()
@@ -450,10 +450,12 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		return data
 
 
-def sendTransaction(secret, transaction, n=10):
+def sendTransaction(secret, transaction, n=10, secondSignature=None):
 	attempt = 0
 	while n: # yes i know, it is brutal :)
 		transaction.sign(secret)
+		if secondSignature:
+			transaction.seconSign(secondSignature)
 		result = ArkyDict(json.loads(requests.post(
 			cfg.__URL_BASE__+"/peer/transactions",
 			data=json.dumps({"transactions": [transaction.serialize()]}),
@@ -475,7 +477,7 @@ def sendMultiple(secret, *transactions, **kw):
 	result = ArkyDict()
 	i = 1
 	for transaction in transactions:
-		data = sendTransaction(secret, transaction, n=kw.get("n", 10))
+		data = sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
 		if data['success']:
 			key = data.pop('transactionId')
 			result[key] = data
