@@ -22,13 +22,6 @@ Run a command as Administrator and type : ``pip install arky``
 Using ``arky``
 ==============
 
-``arky`` allows python developpers to interact with ARK ecosystem. Testnet and mainnet are linkable
-through ``use`` function available at root of ``arky`` package.
-
->>> import arky
->>> arky.use('testnet') # work on testnet (default)
->>> arky.use('mainnet')  # work on mainnet
-
 ``arky.api``
 ^^^^^^^^^^^^
 
@@ -47,6 +40,11 @@ More on ``arky.api`` ?
 ^^^^^^^^^^^^^
 
 >>> import arky.core as core
+
+``core`` module allows python developpers to interact with ARK ecosystem. Testnet and mainnet are
+linkable through ``use`` function.
+
+>>> core.use('testnet') # work on testnet (default)
 >>> keys = core.getKeys("secret")
 >>> keys.public.hex()
 '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
@@ -128,6 +126,8 @@ For the lucky 51 delegates forging on the ARK mainnet, ``arky`` package provides
   Actions:
    update                 update node running on peer
 
+   clean                  delete unused forever log files
+
    check                  check if node is running and forging
 
   Options:
@@ -171,7 +171,7 @@ To use ``delegate.py`` as node monitoring tool on Ubuntu, edit your cron tasks :
   # m    h    dom mon dow   command
     0    */6  *   *   *     python3 ~/arky/delegate.py update -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
     */31 *    *   *   *     python3 ~/arky/delegate.py check  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
-
+    45   12   1   *   *     python3 ~/arky/delegate.py clean  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
 
 Support this project
 ====================

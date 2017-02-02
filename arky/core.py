@@ -5,7 +5,8 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der
 from ecdsa.curves import SECP256k1
 
-from . import __PY3__, __URL_BASE__, __NETWORK__, __FEES__, __HEADERS__, StringIO, slots, api, ArkyDict
+from . import cfg #, cfg.__NETWORK__, cfg.__FEES__, cfg.__HEADERS__ cfg.__URL_BASE__
+from . import __PY3__, StringIO, slots, ArkyDict
 import base58, struct, hashlib, binascii, requests, json
 
 
@@ -26,6 +27,52 @@ pack_bytes = lambda f,v: pack("<"+"%ss"%len(v), f, (v,)) if __PY3__ else \
              lambda f,v: pack("<"+"c"*len(v), f, v)
 
 
+def use(net="testnet"):
+	"""
+select ARK net to use
+>>> use("testnet") # use testnet (default)
+>>> use("mainnet") # use testnet
+"""
+
+	if net == "mainnet":
+		cfg.__URL_BASE__ = "http://node1.arknet.cloud:4000"
+		cfg.__NETWORK__.update(
+			messagePrefix = b"\x18Ark Signed Message:\n",
+			bip32         = ArkyDict(public=0x043587cf, private=0x04358394),
+			pubKeyHash    = b"\x6f",
+			wif           = b"\xef",
+		)
+		cfg.__HEADERS__.update({
+			'Content-Type': 'application/json; charset=utf-8',
+			'os': 'arkwalletapp',
+			'version': '0.5.0',
+			'port': '1',
+			'nethash': "ed14889723f24ecc54871d058d98ce91ff2f973192075c0155ba2b7b70ad2511"
+		})
+
+	elif net == "testnet":
+		cfg.__URL_BASE__ = "http://node1.arknet.cloud:4000"
+		cfg.__NETWORK__.update(
+			messagePrefix = b"\x18Testnet Ark Signed Message:\n",
+			bip32         = ArkyDict(public=0x0488b21e, private=0x0488ade4),
+			pubKeyHash    = b"\x17",
+			wif           = b"\xaa",
+		)
+		cfg.__HEADERS__.update({
+			'Content-Type': 'application/json; charset=utf-8',
+			'os': 'arkwalletapp',
+			'version': '0.5.0',
+			'port': '1',
+			'nethash': "8b2e548078a2b0d6a382e4d75ea9205e7afc1857d31bf15cc035e8664c5dd038"
+		})
+
+	else:
+		raise Exception("%s net properties not known" % net)
+
+# activate testnet by default
+use("testnet")
+
+
 def _compressEcdsaPublicKey(pubkey):
 	first, last = pubkey[:32], pubkey[32:]
 	# check if last digit of second part is even (2%2 = 0, 3%2 = 1)
@@ -36,7 +83,7 @@ def _compressEcdsaPublicKey(pubkey):
 def getKeys(secret="passphrase", seed=None, network=None):
 	"""
 Generate `keys` containing `network`, `public` and `private` key as attribute.
-`secret` or `seed` have to be provided, if `network` is not, `__NETWORK__` is
+`secret` or `seed` have to be provided, if `network` is not, `cfg.__NETWORK__` is
 automatically selected.
 
 Keyword arguments:
@@ -46,7 +93,7 @@ network (object)      -- a python object
 
 Returns ArkyDict
 """
-	network = __NETWORK__ if network == None else network # use __NETWORK__ network by default
+	network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
 	seed = hashlib.sha256(secret.encode("utf8") if not isinstance(secret, bytes) else secret).digest() if not seed else seed
 
 	keys = ArkyDict()
@@ -88,7 +135,7 @@ keys (dict) -- serialized keyring returned by `serializeKeys`
 Returns ArkyDict ready to be used as keyring
 """
 	keys = ArkyDict()
-	keys.network = __NETWORK__ if network == None else network # use __NETWORK__ network by default
+	keys.network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
 	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["signingKey"]))
 	keys.checkingKey = keys.signingKey.get_verifying_key()
 	keys.public = _compressEcdsaPublicKey(keys.checkingKey.to_string())
@@ -334,12 +381,12 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 			object.__setattr__(self, "key_two", getKeys(value))
 		elif attr == "type":
 			# when doing `<object>.type = value` automaticaly set the associated fees
-			if value == 0:   object.__setattr__(self, "fee", __FEES__.send)
-			elif value == 1: object.__setattr__(self, "fee", __FEES__.secondsignature)
-			elif value == 2: object.__setattr__(self, "fee", __FEES__.delegate)
-			elif value == 3: object.__setattr__(self, "fee", __FEES__.vote)
-			elif value == 4: object.__setattr__(self, "fee", __FEES__.multisignature)
-			elif value == 5: object.__setattr__(self, "fee", __FEES__.get("ipfs", 0))
+			if value == 0:   object.__setattr__(self, "fee", cfg.__FEES__.send)
+			elif value == 1: object.__setattr__(self, "fee", cfg.__FEES__.secondsignature)
+			elif value == 2: object.__setattr__(self, "fee", cfg.__FEES__.delegate)
+			elif value == 3: object.__setattr__(self, "fee", cfg.__FEES__.vote)
+			elif value == 4: object.__setattr__(self, "fee", cfg.__FEES__.multisignature)
+			elif value == 5: object.__setattr__(self, "fee", cfg.__FEES__.get("ipfs", 0))
 			object.__setattr__(self, attr, value)
 		else:
 			object.__setattr__(self, attr, value)
@@ -374,17 +421,17 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
 
 	# --> should be moved into wallet class
-	# def seconSign(self, secondSecret=None):
-	# 	if not hasattr(self, "signature"):
-	# 		raise NotSignedTransactionError("%r must be signed first" % self)
-	# 	if secondSecret != None:
-	# 		self.secondSecret = secondSecret
-	# 	elif not hasattr(self, "key_two"):
-	# 		raise NoSecretDefinedError("No second secret defined for %r" % self)
-	# 	if hasattr(self, "signSignature"): delattr(self, "signSignature")
-	# 	stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
-	# 	object.__setattr__(self, "signSignature", checkStrictDER(stamp))
-	# 	object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
+	def seconSign(self, secondSecret=None):
+		if not hasattr(self, "signature"):
+			raise NotSignedTransactionError("%r must be signed first" % self)
+		if secondSecret != None:
+			self.secondSecret = secondSecret
+		elif not hasattr(self, "key_two"):
+			raise NoSecretDefinedError("No second secret defined for %r" % self)
+		if hasattr(self, "signSignature"): delattr(self, "signSignature")
+		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
+		object.__setattr__(self, "id", str(struct.unpack("<Q", hashlib.sha256(getBytes(self)).digest()[:8])[0]))
 
 	def serialize(self):
 		data = ArkyDict()
@@ -408,9 +455,9 @@ def sendTransaction(secret, transaction, n=10):
 	while n: # yes i know, it is brutal :)
 		transaction.sign(secret)
 		result = ArkyDict(json.loads(requests.post(
-			__URL_BASE__+"/peer/transactions",
+			cfg.__URL_BASE__+"/peer/transactions",
 			data=json.dumps({"transactions": [transaction.serialize()]}),
-			headers=__HEADERS__
+			headers=cfg.__HEADERS__
 		).text))
 		if result["success"]:
 			break

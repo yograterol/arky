@@ -2,7 +2,17 @@
 # created by Toons on 01/05/2017
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import ArkyDict, get
+from .. import ArkyDict, cfg
+import json, requests
+
+
+# GET generic method for ARK API
+def get(api, dic={}, **kw):
+	returnkey = kw.pop("returnKey", False)
+	data = json.loads(requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text)
+	if data["success"] and returnkey: return ArkyDict(data[returnkey])
+	else: return ArkyDict(data)
+
 
 class Loader:
 
