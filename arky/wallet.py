@@ -42,14 +42,14 @@ class Wallet(object):
 #   }, callback);
 # };
 
-	def __init__(self, secret=None): #, secondSecret=None):
+	def __init__(self, secret=None, secondSecret=None):
 		self.__tx = core.Transaction()
 		if secret:
 			self.__tx.secret = secret
 			self.init()
 			self.update()
-		# if secondSecret:
-		# 	self.__tx.secondSecret = secondSecret
+		if secondSecret:
+			self.__tx.secondSecret = secondSecret
 
 	def init(self):
 		public_key = binascii.hexlify(self.__tx.key_one.public)
