@@ -25,9 +25,11 @@ parser.add_option("-m", "--mainnet", action="store_false", dest="testnet", defau
 if options.testnet:
 	forever_start = "forever start app.js --genesis genesisBlock.testnet.json --config config.testnet.json"
 	db_table = "ark_testnet"
+	core.use("testnet")
 else:
 	forever_start = "forever start app.js --genesis genesisBlock.main.json --config config.main.json"
 	db_table = "ark_mainnet"
+	core.use("mainnet")
 
 # deal with home directory
 if "win" in sys.platform:
