@@ -1,6 +1,6 @@
 # -*- encoding:utf-8 -*-
 from arky import core, api, slots
-import os, re, sys, json, logging, binascii, smtplib 
+import os, re, sys, json, atexit, logging, binascii, smtplib 
 
 # screen command line
 from optparse import OptionParser
@@ -38,7 +38,14 @@ elif "linux" in sys.platform:
 # open the log file
 logging.basicConfig(filename=os.path.join(home_path, 'delegate.log'), format='%(levelname)s:%(message)s', level=logging.INFO)
 
+# here a simple way to lock command line
 lockfile = os.path.join(home_path, ".lock")
+
+def unlock():
+	if "linux" in sys.platform: os.system('rm -f "%s"' % lockfile)
+	elif "win" in sys.platform: os.system('del /F "%s"' % lockfile)
+	logging.info('>>> Automation unlocked for next command line')
+
 if os.path.exists(lockfile):
 	logging.info('>>> Automation locked by previous command line')
 	sys.exit()
@@ -46,6 +53,7 @@ else:
 	logging.info('>>> Locking automation to prevent from other command line')
 	_lockfile = open(lockfile, "w")
 	_lockfile.close()
+	atexit.register(unlock)
 
 # first of all get delegate json data
 # it automaticaly searches json configuration file in "/home/username/ark-node" folder
@@ -307,11 +315,6 @@ elif "clean" in args:
 		logging.info('EXECUTE> %s [%s]', 'rm -f "%s"' % file, os.popen('rm -f "%s"' % file).read().strip())
 	logging.info('EXECUTE> %s [%s]', forever_start, os.popen(forever_start).read().strip())
 	message += "<p>Log files wipped</p>\n"
-
-if "linux" in sys.platform: os.system('rm -f "%s"' % lockfile)
-elif "win" in sys.platform: os.system('del /F "%s"' % lockfile)
-logging.info('>>> Automation unlocked for next command line')
-
 
 # send email notification
 if notify and options.smtp:
