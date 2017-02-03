@@ -183,5 +183,14 @@ Support this project
 
 ``16SPHzxaxjCYccnJCRY3RG711oybQj4KZ4``
 
+
+Create your delegate
+====================
+
+.. image:: https://github.com/Moustikitos/arky/raw/master/vultr-logo.png
+   :target: http://www.vultr.com/?ref=7071726
+   :width: 100
+
+
 .. _ARK ecosystem: https://github.com/ArkEcosystem
 .. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html

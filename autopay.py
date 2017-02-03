@@ -35,7 +35,7 @@ if len(args) == 1 and os.path.exists(args[0]):
 	forged = int(node["account"]["balance"]) - (3*0.1*100000000)
 	fees = math.floor(USD2ARK(__daily_fees__*7)*100000000)
 	forged -= fees
-	pythoners = math.floor(forged*0.25)
+	pythoners = math.floor(forged*0.2)
 	investments =  forged - pythoners
 
 	for tx in [

@@ -2,6 +2,7 @@
 # © Toons
 from . import ArkyDict
 
+__NET__ = ""
 # Global containers available for arky package
 __NETWORK__ = ArkyDict()
 __HEADERS__ = ArkyDict()

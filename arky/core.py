@@ -5,8 +5,7 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der
 from ecdsa.curves import SECP256k1
 
-from . import cfg #, cfg.__NETWORK__, cfg.__FEES__, cfg.__HEADERS__ cfg.__URL_BASE__
-from . import __PY3__, StringIO, slots, ArkyDict
+from . import __PY3__, StringIO, ArkyDict, cfg, slots
 import base58, struct, hashlib, binascii, requests, json
 
 
@@ -30,8 +29,16 @@ pack_bytes = lambda f,v: pack("<"+"%ss"%len(v), f, (v,)) if __PY3__ else \
 def use(net="testnet"):
 	"""
 select ARK net to use
->>> use("testnet") # use testnet (default)
 >>> use("mainnet") # use testnet
+>>> cfg.__NET__
+'mainnet'
+>>> use("bitcoin") # use testnet
+Traceback (most recent call last):
+...
+Exception: bitcoin net properties not known
+>>> use("testnet") # use testnet (default)
+>>> cfg.__NET__
+'testnet'
 """
 
 	if net == "mainnet":
@@ -69,8 +76,7 @@ select ARK net to use
 	else:
 		raise Exception("%s net properties not known" % net)
 
-# activate testnet by default
-use("testnet")
+	cfg.__NET__ = net
 
 
 def _compressEcdsaPublicKey(pubkey):
@@ -92,6 +98,9 @@ seed (byte)           -- a sha256 sequence bytes
 network (object)      -- a python object
 
 Returns ArkyDict
+
+>>> binascii.hexlify(getKeys("secret").public)
+b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 """
 	network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
 	seed = hashlib.sha256(secret.encode("utf8") if not isinstance(secret, bytes) else secret).digest() if not seed else seed
@@ -117,6 +126,14 @@ Argument:
 keys (ArkyDict) -- keyring returned by `getKeys`
 
 Returns ArkyDict
+
+>>> serializeKeys(getKeys("secret"))['signingKey']
+'2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143415145454943753444\
+564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314a364a626f416347425\
+375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353306630527039473750\
+7a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2b354b3938537042754\
+64a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445204b45592d2d2d2d2d\
+0a'
 """
 	skeys = ArkyDict()
 	sk = binascii.hexlify(keys.signingKey.to_pem())
@@ -130,9 +147,19 @@ def unserializeKeys(serial, network=None):
 Unserialize serial.
 
 Argument:
-keys (dict) -- serialized keyring returned by `serializeKeys`
+keys (ArkyDict) -- serialized keyring returned by `serializeKeys`
 
 Returns ArkyDict ready to be used as keyring
+
+>>> binascii.hexlify(unserializeKeys({
+...	'wif': 'SB3BGPGRh1SRuQd52h7f5jsHUg1G9ATEvSeA7L5Bz4qySQww4k7N',
+...	'signingKey': '2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143\
+415145454943753444564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314\
+a364a626f416347425375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353\
+3066305270394737507a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2\
+b354b393853704275464a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445\
+204b45592d2d2d2d2d0a'}).public)
+b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 """
 	keys = ArkyDict()
 	keys.network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
@@ -151,6 +178,9 @@ Argument:
 keys (ArkyDict) -- keyring returned by `getKeys`
 
 Returns str
+
+>>> getAddress(getKeys("secret"))
+'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
 """
 	network = keys.network
 	ripemd160 = hashlib.new('ripemd160', keys.public).digest()[:21]
@@ -167,6 +197,9 @@ seed (bytes)     -- a sha256 sequence bytes
 network (object) -- a python object
 
 Returns str
+
+>>> getWIF(hashlib.sha256("secret".encode("utf8")).digest(), cfg.__NETWORK__)
+'SB3BGPGRh1SRuQd52h7f5jsHUg1G9ATEvSeA7L5Bz4qySQww4k7N'
 """
 	network = network
 	compressed = network.get("compressed", True)
@@ -182,6 +215,12 @@ Argument:
 transaction (arky.core.Transaction) -- transaction object
 
 Returns sequence bytes
+
+>>> binascii.hexlify(getBytes(Transaction(amount=100000000, secret="secret", timestamp=22030978)))
+b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93300000000000\
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\
+000000000000000000000000000000000000000000000000000000000000000000000000e1f50500000000809\
+6980000000000'
 """
 	buf = StringIO() # create a buffer
 
@@ -254,6 +293,19 @@ Argument:
 sig (bytes) -- signature sequence bytes
 
 Raises StrictDerSignatureError exception or return sig
+
+>>> sig = checkStrictDER(binascii.unhexlify('3044022003e6f032a119ad552804792822d84bbd34b5\
+8fe710bca59f6ca4bb332404957402207d761b265ce8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c3\
+e916cb'))
+>>> binascii.hexlify(sig)
+b'3044022003e6f032a119ad552804792822d84bbd34b58fe710bca59f6ca4bb332404957402207d761b265ce\
+8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c3e916cb'
+>>> sig = checkStrictDER(binascii.unhexlify('3044122003e6f032a119ad552804792822d84bbd34b5\
+8fe710bca59f6ca4bb332404957402207d761b265ce8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c3\
+e916cb'))
+Traceback (most recent call last):
+...
+arky.core.StrictDerSignatureError: R element is not an integer
 """
 	sig_len = len(sig)
 	# Extract the length of the R element.
@@ -330,25 +382,23 @@ Traceback (most recent call last):
   File "C:\Users\Bruno\Python\../GitHub/arky\arky\core.py", line 268, in __setattr__
     self.amount = kwargs.pop("amount", 0)
 arky.core.NotGrantedAttribute: address attribute can not be set using object interface
->>> tx2.secret = 'secret'                   # second way
+>>> tx2.secret = 'secret' # second way
 >>> tx2.address
 'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
 >>> tx3 = core.Transaction()
->>> tx3.sign(secret)                        # third way
+>>> tx3.sign('secret') # third way
 >>> tx3.address
 'AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff'
 
 Note that if secret is set, signature is done so:
->>> tx1.sing()
+>>> tx1.sign()
 >>> tx2.sign()
 
 If no secret defined:
 >>> bad_tx = core.Transaction()
 >>> bad_tx.sign()
 Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "C:\Users\Bruno\Python\../GitHub/arky\arky\core.py", line 316, in sign
-    raise NoSecretDefinedError("No secret defined for %r" % self)
+...
 arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned Transaction from "No one" to "No one">
 '''
 	# here are attribute that can be set through object interface
@@ -356,6 +406,10 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 	senderPublicKey = property(lambda obj:obj.key_one.public, None, None, "alias for public key, read-only attribute")
 
 	def __init__(self, **kwargs):
+		"""
+>>> Transaction(amount=100000000, secret="secret")
+<1.00000000 ARK unsigned Transaction from AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff to "No one">
+"""
 		# the four minimum attributes that defines a transaction
 		self.type = kwargs.pop("type", 0)
 		self.amount = kwargs.pop("amount", 0)
@@ -434,6 +488,12 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
 	def serialize(self):
+		"""
+>>> sorted(Transaction(amount=100000000, secret="secret", timestamp=22030978).serialize().items(), key=lambda e:e[0])
+[('amount', 100000000), ('asset', {}), ('fee', 10000000), ('senderPublicKey', '03a02b9d5f\
+dd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'), ('timestamp', 22030978), ('ty\
+pe', 0)]
+"""
 		data = ArkyDict()
 		for attr in [a for a in [
 			"id", "timestamp", "type", "fee", "amount", 
