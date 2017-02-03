@@ -5,8 +5,7 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der
 from ecdsa.curves import SECP256k1
 
-from . import cfg #, cfg.__NETWORK__, cfg.__FEES__, cfg.__HEADERS__ cfg.__URL_BASE__
-from . import __PY3__, StringIO, slots, ArkyDict
+from . import __PY3__, StringIO, ArkyDict, cfg, slots
 import base58, struct, hashlib, binascii, requests, json
 
 
