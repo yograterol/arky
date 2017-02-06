@@ -15,8 +15,8 @@ Python dict with javascript behaviour.
 >>> ad = ArkyDict()
 >>> ad["key1"] = "value1"
 >>> ad.key2 = "value2"
->>> ad
-{'key2': 'value2', 'key1': 'value1'}
+>>> sorted(ad.items(), key=lambda e:e[0])
+[('key1', 'value1'), ('key2', 'value2')]
 """
 	__setattr__ = lambda obj,*a,**k: dict.__setitem__(obj, *a, **k)
 	__getattr__ = lambda obj,*a,**k: dict.__getitem__(obj, *a, **k)
