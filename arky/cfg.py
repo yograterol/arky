@@ -1,8 +1,11 @@
 # -*- encoding: utf8 -*-
 # © Toons
+
 from . import ArkyDict
 
 __NET__ = ""
+__NB_THREAD__ = 2
+
 # Global containers available for arky package
 __NETWORK__ = ArkyDict()
 __HEADERS__ = ArkyDict()
@@ -17,3 +20,4 @@ __FEES__ = ArkyDict({
 	"multisignature": 500000000,
 	"dapp": 2500000000
 })
+

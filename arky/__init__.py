@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 # © Toons
-import sys
+import sys, threading
 
 __PY3__ = True if sys.version_info[0] >= 3 else False
 if __PY3__:
@@ -21,3 +21,21 @@ Python dict with javascript behaviour.
 	__setattr__ = lambda obj,*a,**k: dict.__setitem__(obj, *a, **k)
 	__getattr__ = lambda obj,*a,**k: dict.__getitem__(obj, *a, **k)
 	__delattr__ = lambda obj,*a,**k: dict.__delitem__(obj, *a, **k)
+
+
+# threaded decorator
+def setInterval(interval):
+	def decorator(function):
+		def wrapper(*args, **kwargs):
+			stopped = threading.Event()
+
+			def loop(): # executed in another thread
+				while not stopped.wait(interval): # until stopped
+					function(*args, **kwargs)
+
+			t = threading.Thread(target=loop)
+			t.daemon = True # stop if the program exits
+			t.start()
+			return stopped
+		return wrapper
+	return decorator

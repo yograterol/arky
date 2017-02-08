@@ -1,5 +1,5 @@
 # -*- encoding: utf8 -*-
-# created by Toons on 01/05/2017
+# © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import ArkyDict, cfg

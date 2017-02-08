@@ -16,6 +16,8 @@ class NoSenderDefinedError(Exception): pass
 class NotSignedTransactionError(Exception): pass
 class StrictDerSignatureError(Exception): pass
 
+
+# byte as int conversion
 basint = (lambda e:e) if __PY3__ else \
          (lambda e:ord(e))
 # read value binary data from buffer
@@ -526,38 +528,37 @@ pe', 0)]
 		return data
 
 
-def sendTransaction(secret, transaction, n=10, secondSignature=None):
-	attempt = 0
-	while n: # yes i know, it is brutal :)
-		transaction.sign(secret)
-		if secondSignature:
-			transaction.seconSign(secondSignature)
-		result = ArkyDict(json.loads(requests.post(
-			cfg.__URL_BASE__+"/peer/transactions",
-			data=json.dumps({"transactions": [transaction.serialize()]}),
-			headers=cfg.__HEADERS__
-		).text))
-		if result["success"]:
-			break
-		else:
-			n -= 1
-			attempt += 1
-			# 1s shift timestamp for hash change
-			transaction.timestamp -= 1
+# def sendTransaction(secret, transaction, n=10, secondSignature=None):
+# 	attempt = 0
+# 	while n: # yes i know, it is brutal :)
+# 		n -= 1
+# 		attempt += 1
+# 		# 1s shift timestamp for hash change
+# 		transaction.timestamp += 1
+# 		transaction.sign(secret)
+# 		if secondSignature:
+# 			transaction.seconSign(secondSignature)
+# 		result = ArkyDict(json.loads(requests.post(
+# 			cfg.__URL_BASE__+"/peer/transactions",
+# 			data=json.dumps({"transactions": [transaction.serialize()]}),
+# 			headers=cfg.__HEADERS__
+# 		).text))
+# 		if result["success"]:
+# 			break
 
-	result.attempt = attempt
-	return result
+# 	result.attempt = attempt
+# 	return result
 
 
-def sendMultiple(secret, *transactions, **kw):
-	result = ArkyDict()
-	i = 1
-	for transaction in transactions:
-		data = sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
-		if data['success']:
-			key = data.pop('transactionId')
-			result[key] = data
-		else:
-			result["tx%03d" % i] = data
-		i += 1
-	return result
+# def sendMultiple(secret, *transactions, **kw):
+# 	result = ArkyDict()
+# 	i = 1
+# 	for transaction in transactions:
+# 		data = sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
+# 		if data['success']:
+# 			key = data.pop('transactionId')
+# 			result[key] = data
+# 		else:
+# 			result["tx%03d" % i] = data
+# 		i += 1
+# 	return result
