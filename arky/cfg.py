@@ -2,9 +2,11 @@
 # © Toons
 
 from . import ArkyDict
+import queue
 
 __NET__ = ""
 __NB_THREAD__ = 2
+__TXLOG__ = queue.Queue()
 
 # Global containers available for arky package
 __NETWORK__ = ArkyDict()
@@ -20,4 +22,3 @@ __FEES__ = ArkyDict({
 	"multisignature": 500000000,
 	"dapp": 2500000000
 })
-

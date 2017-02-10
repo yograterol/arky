@@ -416,7 +416,7 @@ If no secret defined:
 >>> bad_tx.sign()
 Traceback (most recent call last):
 ...
-arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned Transaction from "No one" to "No one">
+arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned transaction type 0 from "No one" to "No one">
 '''
 	# here are attribute that can be set through object interface
 	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "recipientId", "requesterPublicKey"]
@@ -425,12 +425,12 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 	def __init__(self, **kwargs):
 		"""
 >>> Transaction(amount=100000000, secret="secret")
-<1.00000000 ARK unsigned Transaction from a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR to "No one">
+<1.00000000 ARK unsigned transaction type 0 from a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR to "No one">
 """
 		# the four minimum attributes that defines a transaction
 		self.type = kwargs.pop("type", 0)
 		self.amount = kwargs.pop("amount", 0)
-		self.timestamp = slots.getTime()
+		self.timestamp = slots.getTime() - 100 # get backward 100s to avoid error:Invalid transaction timestamp
 		self.asset = kwargs.pop("asset", ArkyDict())
 		for attr,value in kwargs.items():
 			setattr(self, attr, value)
@@ -468,10 +468,11 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned T
 		if hasattr(self, "key_two"): delattr(self, "key_two")
 
 	def __repr__(self):
-		return "<%(amount).8f ARK %(signed)s Transaction from %(from)s to %(to)s>" % {
+		return "<%(amount).8f ARK %(signed)s transaction type %(type)d from %(from)s to %(to)s>" % {
 			"signed": "signed" if hasattr(self, "signature") else \
 			          "double-signed" if hasattr(self, "signSignature") else \
 			          "unsigned",
+			"type": self.type,
 			"amount": self.amount//100000000,
 			"from": getattr(self, "address", '"No one"'),
 			"to": getattr(self, "recipientId", '"No one"')
@@ -519,46 +520,42 @@ pe', 0)]
 			"asset", "signature", "signSignature"
 		] if hasattr(self, a)]:
 			value = getattr(self, attr)
-			if isinstance(value, bytes):
+			if isinstance(value, bytes) and attr not in ["recipientId", "vendorField"]:
 				value = binascii.hexlify(value)
 				if isinstance(value, bytes):
 					value = value.decode()
-			elif attr in ["amount", "timestamp", "fee"]: value = int(value)
+			elif attr in ["amount", "timestamp", "fee"]:
+				value = int(value)
 			setattr(data, attr, value)
 		return data
 
 
-# def sendTransaction(secret, transaction, n=10, secondSignature=None):
-# 	attempt = 0
-# 	while n: # yes i know, it is brutal :)
-# 		n -= 1
-# 		attempt += 1
-# 		# 1s shift timestamp for hash change
-# 		transaction.timestamp += 1
-# 		transaction.sign(secret)
-# 		if secondSignature:
-# 			transaction.seconSign(secondSignature)
-# 		result = ArkyDict(json.loads(requests.post(
-# 			cfg.__URL_BASE__+"/peer/transactions",
-# 			data=json.dumps({"transactions": [transaction.serialize()]}),
-# 			headers=cfg.__HEADERS__
-# 		).text))
-# 		if result["success"]:
-# 			break
+def sendTransaction(secret, transaction, n=10, secondSignature=None):
+	attempt = 0
+	while n: # yes i know, it is brutal :)
+		n -= 1
+		attempt += 1
+		# 1s shift timestamp for hash change
+		transaction.timestamp += 1
+		transaction.sign(secret)
+		if secondSignature:
+			transaction.seconSign(secondSignature)
+		result = ArkyDict(json.loads(requests.post(
+			cfg.__URL_BASE__+"/peer/transactions",
+			data=json.dumps({"transactions": [transaction.serialize()]}),
+			headers=cfg.__HEADERS__
+		).text))
+		if result["success"]:
+			break
 
-# 	result.attempt = attempt
-# 	return result
+	result.attempt = attempt
+	result.transaction = "%r" % transaction
+	cfg.__TXLOG__.put(result)
+	return result
 
 
-# def sendMultiple(secret, *transactions, **kw):
-# 	result = ArkyDict()
-# 	i = 1
-# 	for transaction in transactions:
-# 		data = sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
-# 		if data['success']:
-# 			key = data.pop('transactionId')
-# 			result[key] = data
-# 		else:
-# 			result["tx%03d" % i] = data
-# 		i += 1
-# 	return result
+def sendMultiple(secret, *transactions, **kw):
+	result = ArkyDict()
+	for transaction in transactions:
+		sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
+	return result

@@ -2,55 +2,47 @@
 # © Toons
 
 from . import cfg, core, ArkyDict
-import json, queue, atexit, logging, threading
+import os, json, queue, atexit, logging, requests, threading, binascii
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s %(threadName)s] %(message)s')
+logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.basicConfig(
+	filename  = os.path.normpath(os.path.join(os.path.dirname(__file__), __name__ + ".log")),
+	format    = '[%(asctime)s] %(message)s',
+	level     = logging.INFO,
+)
 
+__LOG_LOCK__ = threading.Event()
+__MGMT_LOCK__ = threading.Event()
 __FIFO__ = queue.Queue()
-__RESULT__ = queue.Queue()
 
-class TxLog(threading.Thread):
-	alive = False
+
+class TxLOG(threading.Thread):
 
 	def __init__(self):
-		TxLog.alive = True
 		threading.Thread.__init__(self)
-		self.setDaemon(True)
 		self.start()
 
-	@staticmethod
-	def stop():
-		TxLog.alive = False
-
 	def run(self):
-		while TxMGMT.alive or not __RESULT__.empty():
-			data = __RESULT__.get()
-			if data: logger.info(data)
-			else: break
+		while __LOG_LOCK__.isSet():
+			data = cfg.__TXLOG__.get()
+			if data:
+				logging.log(logging.INFO, " - ".join(sorted("%s:%s" % item for item in data.items())))
 
 
 class TxMGMT(threading.Thread):
-	alive = False
 	attempt = 10
 
 	def __init__(self):
-		TxMGMT.alive = True
 		threading.Thread.__init__(self)
-		self.setDaemon(True)
 		self.start()
 
-	@staticmethod
-	def stop():
-		TxMGMT.alive = False
-
 	def run(self):
-		while TxMGMT.alive or not __FIFO__.empty():
+		while __MGMT_LOCK__.isSet():
 			data = __FIFO__.get()
 			if data:
 				transaction, secret, secondSignature = data
 				success, attempt = False, TxMGMT.attempt
-				while not success or attempt > 0:
+				while not success and attempt > 0:
 					attempt -= 1
 					# 1s shift timestamp for hash change
 					transaction.timestamp += 1
@@ -67,28 +59,48 @@ class TxMGMT(threading.Thread):
 					success = result["success"]
 
 				result.attempt = TxMGMT.attempt - attempt
-				result.transaction = "%r" % transaction
-				__RESULT__.put(result)
-			else:
-				break
+				if not success:
+					result.signature = binascii.hexlify(transaction.signature)
+					delattr(transaction, "signature")
+					result.getbyte = binascii.hexlify(core.getBytes(transaction))
+				else:
+					result.transaction = "%r" % transaction
+				cfg.__TXLOG__.put(result)
 
 
 def push(transaction, secret, secondSignature=None):
 	if isinstance(transaction, core.Transaction):
+		print(">>> put:", [transaction, secret, secondSignature])
 		__FIFO__.put([transaction, secret, secondSignature])
 
 def start():
+	global threads
 	threads = []
+	__MGMT_LOCK__.set()
 	for i in range(cfg.__NB_THREAD__):
 		threads.append(TxMGMT())
-	threads.append(TxLog())
-	return threads
+	__LOG_LOCK__.set()
+	threads.append(TxLOG())
 
 def stop():
-	TxLog.stop()
-	__RESULT__.put(False)
-	TxMGMT.stop()
-	for i in range(cfg.__NB_THREAD__):
+	# unlock TxMGMT when __FIFO__ queue is empty
+	test = [False]*cfg.__NB_THREAD__
+	while not __FIFO__.empty():
+		if [t.isAlive() for t in threads[:cfg.__NB_THREAD__]] == test:
+			__FIFO__.get_nowait()
+	__MGMT_LOCK__.clear()
+	# put a stop token for each TxMGMT thread in __FIFO__ queue
+	while [t.isAlive() for t in threads[:cfg.__NB_THREAD__]] != test:
 		__FIFO__.put(False)
 
-atexit.register(stop)
+	# unlock TxLOG one when __TXLOG__ queue is empty
+	while not cfg.__TXLOG__.empty():
+		if not threads[-1].isAlive():
+			cfg.__TXLOG__.get_nowait()
+	__LOG_LOCK__.clear()
+	# put a stop token for TxLOG thread in cfg.__TXLOG__ queue
+	if threads[-1].isAlive():
+		cfg.__TXLOG__.put(False)
+
+# start threaded managment
+start()
