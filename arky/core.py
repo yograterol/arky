@@ -2,7 +2,7 @@
 # © Toons
 
 from ecdsa.keys import SigningKey
-from ecdsa.util import sigencode_der
+from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
 from . import __PY3__, StringIO, ArkyDict, cfg, slots
@@ -430,7 +430,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 		# the four minimum attributes that defines a transaction
 		self.type = kwargs.pop("type", 0)
 		self.amount = kwargs.pop("amount", 0)
-		self.timestamp = slots.getTime() - 100 # get backward 100s to avoid error:Invalid transaction timestamp
+		self.timestamp = slots.getTime() - 60 # get backward 60s to avoid error:Invalid transaction timestamp
 		self.asset = kwargs.pop("asset", ArkyDict())
 		for attr,value in kwargs.items():
 			setattr(self, attr, value)
@@ -489,7 +489,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 		elif not hasattr(self, "key_one"):
 			raise NoSecretDefinedError("No secret defined for %r" % self)
 		self._unsign()
-		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode_der)
+		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
 		object.__setattr__(self, "signature", checkStrictDER(stamp))
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
@@ -501,7 +501,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 		elif not hasattr(self, "key_two"):
 			raise NoSecretDefinedError("No second secret defined for %r" % self)
 		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der)
+		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
 		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
@@ -530,32 +530,24 @@ pe', 0)]
 		return data
 
 
-def sendTransaction(secret, transaction, n=10, secondSignature=None):
-	attempt = 0
-	while n: # yes i know, it is brutal :)
-		n -= 1
-		attempt += 1
-		# 1s shift timestamp for hash change
-		transaction.timestamp += 1
-		transaction.sign(secret)
-		if secondSignature:
-			transaction.seconSign(secondSignature)
-		result = ArkyDict(json.loads(requests.post(
-			cfg.__URL_BASE__+"/peer/transactions",
-			data=json.dumps({"transactions": [transaction.serialize()]}),
-			headers=cfg.__HEADERS__
-		).text))
-		if result["success"]:
-			break
+def sendTransaction(secret, transaction, secondSecret=None):
+	transaction.sign(secret)
+	if secondSecret:
+		transaction.seconSign(secondSecret)
 
-	result.attempt = attempt
+	# print(transaction.serialize())
+
+	result = ArkyDict(json.loads(requests.post(
+		cfg.__URL_BASE__+"/peer/transactions",
+		data=json.dumps({"transactions": [transaction.serialize()]}),
+		headers=cfg.__HEADERS__
+	).text))
+
 	result.transaction = "%r" % transaction
 	cfg.__TXLOG__.put(result)
 	return result
 
-
 def sendMultiple(secret, *transactions, **kw):
 	result = ArkyDict()
 	for transaction in transactions:
-		sendTransaction(secret, transaction, n=kw.get("n", 10), secondSignature=kw.get('secondSinature', None))
-	return result
+		sendTransaction(secret, transaction, secondSecret=kw.get('secondSecret', None))

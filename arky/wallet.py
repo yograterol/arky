@@ -44,12 +44,12 @@ class Wallet(object):
 		if secret:
 			self.__K1 = core.getKeys(secret=secret)
 			self.init()
-		self.update()
+			self.update()
 
 	def init(self):
 		public_key = binascii.hexlify(self.__K1.public)
 		self.publicKey = public_key.decode() if isinstance(public_key, bytes) else public_key
-		self.address = core.getAddress(self.self.__K1)
+		self.address = core.getAddress(self.__K1)
 		self.wif = self.__K1.wif
 
 	def update(self):
@@ -64,10 +64,12 @@ class Wallet(object):
 			raise core.NotGrantedAttribute("%s can not be set through Wallet interface" % attr)
 		object.__setattr__(self, attr, value)
 
+	# tested --> ok
 	def sendArk(self, secret, amount, recipientId, **kw):
 		tx = core.Transaction(amount=amount*100000000, recipientId=recipientId, **kw)
 		return core.sendTransaction(secret, tx)
 
+	# tested --> ok
 	def registerAsDelegate(self, secret, username):
 		tx = core.Transaction(type=2)
 		tx.asset.delegate = ArkyDict(username=username, publicKey=self.publicKey)
@@ -76,15 +78,15 @@ class Wallet(object):
 	def voteDelegate(self, secret, up=[], down=[]):
 		votes = self.votes
 		usernames = ['+'+c for c in up if c not in votes and c in Wallet.candidates] + \
-		            ['-'+c for c in down if c in Wallet.candidates]
+		            ['-'+c for c in down if c in self.votes]
 		if len(usernames):
 			tx = core.Transaction(type=3, recipientId=self.address)
 			tx.asset.votes = usernames
-			return core.sendTransaction(secret, tx)
+			core.sendTransaction(secret, tx)
 
 	def save(self, filename):
 		in_ = open(filename, "w")
 		json.dump(core.serializeKeys(self.__K1), in_, indent=2)
 		in_.close()
 
-#	registerSecondSingature(secondSign)
+#	registerSecondSingature(self, secondSign)

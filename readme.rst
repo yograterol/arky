@@ -44,7 +44,7 @@ More on ``arky.api`` ?
 ``core`` module allows python developpers to interact with ARK ecosystem. Testnet and mainnet are
 linkable through ``use`` function.
 
->>> core.use('testnet') # work on testnet (default)
+>>> core.use('ark')
 >>> keys = core.getKeys("secret")
 >>> keys.public.hex()
 '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
@@ -60,16 +60,48 @@ sset': {}, 'senderPublicKey': '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
 'fee': 10000000, 'signature': '304402201dbf20a62d3411c6d000b691edf3ed50c34baa96b94dedf70e2d512b9f917
 8250220475869560dd9740e2c324972be3cb2690e5fdd27b1cccf6dcd8fb325f52f8f25', 'type': 0, 'id': '16683123
 258705133772'}
-
-Actualy, there is an issue with signature. ``sendTransaction`` uses a while loop to do several attempts :
-
->>> tx = core.Transaction(amount=1234000000, recipientId="AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU")
 >>> core.sendTransaction("secret", tx)
 {'transactionId': '3684489509227507694', 'attempt': 5, 'success': True}
 
 More on ``arky.core`` ?
 
 >>> help(core)
+
+``arky.mgmt``
+^^^^^^^^^^^^^
+
+``mgmt`` deploys threaded transaction managment and log them into a log file. Threads are automaticaly launched with ``mgmt`` module import.
+
+>>> import arky.mgmt as mgmt
+>>> mgmt.THREADS
+[<TxMGMT(Thread-1, started 2436)>, <TxMGMT(Thread-2, started 5832)>, <TxLOG(Thread-3, started 6580)>]
+
+To send a transaction :
+
+>>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4")
+>>> mgmt.push("secret", tx)
+
+Then, check into the ``.arky.mgmt`` logfile into your `home` directory :
+
+::
+
+  ...
+  [2017-02-11 20:16:02,721] success:True - transaction:<1.00000000 ARK signed transaction type 0 from AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff to AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4> - transactionIds:['df65053eea80fa4ce035c79698554f725f189ee653c474bbf722df99cf513ebe']
+
+To stop threads :
+
+>>> mgmt.stop()
+>>> mgmt.THREADS
+[<TxMGMT(Thread-1, stopped 2436)>, <TxMGMT(Thread-2, stopped 5832)>, <TxLOG(Thread-3, stopped 6580)>]
+
+To start threads, you may change thread number for transaction managment :
+
+>>> mgmt.cfg.__NB_THREAD__ = 1 # only one TxMGMT thread
+>>> mgmt.start()
+>>> mgmt.THREADS
+[<TxMGMT(Thread-4, started 1988)>, <TxLOG(Thread-5, started 6240)>]
+
+
 
 ``arky.wallet``
 ^^^^^^^^^^^^^^^
