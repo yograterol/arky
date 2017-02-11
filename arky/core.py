@@ -535,15 +535,16 @@ def sendTransaction(secret, transaction, secondSecret=None):
 	if secondSecret:
 		transaction.seconSign(secondSecret)
 
-	# print(transaction.serialize())
-
 	result = ArkyDict(json.loads(requests.post(
 		cfg.__URL_BASE__+"/peer/transactions",
 		data=json.dumps({"transactions": [transaction.serialize()]}),
 		headers=cfg.__HEADERS__
 	).text))
 
-	result.transaction = "%r" % transaction
+	if len(transaction.asset):
+		result.asset = transaction.asset
+	else:
+		result.transaction = "%r" % transaction
 	cfg.__TXLOG__.put(result)
 	return result
 

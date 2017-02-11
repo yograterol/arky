@@ -138,6 +138,12 @@ et', 'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
 >>> w2 = wlt.Wallet.open("secret.wlt")
 >>> w2.balance
 1076464600000
+>>> w2.voteDelegate("secret", up=["arky", "ravelou"])
+>>> w2.votes
+['ravelou', 'arky']
+>>> w2.voteDelegate("secret", down=["arky", "ravelou"])
+>>> w2.votes
+[]
 
 More on ``arky.wallet`` ?
 
