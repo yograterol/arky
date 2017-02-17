@@ -41,8 +41,7 @@ More on ``arky.api`` ?
 
 >>> import arky.core as core
 
-``core`` module allows python developpers to interact with ARK ecosystem. Testnet and mainnet are
-linkable through ``use`` function.
+``core`` module allows python developpers to interact with ARK ecosystem.
 
 >>> core.use('ark')
 >>> keys = core.getKeys("secret")
@@ -60,8 +59,7 @@ sset': {}, 'senderPublicKey': '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
 'fee': 10000000, 'signature': '304402201dbf20a62d3411c6d000b691edf3ed50c34baa96b94dedf70e2d512b9f917
 8250220475869560dd9740e2c324972be3cb2690e5fdd27b1cccf6dcd8fb325f52f8f25', 'type': 0, 'id': '16683123
 258705133772'}
->>> core.sendTransaction("secret", tx)
-{'transactionId': '3684489509227507694', 'attempt': 5, 'success': True}
+>>> core.sendTransaction(tx)
 
 More on ``arky.core`` ?
 
@@ -70,7 +68,7 @@ More on ``arky.core`` ?
 ``arky.mgmt``
 ^^^^^^^^^^^^^
 
-``mgmt`` deploys threaded transaction managment and log them into a log file. Threads are automaticaly launched with ``mgmt`` module import.
+``mgmt`` deploys threaded transaction managment. Threads are automaticaly launched with ``mgmt`` module import.
 
 >>> import arky.mgmt as mgmt
 >>> mgmt.THREADS
@@ -79,7 +77,7 @@ More on ``arky.core`` ?
 To send a transaction :
 
 >>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4")
->>> mgmt.push("secret", tx)
+>>> mgmt.push(tx, "secret")
 
 Then, check into the ``.arky.mgmt`` logfile into your `home` directory :
 
@@ -98,9 +96,8 @@ To start threads, you may change thread number for transaction managment :
 
 >>> mgmt.cfg.__NB_THREAD__ = 1 # only one TxMGMT thread
 >>> mgmt.start()
->>> mgmt.THREADS
+>>> mgmt.THREADS # last thread is always a TxLOG
 [<TxMGMT(Thread-4, started 1988)>, <TxLOG(Thread-5, started 6240)>]
-
 
 
 ``arky.wallet``
@@ -119,97 +116,22 @@ False
 1076464600000
 >>> w.candidates # valid username that can be up/down voted
 ['techbytes', '4miners.net', 'kostik', 'boldninja', 'sonobit', 'marco229', 'dotnet70', 'arkfuturesma
-rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', 'lamar', 'thrice.pi', 'doweig', '
-forrest', 'axente', 'dafricash', 'hagie', 'bioly', 'xujian', 'raspi3', 'arkomatic', 'samuray_test', 
-'bcboilermaker', 'kushed.delegate', 'arkseed', 'jakethepanda', 'frank', 'frank2', 'ravelou', 'arky',
- 'cannabanana', 'ondin', 'genesis_14', 'superwoot112', 'genesis_41', 'jamiec79rsp', 'genesis_38', 'g
-enesis_7', 'genesis_35', 'ilgio', 'fanilla', 'nuevax', 'wes3', 'genesis_1', 'arkshare', 'lidware', '
-atlass', 'genesis_27', 'genesis_20', 'genesis_36', 'genesis_48', 'genesis_29', 'genesis_45', 'genesi
-s_39', 'genesis_8', 'genesis_18', 'genesis_6', 'genesis_32', 'genesis_4', 'genesis_19', 'genesis_16'
-, 'genesis_30', 'genesis_42', 'genesis_22', 'genesis_51', 'genesis_44', 'genesis_9', 'genesis_21', '
-genesis_37', 'genesis_46', 'genesis_5', 'genesis_49', 'genesis_24', 'genesis_43', 'genesis_25', 'gen
-esis_15', 'wes', 'standby2', 'thatisme', 'genesis_2', 'genesis_31', 'genesis_33', 'genesis_50', 'bra
-d', 'grajson', 'genesis_34', 'arkeology', 'genesis_23', 'trustament', 'arkwhale', 'genesis_12', 'gen
-esis_3', 'bull', 'cryptonite', 'deskbob', 'vega', 'dafty2', 'wishxy', 'bcboilermaker1', 'genesis_17'
-, 'genesis_26', 'genesis_40', 'genesis_10', 'blockexp', 'standby', 'ghaarte', 'genesis_47', 'genesis
-_11', 'ark_taurus', 'globe', 'ghaarte2', 'genesis_28', 'arkonprime_odsejen', 'densmirnov', 'ark_fauc
-et', 'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
+rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmirnov', 'ark_faucet', 
+'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
 >>> w.save("secret.wlt")
->>> w2 = wlt.Wallet.open("secret.wlt")
+>>> w2 = wallet.open("secret.wlt")
 >>> w2.balance
 1076464600000
->>> w2.voteDelegate("secret", up=["arky", "ravelou"])
+>>> w2.voteDelegate(up=["arky", "ravelou"])
 >>> w2.votes
 ['ravelou', 'arky']
->>> w2.voteDelegate("secret", down=["arky", "ravelou"])
+>>> w2.voteDelegate(down=["arky"])
 >>> w2.votes
-[]
+['ravelou']
 
 More on ``arky.wallet`` ?
 
 >>> help(wlt)
-
-``delegate.py``
-^^^^^^^^^^^^^^^
-
-For the lucky 51 delegates forging on the ARK mainnet, ``arky`` package provides command line python script to monitor running peer.
-``delegate.py`` is experimental. Use it knowing what you do and how ARK net works.
-
-``python -m delegate -h``
-
-::
-
-  Usage: delegate.py actions [options]
-
-  Actions:
-   update                 update node running on peer
-
-   clean                  delete unused forever log files
-
-   check                  check if node is running and forging
-
-  Options:
-    -h, --help            show this help message and exit
-    -i IP, --ip=IP        peer ip you want to check
-    -e EMAIL, --email=EMAIL
-                          email for notification
-    -p PASSWORD, --password=PASSWORD
-                          email password
-    -s SMTP, --smtp-port=SMTP
-                          smtp address+port to use
-    -m, --mainnet         switch on mainnet
-
-To use ``delegate.py`` as node monitoring tool on Ubuntu, edit your cron tasks :
-
-``crontab -e``
-
-::
-
-  # Edit this file to introduce tasks to be run by cron.
-  #
-  # Each task to run has to be defined through a single line
-  # indicating with different fields when the task will be run
-  # and what command to run for the task
-  #
-  # To define the time you can provide concrete values for
-  # minute (m), hour (h), day of month (dom), month (mon),
-  # and day of week (dow) or use '*' in these fields (for 'any').#
-  # Notice that tasks will be started based on the cron's system
-  # daemon's notion of time and timezones.
-  #
-  # Output of the crontab jobs (including errors) is sent through
-  # email to the user the crontab file belongs to (unless redirected).
-  #
-  # For example, you can run a backup of all your user accounts
-  # at 5 a.m every week with:
-  # 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
-  #
-  # For more information see the manual pages of crontab(5) and cron(8)
-  #
-  # m    h    dom mon dow   command
-    0    */6  *   *   *     python3 ~/arky/delegate.py update -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
-    */31 *    *   *   *     python3 ~/arky/delegate.py check  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
-    45   12   *   *   1     python3 ~/arky/delegate.py clean  -i 45.63.114.19 -e xxxxxxxxxxx@gmail.com -p xxxxxxxxxxxxxxxx -s smtp.gmail.com:587
 
 Support this project
 ====================

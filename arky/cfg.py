@@ -6,7 +6,7 @@ import queue
 
 __NET__ = ""
 __NB_THREAD__ = 2
-__TXLOG__ = queue.Queue()
+__LOG__ = queue.Queue()
 
 # Global containers available for arky package
 __NETWORK__ = ArkyDict()

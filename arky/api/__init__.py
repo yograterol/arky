@@ -5,13 +5,19 @@
 from .. import ArkyDict, cfg
 import json, requests
 
-
 # GET generic method for ARK API
 def get(api, dic={}, **kw):
 	returnkey = kw.pop("returnKey", False)
-	data = json.loads(requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text)
-	if data["success"] and returnkey: return ArkyDict(data[returnkey])
-	else: return ArkyDict(data)
+	text = requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text
+
+	try:
+		data = json.loads(text)
+	except ValueError:
+		cfg.__LOG__.put({"API info": "peer connexion error"})
+		return ArkyDict()
+	else:
+		if data["success"] and returnkey: return ArkyDict(data[returnkey])
+		else: return ArkyDict(data)
 
 
 class Loader:
@@ -30,6 +36,10 @@ class Block:
 	@staticmethod
 	def getBlock(blockId):
 		return get('/api/blocks/get', id=blockId)
+
+	@staticmethod
+	def getNethash():
+		return get('/api/blocks/getNethash')
 
 	@staticmethod
 	def getBlocks():

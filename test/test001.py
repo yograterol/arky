@@ -13,4 +13,6 @@ for i in range(10):
 	mgmt.push(tx, "secret", None)
 	shift += 5
 
+mgmt.push(core.Transaction(amount=100000000, recipientId="Aa4EzB5JtEaUWRgfbzXfm7CxhX3WsaDKwt", vendorField="arky Python API test"), None, None)
+
 mgmt.stop()

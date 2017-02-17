@@ -1,18 +1,11 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg, core, ArkyDict
-import os, sys, json, queue, atexit, logging, requests, threading, binascii
+from . import cfg, core, ArkyDict, HOME
+import os, sys, json, queue, atexit, logging, requests, threading, binascii, traceback
 
-# deal with home directory
-if "win" in sys.platform:
-	home_path = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"])
-elif "linux" in sys.platform:
-	home_path = os.environ["HOME"]
-
-logging.getLogger('requests').setLevel(logging.CRITICAL)
 logging.basicConfig(
-	filename  = os.path.normpath(os.path.join(home_path, "."+__name__)),
+	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
 	format    = '[%(asctime)s] %(message)s',
 	level     = logging.INFO,
 )
@@ -31,8 +24,8 @@ class TxLOG(threading.Thread):
 
 	def run(self):
 		while LOG_LOCK.isSet():
-			data = cfg.__TXLOG__.get()
-			if isinstance(data, ArkyDict):
+			data = cfg.__LOG__.get()
+			if isinstance(data, (ArkyDict, dict)):
 				logging.log(logging.INFO, " - ".join(sorted("%s:%s" % item for item in data.items())))
 
 
@@ -46,12 +39,18 @@ class TxMGMT(threading.Thread):
 		while MGMT_LOCK.isSet():
 			data = FIFO.get()
 			if isinstance(data, list):
-				core.sendTransaction(*data)
+				try:
+					core.sendTransaction(*data)
+				except Exception as error:
+					cfg.__LOG__.put({
+						"API error": error, 
+						"details": "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+					})
 
 
-def push(transaction, secret, secondSignature=None):
+def push(transaction, secret=None, secondSecret=None):
 	if isinstance(transaction, core.Transaction):
-		FIFO.put([secret, transaction, secondSignature])
+		FIFO.put([transaction, secret, secondSecret])
 
 def start():
 	global THREADS
@@ -76,14 +75,14 @@ def stop():
 	while [t.isAlive() for t in THREADS[:-1]] != test:
 		FIFO.put(False)
 
-	# unlock TxLOG one when __TXLOG__ queue is empty
-	while not cfg.__TXLOG__.empty():
+	# unlock TxLOG one when __LOG__ queue is empty
+	while not cfg.__LOG__.empty():
 		if not THREADS[-1].isAlive():
-			cfg.__TXLOG__.get_nowait()
+			cfg.__LOG__.get_nowait()
 	LOG_LOCK.clear()
-	# put a stop token for TxLOG thread in cfg.__TXLOG__ queue
+	# put a stop token for TxLOG thread in cfg.__LOG__ queue
 	if THREADS[-1].isAlive():
-		cfg.__TXLOG__.put(False)
+		cfg.__LOG__.put(False)
 
 # start threaded managment
 start()

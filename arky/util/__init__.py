@@ -25,7 +25,7 @@ def getPoloniexPair(pair):
 
 # poloniex global data 
 # reload data every 30 seconds
-@setInterval(30) 
+@setInterval(60) 
 def load():
 	global poloniex_json
 	poloniex_json = json.loads(requests.get("https://poloniex.com/public?command=returnTicker").text)

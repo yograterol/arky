@@ -5,8 +5,8 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import __PY3__, StringIO, ArkyDict, cfg, slots
-import base58, struct, hashlib, binascii, requests, json
+from . import __PY3__, StringIO, ArkyDict, api, cfg, slots, setInterval, NETWORKS
+import base58, random, struct, hashlib, binascii, requests, json
 
 
 # define core exceptions 
@@ -15,8 +15,10 @@ class NoSecretDefinedError(Exception): pass
 class NoSenderDefinedError(Exception): pass
 class NotSignedTransactionError(Exception): pass
 class StrictDerSignatureError(Exception): pass
+class NetworkError(Exception): pass
 
 
+choose = lambda obj: obj[int(random.random()*len(obj))%len(obj)]
 # byte as int conversion
 basint = (lambda e:e) if __PY3__ else \
          (lambda e:ord(e))
@@ -29,7 +31,7 @@ pack_bytes = (lambda f,v: pack("<"+"%ss"%len(v), f, (v,))) if __PY3__ else \
              (lambda f,v: pack("<"+"s"*len(v), f, v))
 
 
-def use(net="testnet"):
+def use(network="testnet"):
 	"""
 select ARK net to use
 >>> use("ark") # use testnet
@@ -38,58 +40,38 @@ select ARK net to use
 >>> use("bitcoin2") # use testnet
 Traceback (most recent call last):
 ...
-Exception: bitcoin2 net properties not known
+NetworkError: Unknown bitcoin2 network properties
 """
-	if net == "testnet":
+	NETWORKS.get(network)
+	try: cfg.__NETWORK__.update(NETWORKS.get(network))
+	except: raise NetworkError("Unknown %s network properties" % network)
+
+	if network == "testnet":
 		cfg.__NET__ = "testnet"
-		cfg.__URL_BASE__ = "http://node1.arknet.cloud:4000"
-		cfg.__HEADERS__.update({
-			'Content-Type' : 'application/json; charset=utf-8',
-			'os'           : 'arkwalletapp',
-			'version'      : '0.5.0',
-			'port'         : '1',
-			'nethash'      : "8b2e548078a2b0d6a382e4d75ea9205e7afc1857d31bf15cc035e8664c5dd038"
-		})
-		cfg.__NETWORK__.update({
-			"messagePrefix" : b"\x18Ark Testnet Signed Message:\n",
-			"bip32"         : ArkyDict(public=0x043587cf, private=0x04358394),
-			"pubKeyHash"    : b"\x52",
-			"wif"           : b"\xef",
-		})
+		cfg.__URL_BASE__ = choose([
+			"http://5.39.9.245:4000",
+			"http://5.39.9.246:4000",
+			"http://5.39.9.247:4000",
+			"http://5.39.9.248:4000",
+			"http://5.39.9.249:4000"
+		])
 	else:
 		cfg.__NET__ = "mainnet"
-		cfg.__URL_BASE__ = "http://node1.arknet.cloud:4000"
-		cfg.__HEADERS__.update({
-			'Content-Type' : 'application/json; charset=utf-8',
-			'os'           : 'arkwalletapp',
-			'version'      : '0.5.0',
-			'port'         : '1',
-			'nethash'      : "ed14889723f24ecc54871d058d98ce91ff2f973192075c0155ba2b7b70ad2511"
-		})
-		cfg.__NETWORK__.update({
-			"messagePrefix" : b"\x18Ark Signed Message:\n",
-			"bip32"         : ArkyDict(public=0x0488b21e, private=0x0488ade4),
-			"pubKeyHash"    : b"\x17",
-			"wif"           : b"\xaa"
-		} if net == "ark" else {
-			"messagePrefix" : b"\x18Bitcoin Signed Message:\n",
-			"bip32"         : ArkyDict(public=0x0488b21e, private=0x0488ade4),
-			"pubKeyHash"    : b"\x00",
-			"wif"           : b"\x80"
-		} if net == "bitcoin" else {
-			"messagePrefix" : b"\x19Litecoin Signed Message:\n",
-			"bip32"         : ArkyDict(public=0x019da462, private=0x019d9cfe),
-			"pubKeyHash"    : b"\x30",
-			"wif"           : b"\xb0"
-		} if net == "litecoin" else {
-			"messagePrefix" : b"",
-			"bip32"         : ArkyDict(public=0, private=0),
-			"pubKeyHash"    : b"",
-			"wif"           : b""
-		})
- 
-	if cfg.__NETWORK__.wif == b"":
-		raise Exception("%s net properties not known" % net)
+		cfg.__URL_BASE__ = choose([
+			"http://40.68.214.86:8000",
+			"http://13.70.207.248:8000",
+			"http://13.89.42.130:8000",
+			"http://52.160.98.183:8000",
+			"http://40.121.84.254:8000"
+		])
+
+	cfg.__HEADERS__.update({
+		'Content-Type' : 'application/json; charset=utf-8',
+		'os'           : 'arkwalletapp',
+		'version'      : '0.5.0',
+		'port'         : '1',
+		'nethash'      : api.Block.getNethash().get("nethash", "")
+	})
 
 # initailize testnet by default
 use("testnet")
@@ -104,8 +86,8 @@ def _compressEcdsaPublicKey(pubkey):
 
 def getKeys(secret="passphrase", seed=None, network=None):
 	"""
-Generate keyring containing `network`, `public` and `private` key as attribute.
-`secret` or `seed` have to be provided, if `network` is not, `cfg.__NETWORK__` is
+Generate keyring containing network, public and private key as attribute.
+secret or seed have to be provided, if network is not, cfg.__NETWORK__ is
 automatically selected.
 
 Keyword arguments:
@@ -118,7 +100,7 @@ Returns ArkyDict
 >>> binascii.hexlify(getKeys("secret").public)
 b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 """
-	network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
+	network = ArkyDict(**network) if network else cfg.__NETWORK__  # use cfg.__NETWORK__ network by default
 	seed = hashlib.sha256(secret.encode("utf8") if not isinstance(secret, bytes) else secret).digest() if not seed else seed
 
 	keys = ArkyDict()
@@ -136,10 +118,10 @@ b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 
 def serializeKeys(keys):
 	"""
-Serialize `keys`.
+Serialize keys.
 
 Argument:
-keys (ArkyDict) -- keyring returned by `getKeys`
+keys (ArkyDict) -- keyring returned by getKeys
 
 Returns ArkyDict
 
@@ -154,7 +136,7 @@ Returns ArkyDict
 	skeys = ArkyDict()
 	sk = binascii.hexlify(keys.signingKey.to_pem())
 	skeys.signingKey = sk.decode() if isinstance(sk, bytes) else sk
-	skeys.wif = keys.wif
+	if "wif" in keys: skeys.wif = keys.wif
 	return skeys
 
 
@@ -163,7 +145,7 @@ def unserializeKeys(serial, network=None):
 Unserialize `serial`.
 
 Argument:
-keys (ArkyDict) -- serialized keyring returned by `serializeKeys`
+keys (ArkyDict) -- serialized keyring returned by serializeKeys
 
 Returns ArkyDict ready to be used as keyring
 
@@ -182,7 +164,7 @@ b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["signingKey"]))
 	keys.checkingKey = keys.signingKey.get_verifying_key()
 	keys.public = _compressEcdsaPublicKey(keys.checkingKey.to_string())
-	keys.wif = serial["wif"]
+	if "wif" in serial: keys.wif = serial["wif"]
 	return keys
 
 
@@ -272,13 +254,14 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 	pack_bytes(buf, vendorField)
 
 	# write amount value
-	pack("<Q", buf, (transaction.amount,))
-	pack("<Q", buf, (transaction.fee,))
+	pack("<Q", buf, (int(transaction.amount),))
+	pack("<Q", buf, (int(transaction.fee),))
 
 	# more test to confirm the good bytification of type 1 to 4...
 	typ  = transaction.type
 	if typ == 1 and "signature" in transaction.asset:
-		pack_bytes(buf, transaction.asset.signature)
+		data = binascii.unhexlify(transaction.asset.signature.publicKey)
+		pack_bytes(buf, data.encode() if not isinstance(data, bytes) else data)
 	elif typ == 2 and "delegate" in transaction.asset:
 		pack_bytes(buf, transaction.asset.delegate.username.encode())
 	elif typ == 3 and "votes" in transaction.asset:
@@ -332,19 +315,19 @@ arky.core.StrictDerSignatureError: R element is not an integer
 
 	# Minimum and maximum size constraints.
 	if 8 > sig_len > 72:
-		raise StrictDerSignatureError("bad signature size (<8 or >72)")
+		raise StrictDerSignatureError("Bad signature size (<8 or >72)")
 	# A signature is of type 0x30 (compound).
 	if basint(sig[0]) != 0x30:
 		raise StrictDerSignatureError("A signature is not of type 0x30 (compound)")
 	# Make sure the length covers the entire signature.
 	if basint(sig[1]) != (sig_len - 2):
-		raise StrictDerSignatureError("length %d does not covers the entire signature (%d)" % (sig[1], sig_len))
+		raise StrictDerSignatureError("Length %d does not covers the entire signature (%d)" % (sig[1], sig_len))
 	# Make sure the length of the S element is still inside the signature.
 	if (5 + r_len) >= sig_len:
 		raise StrictDerSignatureError("S element is not inside the signature")
 	# Verify that the length of the signature matches the sum of the length of the elements.
 	if (r_len + s_len + 6) != sig_len:
-		raise StrictDerSignatureError("signature length does not matches sum of the elements")
+		raise StrictDerSignatureError("Signature length does not matches sum of the elements")
 	# Check whether the R element is an integer.
 	if basint(sig[2]) != 0x02:
 		raise StrictDerSignatureError("R element is not an integer")
@@ -416,7 +399,7 @@ If no secret defined:
 >>> bad_tx.sign()
 Traceback (most recent call last):
 ...
-arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned transaction type 0 from "No one" to "No one">
+arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transaction(A0.00000000) from "No one" to "No one">
 '''
 	# here are attribute that can be set through object interface
 	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "recipientId", "requesterPublicKey"]
@@ -425,7 +408,7 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 	def __init__(self, **kwargs):
 		"""
 >>> Transaction(amount=100000000, secret="secret")
-<1.00000000 ARK unsigned transaction type 0 from a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR to "No one">
+<unsigned type-0 transaction(A1.00000000) from a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR to "No one">
 """
 		# the four minimum attributes that defines a transaction
 		self.type = kwargs.pop("type", 0)
@@ -468,12 +451,12 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 		if hasattr(self, "key_two"): delattr(self, "key_two")
 
 	def __repr__(self):
-		return "<%(amount).8f ARK %(signed)s transaction type %(type)d from %(from)s to %(to)s>" % {
+		return "<%(signed)s type-%(type)d transaction(A%(amount).8f) from %(from)s to %(to)s>" % {
 			"signed": "signed" if hasattr(self, "signature") else \
 			          "double-signed" if hasattr(self, "signSignature") else \
 			          "unsigned",
 			"type": self.type,
-			"amount": self.amount//100000000,
+			"amount": self.amount/100000000.,
 			"from": getattr(self, "address", '"No one"'),
 			"to": getattr(self, "recipientId", '"No one"')
 		}
@@ -483,26 +466,23 @@ arky.core.NoSecretDefinedError: No secret defined for <0.00000000 ARK unsigned t
 		if hasattr(self, "signSignature"): delattr(self, "signSignature")
 		if hasattr(self, "id"): delattr(self, "id")
 
-	def sign(self, secret=None):
-		if secret != None:
-			self.secret = secret
-		elif not hasattr(self, "key_one"):
-			raise NoSecretDefinedError("No secret defined for %r" % self)
+	def sign(self, secret=None, secondSecret=None):
 		self._unsign()
-		stamp = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-		object.__setattr__(self, "signature", checkStrictDER(stamp))
-		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
-
-	def seconSign(self, secondSecret=None):
-		if not hasattr(self, "signature"):
-			raise NotSignedTransactionError("%r must be signed first" % self)
-		if secondSecret != None:
-			self.secondSecret = secondSecret
-		elif not hasattr(self, "key_two"):
-			raise NoSecretDefinedError("No second secret defined for %r" % self)
-		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		stamp = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-		object.__setattr__(self, "signSignature", checkStrictDER(stamp))
+		# if secret is given, set a new secret (setting a new key_one)
+		if secret != None: self.secret = secret
+		# else, if no key_one attribute is set --> no secret defined, no owner defined
+		elif not hasattr(self, "key_one"): raise NoSecretDefinedError("No secret defined for %r" % self)
+		# store signature under signature attribute
+		stamp1 = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
+		object.__setattr__(self, "signature", checkStrictDER(stamp1))
+		# if secret is given, set a new secondSecret (setting a new key_two), only if account had registered a second signature
+		if secondSecret != None: self.secondSecret = secondSecret
+		# if key_two attribute is set
+		if hasattr(self, "key_two"):
+			# store second signature under signSignature attribute
+			stamp2 = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
+			object.__setattr__(self, "signSignature", checkStrictDER(stamp2))
+		# generate id
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 
 	def serialize(self):
@@ -530,10 +510,8 @@ pe', 0)]
 		return data
 
 
-def sendTransaction(secret, transaction, secondSecret=None):
-	transaction.sign(secret)
-	if secondSecret:
-		transaction.seconSign(secondSecret)
+def sendTransaction(transaction, secret=None, secondSecret=None):
+	transaction.sign(secret, secondSecret)
 
 	result = ArkyDict(json.loads(requests.post(
 		cfg.__URL_BASE__+"/peer/transactions",
@@ -545,10 +523,22 @@ def sendTransaction(secret, transaction, secondSecret=None):
 		result.asset = transaction.asset
 	else:
 		result.transaction = "%r" % transaction
-	cfg.__TXLOG__.put(result)
+	cfg.__LOG__.put(result)
 	return result
 
-def sendMultiple(secret, *transactions, **kw):
+def sendMultiple(*transactions, **kw):
 	result = ArkyDict()
 	for transaction in transactions:
-		sendTransaction(secret, transaction, secondSecret=kw.get('secondSecret', None))
+		sendTransaction(transaction, secret=kw.get('secret', None), secondSecret=kw.get('secondSecret', None))
+
+
+@setInterval(500)
+def rotatePeer():
+	peers = api.Peer.getPeersList().get("peers", [])
+	if len(peers):
+		old_one = cfg.__URL_BASE__
+		cfg.__URL_BASE__ = "http://" + choose(peers)["string"]
+		if not api.Loader.getLoadingStatus().get("success", False):
+			cfg.__URL_BASE__ = old_one
+		cfg.__LOG__.put({"API info": "using peer %s" % cfg.__URL_BASE__})
+_stop_rotatePeer_daemon = rotatePeer()
