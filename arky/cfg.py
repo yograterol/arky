@@ -1,8 +1,9 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import ArkyDict
-import queue
+from . import ArkyDict, __PY3__
+if __PY3__: import queue
+else: import Queue as queue
 
 __NET__ = ""
 __NB_THREAD__ = 2
