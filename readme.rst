@@ -25,12 +25,12 @@ Using ``arky``
 ``arky.api``
 ^^^^^^^^^^^^
 
->>> import arky.api as api
->>> api.Account.getAccount("AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU") # arky delegate
-{'account': {'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac5c26a43111472614bcf6c65a377', 'bal
-ance': '1101375294113', 'unconfirmedBalance': '1101375294113', 'u_multisignatures': [], 'unconfirmed
-Signature': 0, 'secondSignature': 0, 'address': 'AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU', 'secondPublicK
-ey': None, 'multisignatures': []}, 'success': True}
+>>> from arky import api
+>>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
+{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
+e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
+5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
+tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
 
 More on ``arky.api`` ?
 
@@ -39,7 +39,7 @@ More on ``arky.api`` ?
 ``arky.core``
 ^^^^^^^^^^^^^
 
->>> import arky.core as core
+>>> from arky import core
 
 ``core`` module allows python developpers to interact with ARK ecosystem.
 
@@ -68,9 +68,10 @@ More on ``arky.core`` ?
 ``arky.mgmt``
 ^^^^^^^^^^^^^
 
+>>> from arky import mgmt
+
 ``mgmt`` deploys threaded transaction managment. Threads are automaticaly launched with ``mgmt`` module import.
 
->>> import arky.mgmt as mgmt
 >>> mgmt.THREADS
 [<TxMGMT(Thread-1, started 2436)>, <TxMGMT(Thread-2, started 5832)>, <TxLOG(Thread-3, started 6580)>]
 
@@ -78,6 +79,8 @@ To send a transaction :
 
 >>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4")
 >>> mgmt.push(tx, "secret")
+>>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4", secret="secret")
+>>> mgmt.push(tx) # no secret needed here
 
 Then, check into the ``.arky.mgmt`` logfile into your `home` directory :
 
@@ -103,11 +106,11 @@ To start threads, you may change thread number for transaction managment :
 ``arky.wallet``
 ^^^^^^^^^^^^^^^
 
-``Wallet`` class allows developper to send ARK, to register address as delegate and to vote for delegates.
-For now, this class is highly experimental and should be used carefully.
+>>> from arky import wallet
 
->>> import arky.wallet as wlt
->>> w = wlt.Wallet("secret")
+``Wallet`` class allows developper to send ARK, to register address as delegate and to vote for delegates.
+
+>>> w = wallet.Wallet("secret")
 >>> w.delegate
 False
 >>> w.registered
@@ -131,7 +134,7 @@ rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmir
 
 More on ``arky.wallet`` ?
 
->>> help(wlt)
+>>> help(wallet)
 
 Support this project
 ====================
