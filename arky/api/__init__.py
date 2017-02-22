@@ -3,21 +3,26 @@
 
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import ArkyDict, cfg
-import json, requests
+import json, requests, traceback
 
 # GET generic method for ARK API
 def get(api, dic={}, **kw):
 	returnkey = kw.pop("returnKey", False)
-	text = requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text
-
 	try:
+		text = requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text
 		data = json.loads(text)
-	except ValueError:
-		cfg.__LOG__.put({"API info": "peer connexion error"})
-		return ArkyDict()
+	except Exception as error:
+		if hasattr(error, "__traceback__"):
+			cfg.__LOG__.put({
+				"API error": error, 
+				"details": "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+			})
+		else:
+			cfg.__LOG__.put({"API error": error})
 	else:
-		if data["success"] and returnkey: return ArkyDict(data[returnkey])
-		else: return ArkyDict(data)
+		if data["success"]:
+			return ArkyDict(data[returnkey]) if returnkey else ArkyDict(data)
+	return ArkyDict()
 
 
 class Loader:

@@ -556,11 +556,12 @@ def sendMultiple(*transactions, **kw):
 
 @setInterval(500)
 def rotatePeer():
-	peers = api.Peer.getPeersList().get("peers", [])
-	if len(peers):
+	try: peer = choose(api.Peer.getPeersList().get("peers", []))
+	except: peer = {}
+	if "string" in peer:
 		old_one = cfg.__URL_BASE__
-		cfg.__URL_BASE__ = "http://" + choose(peers)["string"]
-		if not api.Loader.getLoadingStatus().get("success", False):
-			cfg.__URL_BASE__ = old_one
-		cfg.__LOG__.put({"API info": "using peer %s" % cfg.__URL_BASE__})
-_stop_rotatePeer_daemon = rotatePeer()
+		cfg.__URL_BASE__ = "http://" + peer["string"]
+		try: success = api.Loader.getLoadingStatus().get("success", False)
+		except: success = False
+		if success: cfg.__LOG__.put({"API info": "using peer %s" % cfg.__URL_BASE__})
+		else: cfg.__URL_BASE__ = old_one

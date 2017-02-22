@@ -42,10 +42,13 @@ class TxMGMT(threading.Thread):
 				try:
 					core.sendTransaction(*data)
 				except Exception as error:
-					cfg.__LOG__.put({
-						"API error": error, 
-						"details": "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
-					})
+					if hasattr(error, "__traceback__"):
+						cfg.__LOG__.put({
+							"API error": error, 
+							"details": "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+						})
+					else:
+						cfg.__LOG__.put({"API error": error})
 
 
 def push(transaction, secret=None, secondSecret=None):
