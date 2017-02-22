@@ -1,18 +1,20 @@
 # -*- encoding:utf-8 -*-
-from _arky import wallet, setInterval
+from arky import wallet, setInterval
 import random, threading
 
-choose = lambda obj: l[int(random.random()*len(obj))%len(obj)]
+choose = lambda obj: obj[int(random.random()*len(obj))%len(obj)]
 tx_range = 5
 
 wallet.core.use("ark")
 unlock = threading.Event()
-wlt = wallet.Wallet("brother mad nuclear trigger version dutch castle bullet meat master damp spatial")
+wlt = wallet.open("arky.awt")
 
 def loop():
 	addresses = [d["address"] for d in wallet.Wallet.delegates if d["address"] != wlt.address]
 	while not unlock.isSet():
-		wlt.sendArk(random.random()*tx_range, choose(addresses), vendorField="arky API stress test: deadwhile")
+		amount = random.random()*tx_range
+		address = choose(addresses)
+		wlt.sendArk(amount, address, vendorField="arky API stress test: deadwhile")
 
 @setInterval(10)
 def checkAccount(obj, evt):
@@ -22,6 +24,4 @@ def checkAccount(obj, evt):
 
 checkAccount(wlt, unlock)
 t = threading.Thread(target=loop)
-# t.start()
-wallet.mgmt.stop()
-
+t.start()

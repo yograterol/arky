@@ -48,7 +48,7 @@ secondSecret       (str)
 			object.__setattr__(self, "publicKey", public_key.decode() if isinstance(public_key, bytes) else public_key)
 			object.__setattr__(self, "K1", keys)
 			self.update()
-			@setInterval(30)
+			@setInterval(15)
 			def _check(obj): obj.update()
 			self._stop_check_daemon = _check(self)
 		elif attr == "secondSecret":
@@ -61,7 +61,7 @@ secondSecret       (str)
 		object.__setattr__(self, attr, value)
 
 	def __del__(self):
-		self._stop_update_daemon.set()
+		self._stop_check_daemon.set()
 		if hasattr(self, "_stop_setter_daemon"):
 			self._stop_setter_daemon.set()
 
@@ -147,6 +147,11 @@ def open(filename):
 	object.__setattr__(obj, "K1", K1)
 	obj.update()
 	if K2: object.__setattr__(obj, "K2", core.unserializeKeys(K2))
+	
+	@setInterval(15)
+	def _check(o): obj.update()
+	obj._stop_check_daemon = _check(obj)
+
 	return obj
 
 

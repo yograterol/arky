@@ -58,11 +58,16 @@ NetworkError: Unknown bitcoin2 network properties
 	else:
 		cfg.__NET__ = "mainnet"
 		cfg.__URL_BASE__ = choose([
-			"http://40.68.214.86:8000",
-			"http://13.70.207.248:8000",
-			"http://13.89.42.130:8000",
-			"http://52.160.98.183:8000",
-			"http://40.121.84.254:8000"
+			"http://5.39.9.245:4000",
+			"http://5.39.9.246:4000",
+			"http://5.39.9.247:4000",
+			"http://5.39.9.248:4000",
+			"http://5.39.9.249:4000"
+			# "http://40.68.214.86:8000",
+			# "http://13.70.207.248:8000",
+			# "http://13.89.42.130:8000",
+			# "http://52.160.98.183:8000",
+			# "http://40.121.84.254:8000"
 		])
 
 	cfg.__HEADERS__.update({
@@ -284,6 +289,23 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 	return result.encode() if not isinstance(result, bytes) else result
 
 
+def signSerial(serial, key_one, key_two=None):
+	if not isinstance(serial, ArkyDict):
+		serial = ArkyDict(**serial)
+		serial.asset = ArkyDict(serial.get("asset", {}))
+	serial.pop("signature", None)
+	serial.pop("signSignature", None)
+	for attr in [a for a in ["senderPublicKey", "requesterPublicKey"] if hasattr(serial, a)]:
+		setattr(serial, attr, binascii.unhexlify(getattr(serial, attr)))
+	stamp1 = checkStrictDER(key_one.signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
+	serial.signature = stamp1
+	if key_two:
+		stamp2 = checkStrictDER(key_two.signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
+		return stamp1, stamp2
+		serial.signSignature = stamp2
+	return stamp1
+
+
 def checkStrictDER(sig):
 	"""
 https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki#der-encoding-reference
@@ -503,7 +525,7 @@ pe', 0)]
 			if isinstance(value, bytes) and attr not in ["recipientId", "vendorField"]:
 				value = binascii.hexlify(value)
 				if isinstance(value, bytes):
-					value = value.decode()
+					value = str(value.decode())
 			elif attr in ["amount", "timestamp", "fee"]:
 				value = int(value)
 			setattr(data, attr, value)

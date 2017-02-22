@@ -8,6 +8,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+_arky/
+__arky/
 bye/
 env/
 build/
@@ -144,3 +146,4 @@ $RECYCLE.BIN/
 *.lnk
 rst/notification.jpg
 *.wlt
+*.awt
