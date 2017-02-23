@@ -10,6 +10,12 @@ logging.basicConfig(
 	level     = logging.INFO,
 )
 
+def log_console():
+	console = logging.StreamHandler()
+	console.setFormatter(logging.Formatter('%(message)s'))
+	console.setLevel(logging.INFO)
+	logging.getLogger('').addHandler(console)
+
 LOG_LOCK = threading.Event()
 MGMT_LOCK = threading.Event()
 FIFO = queue.Queue()

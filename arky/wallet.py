@@ -62,8 +62,8 @@ secondSecret       (str)
 
 	def __del__(self):
 		self._stop_check_daemon.set()
-		# if hasattr(self, "_stop_setter_daemon"):
-		# 	self._stop_setter_daemon.set()
+		if hasattr(self, "_stop_setter_daemon"):
+			self._stop_setter_daemon.set()
 
 	def save(self, filename):
 		in_ = io.open(filename, "w")
@@ -114,24 +114,24 @@ secondSecret       (str)
 		else:
 			cfg.__LOG__.put({"API info": "%s already registered as delegate" % self.publicKey})
 
-	def registerSecondSingature(self, secondSecret):
+	def registerSecondSignature(self, secondSecret):
 		if not self.account.get('secondSignature'):
 			newPublicKey = binascii.hexlify(core.getKeys(secondSecret).public)
 			newPublicKey = newPublicKey.decode() if isinstance(newPublicKey, bytes) else newPublicKey
 			mgmt.push(self.transaction(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))))
-			# # automaticaly set secondSignature when transaction is applied
-			# @setInterval(10)
-			# def _setter(obj, passphrase):
-			# 	try: obj.secondSecret = passphrase
-			# 	except SecondSignatureError: pass
-			# 	else:
-			# 		obj._stop_setter_daemon.set()
-			# 		delattr(obj, "_stop_setter_daemon")
-			# 		cfg.__LOG__.put({"API info": "Second signature set for %s" % self})
-			# if hasattr(self, "_stop_setter_daemon"):
-			# 	self._stop_setter_daemon.set()
-			# 	delattr(obj, "_stop_setter_daemon")
-			# self._stop_setter_daemon = _setter(self, secondSecret)
+			# automaticaly set secondSignature when transaction is applied
+			@setInterval(10)
+			def _setter(obj, passphrase):
+				try: obj.secondSecret = passphrase
+				except SecondSignatureError: pass
+				else:
+					obj._stop_setter_daemon.set()
+					delattr(obj, "_stop_setter_daemon")
+					cfg.__LOG__.put({"API info": "Second signature set for %s" % self})
+			if hasattr(self, "_stop_setter_daemon"):
+				self._stop_setter_daemon.set()
+				delattr(obj, "_stop_setter_daemon")
+			self._stop_setter_daemon = _setter(self, secondSecret)
 		else:
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
 

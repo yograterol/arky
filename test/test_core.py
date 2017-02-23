@@ -5,5 +5,5 @@ import arky.core
 if not __PY3__:
 	raise Exception("doctest is written for python 3.x familly")
 
-arky.core.use("testnet")
+arky.core.api.use("testnet")
 doctest.testmod(arky.core)

@@ -22,28 +22,22 @@ Run a command as Administrator and type : ``pip install arky``
 Using ``arky``
 ==============
 
-``arky.api``
-^^^^^^^^^^^^
+Select network
+^^^^^^^^^^^^^^
+
+You need to import ``api`` module first and eventualy change from ``testnet`` (default) via ``api.use`` function.
 
 >>> from arky import api
->>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
-{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
-e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
-5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
-tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
-
-More on ``arky.api`` ?
-
->>> help(api)
+>>> api.use("ark")
 
 ``arky.core``
 ^^^^^^^^^^^^^
 
 >>> from arky import core
+>>> core.api.use("ark") # api is loaded by core
 
 ``core`` module allows python developpers to interact with ARK ecosystem.
 
->>> core.use('ark')
 >>> keys = core.getKeys("secret")
 >>> keys.public.hex()
 '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
@@ -64,6 +58,21 @@ sset': {}, 'senderPublicKey': '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
 More on ``arky.core`` ?
 
 >>> help(core)
+
+``arky.api``
+^^^^^^^^^^^^
+
+>>> from arky import api
+>>> api.use("ark")
+>>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
+{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
+e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
+5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
+tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
+
+More on ``arky.api`` ?
+
+>>> help(api)
 
 ``arky.mgmt``
 ^^^^^^^^^^^^^
@@ -107,6 +116,7 @@ To start threads, you may change thread number for transaction managment :
 ^^^^^^^^^^^^^^^
 
 >>> from arky import wallet
+>>> wallet.api.use("ark") # api is loaded by wallet
 
 ``Wallet`` class allows developper to send ARK, to register address as delegate and to vote for delegates.
 

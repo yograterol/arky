@@ -5,20 +5,9 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import __PY3__, StringIO, ArkyDict, api, cfg, slots, setInterval, NETWORKS
-import base58, random, struct, hashlib, binascii, requests, json
+from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, setInterval, choose #, NETWORKS
+import base58, struct, hashlib, binascii, requests, json
 
-
-# define core exceptions 
-class NotGrantedAttribute(Exception): pass
-class NoSecretDefinedError(Exception): pass
-class NoSenderDefinedError(Exception): pass
-class NotSignedTransactionError(Exception): pass
-class StrictDerSignatureError(Exception): pass
-class NetworkError(Exception): pass
-
-
-choose = lambda obj: obj[int(random.random()*len(obj))%len(obj)]
 # byte as int conversion
 basint = (lambda e:e) if __PY3__ else \
          (lambda e:ord(e))
@@ -31,55 +20,12 @@ pack_bytes = (lambda f,v: pack("<"+"%ss"%len(v), f, (v,))) if __PY3__ else \
              (lambda f,v: pack("<"+"s"*len(v), f, v))
 
 
-def use(network="testnet"):
-	"""
-select ARK net to use
->>> use("ark") # use testnet
->>> cfg.__NET__
-'mainnet'
->>> use("bitcoin2") # use testnet
-Traceback (most recent call last):
-...
-NetworkError: Unknown bitcoin2 network properties
-"""
-	NETWORKS.get(network)
-	try: cfg.__NETWORK__.update(NETWORKS.get(network))
-	except: raise NetworkError("Unknown %s network properties" % network)
-
-	if network == "testnet":
-		cfg.__NET__ = "testnet"
-		cfg.__URL_BASE__ = choose([
-			"http://5.39.9.245:4000",
-			"http://5.39.9.246:4000",
-			"http://5.39.9.247:4000",
-			"http://5.39.9.248:4000",
-			"http://5.39.9.249:4000"
-		])
-	else:
-		cfg.__NET__ = "mainnet"
-		cfg.__URL_BASE__ = choose([
-			"http://5.39.9.245:4000",
-			"http://5.39.9.246:4000",
-			"http://5.39.9.247:4000",
-			"http://5.39.9.248:4000",
-			"http://5.39.9.249:4000"
-			# "http://40.68.214.86:8000",
-			# "http://13.70.207.248:8000",
-			# "http://13.89.42.130:8000",
-			# "http://52.160.98.183:8000",
-			# "http://40.121.84.254:8000"
-		])
-
-	cfg.__HEADERS__.update({
-		'Content-Type' : 'application/json; charset=utf-8',
-		'os'           : 'arkwalletapp',
-		'version'      : '0.5.0',
-		'port'         : '1',
-		'nethash'      : api.Block.getNethash().get("nethash", "")
-	})
-
-# initailize testnet by default
-use("testnet")
+# define core exceptions 
+class NotGrantedAttribute(Exception): pass
+class NoSecretDefinedError(Exception): pass
+class NoSenderDefinedError(Exception): pass
+class NotSignedTransactionError(Exception): pass
+class StrictDerSignatureError(Exception): pass
 
 
 def _compressEcdsaPublicKey(pubkey):
@@ -301,8 +247,8 @@ def signSerial(serial, key_one, key_two=None):
 	serial.signature = stamp1
 	if key_two:
 		stamp2 = checkStrictDER(key_two.signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
-		return stamp1, stamp2
 		serial.signSignature = stamp2
+		return stamp1, stamp2
 	return stamp1
 
 

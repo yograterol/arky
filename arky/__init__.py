@@ -1,16 +1,15 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-import os, sys, threading, logging, requests
+import os, sys, threading, logging, requests, random
+
+__PY3__ = True if sys.version_info[0] >= 3 else False
+if __PY3__: from io import BytesIO as StringIO
+else: from StringIO import StringIO
 
 logging.getLogger('requests').setLevel(logging.CRITICAL)
 
-__PY3__ = True if sys.version_info[0] >= 3 else False
-if __PY3__:
-	from io import BytesIO as StringIO
-else:
-	from StringIO import StringIO
-
+choose = lambda obj: obj[int(random.random()*len(obj))%len(obj)]
 # deal with home directory
 HOME = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"]) if "win" in sys.platform else \
        os.environ.get("HOME", ".")
@@ -48,9 +47,9 @@ Python dict with javascript behaviour.
 >>> sorted(ad.items(), key=lambda e:e[0])
 [('key1', 'value1'), ('key2', 'value2')]
 """
-	__setattr__ = lambda obj,*a,**k: dict.__setitem__(obj, *a, **k)
-	__getattr__ = lambda obj,*a,**k: dict.__getitem__(obj, *a, **k)
-	__delattr__ = lambda obj,*a,**k: dict.__delitem__(obj, *a, **k)
+	def __setattr__(self, attr, value): return dict.__setitem__(self, attr, value)
+	def __getattr__(self, attr): return dict.__getitem__(self, attr)
+	def __delattr__(self, attr): return dict.__delitem__(self, attr)
 
 
 # network parameters

@@ -2,8 +2,10 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import ArkyDict, cfg
+from .. import cfg, ArkyDict, choose, NETWORKS
 import json, requests, traceback
+
+class NetworkError(Exception): pass
 
 # GET generic method for ARK API
 def get(api, dic={}, **kw):
@@ -149,3 +151,49 @@ class Multisignature:
 	@staticmethod
 	def getAccountsOfMultisignature(publicKey):
 		return post('/api/multisignatures/accounts', publicKey=publicKey)
+
+
+def use(network="testnet"):
+	"""
+select ARK net to use
+>>> use("ark") # use testnet
+>>> cfg.__NET__
+'mainnet'
+>>> use("bitcoin2") # use testnet
+Traceback (most recent call last):
+...
+NetworkError: Unknown bitcoin2 network properties
+"""
+	NETWORKS.get(network)
+	try: cfg.__NETWORK__.update(NETWORKS.get(network))
+	except: raise NetworkError("Unknown %s network properties" % network)
+
+	if network == "testnet":
+		cfg.__NET__ = "testnet"
+		cfg.__URL_BASE__ = choose([
+			"http://5.39.9.245:4000",
+			"http://5.39.9.246:4000",
+			"http://5.39.9.247:4000",
+			"http://5.39.9.248:4000",
+			"http://5.39.9.249:4000"
+		])
+	else:
+		cfg.__NET__ = "mainnet"
+		cfg.__URL_BASE__ = choose([
+			"http://5.39.9.245:4000",
+			"http://5.39.9.246:4000",
+			"http://5.39.9.247:4000",
+			"http://5.39.9.248:4000",
+			"http://5.39.9.249:4000"
+		])
+
+	cfg.__HEADERS__.update({
+		'Content-Type' : 'application/json; charset=utf-8',
+		'os'           : 'arkwalletapp',
+		'version'      : '0.5.0',
+		'port'         : '1',
+		'nethash'      : Block.getNethash().get("nethash", "")
+	})
+# initailize testnet by default
+use("testnet")
+
