@@ -2,11 +2,12 @@
 # © Toons
 
 from . import cfg, api, mgmt, core, slots, ArkyDict, StringIO, setInterval, HOME
-import io, json, hashlib, binascii, logging
+import io, json, socket, hashlib, binascii, logging, threading
 
 # define wallet exceptions 
 class ReadOnlyAttributes(Exception): pass
 class SecondSignatureError(Exception): pass
+class MultiSignatureError(Exception): pass
 
 
 class Wallet(object):
@@ -92,6 +93,53 @@ secondSecret       (str)
 	def sendArk(self, amount, recipientId, **kw):
 		mgmt.push(self.transaction(type=0, amount=int(amount*100000000), recipientId=recipientId, **kw))
 
+	def sendArkMultisign(self, amount, recipientId, **kw):
+		ip = kw.get("ip", socket.gethostbyname(socket.gethostname()))
+		port = kw.get("port", 12397)
+		lifetime = kw.get("lifetime", 72)
+		minimum = kw.get("minimum", 3)
+		keysgroup = kw.get("keysgroup", [])
+		timeout = kw.get("timeout", 2*60) # 2 minutes
+
+		if len(keysgroup) < 2:
+			raise MultiSignatureError()
+
+		asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=["+"+k for k in keysgroup]))
+		tx = self.transaction(type=4, amount=int(amount*100000000), recipientId=recipientId, asset=asset, **kw)
+
+		def askRemoteSignature(conn, data, q):
+			conn.sendall(data)
+			q.put(conn.recv(1024))
+
+		data = json.dumps(tx.serialize()).replace(" ", "")
+		if __PY3__: data = data.encode() if not isinstance(data, bytes) else data
+		else: data = str(data)
+
+		q = cfg.queue.Queue()
+		s = socket.socket()
+		s.bind((ip, port))
+		print("broadcasting signal on %s:%s" % (ip, port))
+		for i in range(minimum-1):
+			conn, addr = s.accept()
+			conn.settimeout(timeout)
+			print("remote %s accepted connection" % addr)
+			threading.Thread(target=askRemoteSignature, args=(conn, data, q)).start()
+		s.close()
+
+		tx.signatures = [sig for sig in q.queue]
+		mgmt.push(tx)
+
+	def remoteSign(self, ip, port):
+		s = socket.socket()
+		s.connect((ip, port))
+		data = s.receive(1024)
+		data = json.loads(data.decode() id isinstance(data, bytes) emse data)
+		sig = binascii.hexlify(core.signSerial(data, self.K1))
+		if __PY3__: sig = sig.encode() if not isinstance(sig, bytes) else sig
+		else: sig = str(sig)
+		s.sendall(sig)
+		s.close()
+
 	def voteDelegate(self, up=[], down=[]):
 		votes = self.votes
 		# first filter
@@ -156,9 +204,3 @@ def open(filename):
 
 	return obj
 
-
-# @setInterval(60)
-# def check():
-# 	Wallet.delegates = api.Delegate.getCandidates()
-# 	Wallet.candidates = [d["username"] for d in Wallet.delegates]
-# _stop_check_daemon = check()

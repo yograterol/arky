@@ -235,21 +235,18 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 	return result.encode() if not isinstance(result, bytes) else result
 
 
-def signSerial(serial, key_one, key_two=None):
-	if not isinstance(serial, ArkyDict):
-		serial = ArkyDict(**serial)
-		serial.asset = ArkyDict(serial.get("asset", {}))
+def signSerial(serial, keyring):
 	serial.pop("signature", None)
 	serial.pop("signSignature", None)
-	for attr in [a for a in ["senderPublicKey", "requesterPublicKey"] if hasattr(serial, a)]:
-		setattr(serial, attr, binascii.unhexlify(getattr(serial, attr)))
-	stamp1 = checkStrictDER(key_one.signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
-	serial.signature = stamp1
-	if key_two:
-		stamp2 = checkStrictDER(key_two.signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
-		serial.signSignature = stamp2
-		return stamp1, stamp2
-	return stamp1
+
+	class O: pass
+	obj = O()
+	for attr, value in serial.items():
+		if attr in ["senderPublicKey", "requesterPublicKey"]:
+			value = binascii.unhexlify(value)
+		setattr(obj, attr, value)
+
+	return checkStrictDER(keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize))
 
 
 def checkStrictDER(sig):
