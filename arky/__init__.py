@@ -48,7 +48,7 @@ Python dict with javascript behaviour.
 [('key1', 'value1'), ('key2', 'value2')]
 """
 	def __setattr__(self, attr, value): return dict.__setitem__(self, attr, value)
-	def __getattr__(self, attr, default=None): return dict.__getitem__(self, attr, default)
+	def __getattr__(self, attr): return dict.__getitem__(self, attr)
 	def __delattr__(self, attr): return dict.__delitem__(self, attr)
 
 
