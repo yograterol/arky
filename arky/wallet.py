@@ -1,8 +1,9 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg, api, mgmt, core, slots, ArkyDict, StringIO, setInterval, HOME
+from . import cfg, api, mgmt, core, slots, ArkyDict, StringIO, setInterval, HOME, __PY3__
 import io, json, socket, hashlib, binascii, logging, threading
+if __PY3__: raw_input = input
 
 # define wallet exceptions 
 class ReadOnlyAttributes(Exception): pass
@@ -94,50 +95,50 @@ secondSecret       (str)
 		mgmt.push(self.transaction(type=0, amount=int(amount*100000000), recipientId=recipientId, **kw))
 
 	def sendArkMultisign(self, amount, recipientId, **kw):
-		ip = kw.get("ip", socket.gethostbyname(socket.gethostname()))
-		port = kw.get("port", 12397)
-		lifetime = kw.get("lifetime", 72)
-		minimum = kw.get("minimum", 3)
-		keysgroup = kw.get("keysgroup", [])
-		timeout = kw.get("timeout", 2*60) # 2 minutes
+		keysgroup = kw.pop("keysgroup", [])
+		if len(keysgroup) < 1: raise MultiSignatureError()
 
-		if len(keysgroup) < 2:
-			raise MultiSignatureError()
+		ip = kw.pop("ip", socket.gethostbyname(socket.gethostname()))
+		port = kw.pop("port", 12397)
+		lifetime = kw.pop("lifetime", 72)
+		minimum = kw.pop("minimum", len(keysgroup))
+		timeout = kw.pop("timeout", 2*60) # 2 minutes
 
-		asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=["+"+k for k in keysgroup]))
+		asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
 		tx = self.transaction(type=4, amount=int(amount*100000000), recipientId=recipientId, asset=asset, **kw)
-
-		def askRemoteSignature(conn, data, q):
-			conn.sendall(data)
-			q.put(conn.recv(1024))
-
-		data = json.dumps(tx.serialize()).replace(" ", "")
-		if __PY3__: data = data.encode() if not isinstance(data, bytes) else data
-		else: data = str(data)
+		object.__setattr__(tx, "fee", tx.fee*(minimum+1))
+		tx.sign()
 
 		q = cfg.queue.Queue()
 		s = socket.socket()
 		s.bind((ip, port))
-		print("broadcasting signal on %s:%s" % (ip, port))
-		for i in range(minimum-1):
+		s.listen(minimum)
+		print("listening signal on %s:%s" % (ip, port))
+
+		data = json.dumps(tx.serialize())
+		data = data.encode() if not isinstance(data, bytes) else data
+
+		for i in range(minimum):
 			conn, addr = s.accept()
 			conn.settimeout(timeout)
-			print("remote %s accepted connection" % addr)
-			threading.Thread(target=askRemoteSignature, args=(conn, data, q)).start()
+			print("remote %s:%s accepted connection" % addr)
+			t = threading.Thread(target=askRemoteSignature, args=(conn, data, q))
+			t.daemon = True # stop if the program exits
+			t.start()
+		t.join()
 		s.close()
 
-		tx.signatures = [sig for sig in q.queue]
+		object.__setattr__(tx, "signatures", [str(sig.decode() if isinstance(sig, bytes) else sig) for sig in q.queue if len(sig) > 0])
 		mgmt.push(tx)
 
 	def remoteSign(self, ip, port):
 		s = socket.socket()
 		s.connect((ip, port))
-		data = s.receive(1024)
-		data = json.loads(data.decode() id isinstance(data, bytes) emse data)
-		sig = binascii.hexlify(core.signSerial(data, self.K1))
-		if __PY3__: sig = sig.encode() if not isinstance(sig, bytes) else sig
-		else: sig = str(sig)
-		s.sendall(sig)
+		data = s.recv(1024)
+		data = json.loads(data.decode() if isinstance(data, bytes) else data)
+		for item in sorted(data.items(), key=lambda e:e[0]): print("%s : %s" % item)
+		if raw_input(">>> sign this transaction [y/n]: ") in ["Y", "y", "yes"]:
+			s.sendall(core.signSerial(data, self.K1))
 		s.close()
 
 	def voteDelegate(self, up=[], down=[]):
@@ -182,6 +183,13 @@ secondSecret       (str)
 			self._stop_setter_daemon = _setter(self, secondSecret)
 		else:
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
+
+
+def askRemoteSignature(conn, data, q):
+	conn.sendall(data)
+	sig = conn.recv(1024)
+	q.put(binascii.hexlify(sig))
+	conn.close()
 
 
 def open(filename):

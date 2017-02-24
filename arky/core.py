@@ -5,7 +5,7 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, setInterval, choose #, NETWORKS
+from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, setInterval, choose, arkydify
 import base58, struct, hashlib, binascii, requests, json
 
 # byte as int conversion
@@ -236,16 +236,14 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 
 
 def signSerial(serial, keyring):
-	serial.pop("signature", None)
-	serial.pop("signSignature", None)
-
 	class O: pass
 	obj = O()
 	for attr, value in serial.items():
 		if attr in ["senderPublicKey", "requesterPublicKey"]:
 			value = binascii.unhexlify(value)
+		elif attr == "asset":
+			value = arkydify(value)
 		setattr(obj, attr, value)
-
 	return checkStrictDER(keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize))
 
 
@@ -462,7 +460,7 @@ pe', 0)]
 		for attr in [a for a in [
 			"id", "timestamp", "type", "fee", "amount", 
 			"recipientId", "senderPublicKey", "requesterPublicKey", "vendorField",
-			"asset", "signature", "signSignature"
+			"asset", "signature", "signatures", "signSignature"
 		] if hasattr(self, a)]:
 			value = getattr(self, attr)
 			if isinstance(value, bytes) and attr not in ["recipientId", "vendorField"]:
@@ -471,6 +469,8 @@ pe', 0)]
 					value = str(value.decode())
 			elif attr in ["amount", "timestamp", "fee"]:
 				value = int(value)
+			elif attr == "asset": #isinstance(value, dict):
+				value = arkydify(value)
 			setattr(data, attr, value)
 		return data
 
