@@ -2,7 +2,7 @@
 # © Toons
 
 from . import cfg, core, ArkyDict, HOME
-import os, sys, json, queue, atexit, logging, requests, threading, binascii, traceback
+import os, sys, json, atexit, logging, requests, threading, binascii, traceback
 
 logging.basicConfig(
 	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
@@ -18,7 +18,7 @@ def log_console():
 
 LOG_LOCK = threading.Event()
 MGMT_LOCK = threading.Event()
-FIFO = queue.Queue()
+FIFO = cfg.queue.Queue()
 THREADS = []
 
 
