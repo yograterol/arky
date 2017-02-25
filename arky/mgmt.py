@@ -95,6 +95,10 @@ def stop():
 	if THREADS[-1].isAlive():
 		cfg.__LOG__.put(False)
 
+def join():
+	while not FIFO.empty(): pass
+	while not cfg.__LOG__.empty(): pass
+
 # start threaded managment
 start()
 atexit.register(stop)
