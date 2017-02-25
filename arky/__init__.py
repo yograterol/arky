@@ -55,9 +55,7 @@ Python dict with javascript behaviour.
 >>> sorted(ad.items(), key=lambda e:e[0])
 [('key1', 'value1'), ('key2', 'value2')]
 """
-	def __setattr__(self, attr, value):
-		if isinstance(value, dict): value = ArkyDict(**value)
-		return dict.__setitem__(self, attr, value)
+	def __setattr__(self, attr, value): return dict.__setitem__(self, attr, value)
 	def __getattr__(self, attr, default=False): return dict.get(self, attr, default)
 	def __delattr__(self, attr): return dict.__delitem__(self, attr)
 

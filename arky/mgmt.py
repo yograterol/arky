@@ -26,6 +26,7 @@ class TxLOG(threading.Thread):
 
 	def __init__(self):
 		threading.Thread.__init__(self)
+		self.daemon = True
 		self.start()
 
 	def run(self):
@@ -39,6 +40,7 @@ class TxMGMT(threading.Thread):
 
 	def __init__(self):
 		threading.Thread.__init__(self)
+		self.daemon = True
 		self.start()
 
 	def run(self):

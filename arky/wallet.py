@@ -113,7 +113,7 @@ secondSecret       (str)
 		s = socket.socket()
 		s.bind((ip, port))
 		s.listen(minimum)
-		print("listening signal on %s:%s" % (ip, port))
+		print("listening signal, ip:port = %s:%s" % (ip, port))
 
 		data = json.dumps(tx.serialize())
 		data = data.encode() if not isinstance(data, bytes) else data

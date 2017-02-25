@@ -239,7 +239,7 @@ def signSerial(serial, keyring):
 	class O: pass
 	obj = O()
 	for attr, value in serial.items():
-		if attr in ["senderPublicKey", "requesterPublicKey"]:
+		if attr in ["senderPublicKey", "requesterPublicKey", "signature", "signSignature"]:
 			value = binascii.unhexlify(value)
 		elif attr == "asset":
 			value = arkydify(value)
