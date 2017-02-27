@@ -27,7 +27,7 @@ kw.update(**{
 	"install_requires": ["requests", "ecdsa", "pytz", "base58"],
 	"license": "Copyright 2015-2016, Toons, BSD licence",
 	"classifiers": [
-		'Development Status :: 2 - Pre-Alpha',
+		'Development Status :: 4 - Beta',
 		'Environment :: Console',
 		'Environment :: Web Environment',
 		'Intended Audience :: Developers',

@@ -147,3 +147,5 @@ $RECYCLE.BIN/
 rst/notification.jpg
 *.wlt
 *.awt
+test/deadwhile.py
+test/peerloop.py

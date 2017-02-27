@@ -3,7 +3,8 @@
 
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import cfg, ArkyDict, choose, NETWORKS
-import json, requests, traceback
+import json, requests, traceback, datetime, pytz
+UTC = pytz.UTC
 
 class NetworkError(Exception): pass
 
@@ -169,6 +170,8 @@ NetworkError: Unknown bitcoin2 network properties
 	except: raise NetworkError("Unknown %s network properties" % network)
 
 	if network == "testnet":
+		# in js month value start from 0, in python month value start from 1
+		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "testnet"
 		cfg.__URL_BASE__ = choose([
 			"http://5.39.9.245:4000",
@@ -178,6 +181,8 @@ NetworkError: Unknown bitcoin2 network properties
 			"http://5.39.9.249:4000"
 		])
 	else:
+		# in js month value start from 0, in python month value start from 1
+		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "mainnet"
 		cfg.__URL_BASE__ = choose([
 			"http://5.39.9.245:4000",
@@ -196,4 +201,3 @@ NetworkError: Unknown bitcoin2 network properties
 	})
 # initailize testnet by default
 use("testnet")
-

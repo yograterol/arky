@@ -16,8 +16,30 @@ class Wallet(object):
 Wallet object allows user to send all type of transaction granted by the Ark blockchain.
 
 Attributes that can be set using object interface :
-secret             (str)
-secondSecret       (str)
+secret       (str) -- a valid utf-8 encoded string
+secondSecret (str) -- a valid utf-8 encoded string
+
+>>> from arkyimport wallet
+>>> w = wallet.Wallet("secret")
+>>> w.address
+'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
+>>> w.wif
+'cP3giX8Vmcev97Y5BvMH1kPteesGk3AQ9vd9ifyis5r5sFiV8H26'
+>>> w.publicKey
+'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
+>>> w.delegates[1]
+{'vote': '254644554598363', 'missedblocks': 17, 'productivity': 98.23, 'rate': 2, 'addres\
+s': 'AMLLuYLAfM4VWzzFxE8P5gFnof8JDpSgrm', 'approval': 2.04, 'username': 'arky', 'publicKe\
+y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'producedblocks\
+': 942}
+>>> w.sendArk(1.5, 'aPzezL8FFR3gnJC3hyJ6V1eFeFRNUzsS4y', "A1.5 for you using arky API")
+>>> w.registerAsDelegate("secret_delegate")
+>>> w.voteDelegate(up=["arky", "ravelou"])
+>>> w.votes
+['ravelou', 'arky']
+>>> w.voteDelegate(down=["arky"])
+>>> w.votes
+['ravelou']
 '''
 
 	# list of all registered delegates
@@ -28,17 +50,19 @@ secondSecret       (str)
 	votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
 	# list of voters given to wallet
 	voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
-
+	# return wallet balance in SATOSHI
 	balance = property(lambda obj: int(obj.account.get("balance", 0)), None, None, "")
+	# return wallet WIF addres
 	wif = property(lambda obj: obj.K1.wif, None, None, "")
 
 	def __init__(self, secret=None, secondSecret=None):
 		if secret:
 			self.secret = secret
-			if secondSecret:
-				self.secondSecret = secondSecret
-			elif self.account.get('secondSignature', False):
-				raise SecondSignatureError("Missing second signature for this wallet")
+			if self.account.get('secondSignature', False):
+				if secondSecret:
+					self.secondSecret = secondSecret
+				else:
+					raise SecondSignatureError("Missing second signature for this wallet")
 
 	def __setattr__(self, attr, value):
 		if attr in ["delegate", "registered", "forger", "K1", "K2", "account"]:
@@ -83,7 +107,10 @@ secondSecret       (str)
 		Wallet.delegates = api.Delegate.getCandidates()
 		Wallet.candidates = [d["username"] for d in Wallet.delegates]
 
-	def transaction(self, **kw):
+	def _generate_tx(self, **kw):
+		"""
+Generate a transaction with wallet key(s)
+"""
 		tx = core.Transaction(**kw)
 		object.__setattr__(tx, "key_one", self.K1)
 		object.__setattr__(tx, "address", core.getAddress(self.K1))
@@ -91,41 +118,54 @@ secondSecret       (str)
 			object.__setattr__(tx, "key_two", self.K2)
 		return tx
 
-	def sendArk(self, amount, recipientId, **kw):
-		mgmt.push(self.transaction(type=0, amount=int(amount*100000000), recipientId=recipientId, **kw))
+	def sendArk(self, amount, recipientId, vendorField=None):
+		"""
+Send ARK amount to recipientId.
 
-	def sendArkMultisign(self, amount, recipientId, **kw):
+Argument:
+amount      (float) -- amount you want to send in ARK (not in SATOSHI !)
+recipientId (str) -- valid ARK address you want to send to
+vendorField (str) -- 64-char-max message you want to send with (None by default)
+"""
+		mgmt.push(self._generate_tx(type=0, amount=int(amount*100000000), recipientId=recipientId, vendorField=vendorField))
+
+	# experimental... do not use. working on LAN for now
+	def sendMultisignArk(self, amount, recipientId, **kw):
 		keysgroup = kw.pop("keysgroup", [])
 		if len(keysgroup) < 1: raise MultiSignatureError()
 
-		ip = kw.pop("ip", socket.gethostbyname(socket.gethostname()))
-		port = kw.pop("port", 12397)
+		ip = kw.pop("ip", cfg.__IP__)
+		port = kw.pop("port", cfg.__PORT__)
 		lifetime = kw.pop("lifetime", 72)
-		minimum = kw.pop("minimum", len(keysgroup))
+		minimum = kw.pop("minimum", min(len(keysgroup), 2))
 		timeout = kw.pop("timeout", 2*60) # 2 minutes
 
 		asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
-		tx = self.transaction(type=4, amount=int(amount*100000000), recipientId=recipientId, asset=asset, **kw)
+		tx = self._generate_tx(type=4, amount=int(amount*100000000), recipientId=recipientId, asset=asset, **kw)
 		object.__setattr__(tx, "fee", tx.fee*(minimum+1))
 		tx.sign()
 
 		q = cfg.queue.Queue()
 		s = socket.socket()
-		s.bind((ip, port))
+		s.bind(("", port))
 		s.listen(minimum)
 		print("listening signal, ip:port = %s:%s" % (ip, port))
 
 		data = json.dumps(tx.serialize())
 		data = data.encode() if not isinstance(data, bytes) else data
 
+		threads = []
 		for i in range(minimum):
 			conn, addr = s.accept()
 			conn.settimeout(timeout)
+			print(conn)
 			print("remote %s:%s accepted connection" % addr)
 			t = threading.Thread(target=askRemoteSignature, args=(conn, data, q))
 			t.daemon = True # stop if the program exits
 			t.start()
-		t.join()
+			threads.append(t)
+
+		for t in threads: t.join()
 		s.close()
 
 		object.__setattr__(tx, "signatures", [str(sig.decode() if isinstance(sig, bytes) else sig) for sig in q.queue if len(sig) > 0])
@@ -142,6 +182,14 @@ secondSecret       (str)
 		s.close()
 
 	def voteDelegate(self, up=[], down=[]):
+		"""
+Up or down vote for delegates. Delegates name are listed in `wallet.candidates` attribute.
+Automatically filters usernames that are already voted up/down ore are invalid.
+
+Argument:
+up   (list) -- list of username to be upvoted
+down (list) -- list of username to be downvoted
+"""
 		votes = self.votes
 		# first filter
 		up   = [u for u in up if u not in votes and u in Wallet.candidates]
@@ -153,21 +201,35 @@ secondSecret       (str)
 		usernames = ['+'+c for c in up] + ['-'+c for c in down]
 		# send votes
 		if len(usernames):
-			mgmt.push(self.transaction(type=3, recipientId=self.address, asset=ArkyDict(votes=usernames)))
+			mgmt.push(self._generate_tx(type=3, recipientId=self.address, asset=ArkyDict(votes=usernames)))
 		else:
 			cfg.__LOG__.put({"API info": "no one to up/down vote"})
 
 	def registerAsDelegate(self, username):
+		"""
+Register wallet as a delegate (this enables forging).
+
+Arguments:
+username (str) -- a utf-8 valid username
+"""
 		if not self.delegate:
-			mgmt.push(self.transaction(type=2, asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=self.publicKey))))
+			mgmt.push(self._generate_tx(type=2, asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=self.publicKey))))
 		else:
 			cfg.__LOG__.put({"API info": "%s already registered as delegate" % self.publicKey})
 
 	def registerSecondSignature(self, secondSecret):
+		"""
+Register a second signature. This is permanent and the two secrets have to be given to
+open the wallet. When second signature is registered on blockchain side, it automatically
+register the second key into the wallet.
+
+Argument:
+secondSecret (str) -- a valid utf-8 encoded string
+"""
 		if not self.account.get('secondSignature'):
 			newPublicKey = binascii.hexlify(core.getKeys(secondSecret).public)
 			newPublicKey = newPublicKey.decode() if isinstance(newPublicKey, bytes) else newPublicKey
-			mgmt.push(self.transaction(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))))
+			mgmt.push(self._generate_tx(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))))
 			# automaticaly set secondSignature when transaction is applied
 			@setInterval(10)
 			def _setter(obj, passphrase):
@@ -184,7 +246,7 @@ secondSecret       (str)
 		else:
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
 
-
+# used by Wallet.sendMultisignArk
 def askRemoteSignature(conn, data, q):
 	conn.sendall(data)
 	sig = conn.recv(1024)

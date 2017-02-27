@@ -26,7 +26,8 @@ def getVoterContribution(wlt):
 	for voter in wlt.voters:
 		voter_addr = voter["address"]
 		nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
-		data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
+		if nb_votes > 0:
+			data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
 	return data
 
 if len(args) == 1 and os.path.exists(args[0]):
@@ -62,8 +63,10 @@ print("For voters     :", voters)
 
 print("\nTransfering ARK...")
 for addr,ratio in contributors.items():
-	print("sending", voters*ratio, "ARK to", addr)
-	wlt.sendArk(voters*ratio, addr, vendorField="Arky weekly pay back. Thanks for you contribution !")
+	amount = voters*ratio
+	if amount > 0.:
+		print("sending A%.8f to %s", (amount, addr))
+		wlt.sendArk(amount, addr, vendorField="Arky weekly refund. Thanks for you contribution !")
 
 # wlt.sendArk(pythoners, __pythoners__)
 # wlt.sendArk(investments, __investments__)

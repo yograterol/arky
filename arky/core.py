@@ -406,7 +406,7 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 			elif value == 4: object.__setattr__(self, "fee", cfg.__FEES__.multisignature)
 			elif value == 5: object.__setattr__(self, "fee", cfg.__FEES__.dapp)
 			object.__setattr__(self, attr, value)
-		else:
+		elif value != None:
 			object.__setattr__(self, attr, value)
 
 	def __del__(self):
@@ -497,7 +497,7 @@ def sendMultiple(*transactions, **kw):
 		sendTransaction(transaction, secret=kw.get('secret', None), secondSecret=kw.get('secondSecret', None))
 
 
-@setInterval(500)
+@setInterval(5)
 def rotatePeer():
 	try: peer = choose(api.Peer.getPeersList().get("peers", []))
 	except: peer = {}

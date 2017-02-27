@@ -11,8 +11,9 @@ w.sendArkMultisign(
 		'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 	],
 	vendorField="arky multi signature test !",
+	ip='109.130.85.151'
 )
 
 import os
+wallet.mgmt.join()
 os.system("pause")
-wallet.mgmt.stop()
