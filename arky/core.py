@@ -139,7 +139,7 @@ Returns str
 
 def getWIF(seed, network):
 	"""
-Computes WIF address from keyring.
+Computes WIF address from seed.
 
 Argument:
 seed (bytes)     -- a sha256 sequence bytes
@@ -188,17 +188,16 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 		pack_bytes(buf, transaction.requesterPublicKey)
 
 	if hasattr(transaction, "recipientId"):
-		# decode reciever adress public key
+		# decode reciever address public key (bytes returned)
 		recipientId = base58.b58decode_check(transaction.recipientId)
 	else:
 		# put a blank
 		recipientId = b"\x00"*21
-	pack_bytes(buf,recipientId)
+	pack_bytes(buf, recipientId)
 
 	if hasattr(transaction, "vendorField"):
 		# put vendor field value (64 bytes limited)
-		n = min(64, len(transaction.vendorField))
-		vendorField = transaction.vendorField[:n].encode() + b"\x00"*(64-n)
+		vendorField = transaction.vendorField[:64].encode().ljust(64, b"\x00")
 	else:
 		# put a blank
 		vendorField = b"\x00"*64
@@ -243,7 +242,8 @@ def signSerial(serial, keyring):
 			value = binascii.unhexlify(value)
 		elif attr == "asset":
 			value = arkydify(value)
-		setattr(obj, attr, value)
+		elif value != None:
+			setattr(obj, attr, value)
 	return checkStrictDER(keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize))
 
 
@@ -469,7 +469,7 @@ pe', 0)]
 					value = str(value.decode())
 			elif attr in ["amount", "timestamp", "fee"]:
 				value = int(value)
-			elif attr == "asset": #isinstance(value, dict):
+			elif attr == "asset":
 				value = arkydify(value)
 			setattr(data, attr, value)
 		return data
@@ -497,7 +497,7 @@ def sendMultiple(*transactions, **kw):
 		sendTransaction(transaction, secret=kw.get('secret', None), secondSecret=kw.get('secondSecret', None))
 
 
-@setInterval(5)
+@setInterval(500)
 def rotatePeer():
 	try: peer = choose(api.Peer.getPeersList().get("peers", []))
 	except: peer = {}

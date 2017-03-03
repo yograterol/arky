@@ -2,7 +2,7 @@
 # © Toons
 
 from . import cfg, core, ArkyDict, HOME
-import os, sys, json, atexit, logging, requests, threading, binascii, traceback
+import os, sys, json, time, atexit, logging, requests, threading, binascii, traceback, requests
 
 logging.basicConfig(
 	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
@@ -45,10 +45,14 @@ class TxMGMT(threading.Thread):
 
 	def run(self):
 		while MGMT_LOCK.isSet():
-			data = FIFO.get()
-			if isinstance(data, list):
+			args = FIFO.get()
+			if isinstance(args, list):
 				try:
-					core.sendTransaction(*data)
+					if len(args) == 2:
+						url, data = args
+						cfg.__LOG__.put({"API send":requests.post(url, data=data, headers=cfg.__HEADERS__).text})
+					else:
+						core.sendTransaction(*args)
 				except Exception as error:
 					if hasattr(error, "__traceback__"):
 						cfg.__LOG__.put({
@@ -66,7 +70,9 @@ def push(transaction, secret=None, secondSecret=None):
 def start():
 	global THREADS
 	# first, check if there still is alive thread
-	if True in [t.isAlive() for t in THREADS]: stop()
+	if True in [t.isAlive() for t in THREADS]: 
+		try: stop()
+		except: pass
 	THREADS = []
 	MGMT_LOCK.set()
 	for i in range(cfg.__NB_THREAD__):
@@ -96,8 +102,8 @@ def stop():
 		cfg.__LOG__.put(False)
 
 def join():
-	while not FIFO.empty(): pass
-	while not cfg.__LOG__.empty(): pass
+	while not FIFO.empty(): time.sleep(2)
+	while not cfg.__LOG__.empty(): time.sleep(2)
 
 # start threaded managment
 start()

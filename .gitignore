@@ -149,3 +149,4 @@ rst/notification.jpg
 *.awt
 test/deadwhile.py
 test/peerloop.py
+test/killingpool.py

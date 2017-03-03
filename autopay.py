@@ -54,11 +54,11 @@ print("total fees     :", fees)
 # part to be distributed
 share = amount - node_invest - fees
 print("share          :", share)
-pythoners = 0.1*share
+pythoners = 0.15*share
 print("For pythoners  :", pythoners)
 investments = 0.6*share
 print("For investments:", investments)
-voters = 0.3*share
+voters = 0.25*share
 print("For voters     :", voters)
 
 print("\nTransfering ARK...")

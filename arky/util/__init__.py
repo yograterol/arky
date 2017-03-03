@@ -15,7 +15,7 @@ def getKrakenPair(pair):
 
 def getArkPrice(curency):
 	try: cmc_ark = json.loads(requests.get("http://coinmarketcap.northpole.ro/api/v5/ARK.json").text)
-	except: cmc_ark = {"price": {"usd":1/34}}
+	except: cmc_ark = {"price": {"usd":1.0/34}}
 	return float(cmc_ark["price"][curency])
 
 

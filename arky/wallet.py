@@ -127,7 +127,7 @@ amount      (float) -- amount you want to send in ARK (not in SATOSHI !)
 recipientId (str) -- valid ARK address you want to send to
 vendorField (str) -- 64-char-max message you want to send with (None by default)
 """
-		mgmt.push(self._generate_tx(type=0, amount=int(amount*100000000), recipientId=recipientId, vendorField=vendorField))
+		mgmt.push(self._generate_tx(type=0, amount=int(amount*100000000.), recipientId=recipientId, vendorField=vendorField))
 
 	# experimental... do not use. working on LAN for now
 	def sendMultisignArk(self, amount, recipientId, **kw):
@@ -141,7 +141,7 @@ vendorField (str) -- 64-char-max message you want to send with (None by default)
 		timeout = kw.pop("timeout", 2*60) # 2 minutes
 
 		asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
-		tx = self._generate_tx(type=4, amount=int(amount*100000000), recipientId=recipientId, asset=asset, **kw)
+		tx = self._generate_tx(type=4, amount=int(amount*100000000.), recipientId=recipientId, asset=asset, **kw)
 		object.__setattr__(tx, "fee", tx.fee*(minimum+1))
 		tx.sign()
 

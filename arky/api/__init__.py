@@ -3,7 +3,7 @@
 
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import cfg, ArkyDict, choose, NETWORKS
-import json, requests, traceback, datetime, pytz
+import sys, json, requests, traceback, datetime, pytz
 UTC = pytz.UTC
 
 class NetworkError(Exception): pass
@@ -17,7 +17,7 @@ def get(api, dic={}, **kw):
 	except Exception as error:
 		if hasattr(error, "__traceback__"):
 			cfg.__LOG__.put({
-				"API error": error, 
+				"API error": error,
 				"details": "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
 			})
 		else:
@@ -165,10 +165,13 @@ Traceback (most recent call last):
 ...
 NetworkError: Unknown bitcoin2 network properties
 """
-	NETWORKS.get(network)
+	# NETWORKS.get(network)
 	try: cfg.__NETWORK__.update(NETWORKS.get(network))
 	except: raise NetworkError("Unknown %s network properties" % network)
 
+	sys.ps1 = "@%s>>> " % network
+	sys.ps2 = "@%s... " % network
+	
 	if network == "testnet":
 		# in js month value start from 0, in python month value start from 1
 		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
