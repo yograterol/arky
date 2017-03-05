@@ -12,7 +12,8 @@ Install
 Ubuntu
 ^^^^^^
 
-Open a terminal and type : ``sudo pip install arky``
+Open a terminal and type : ``sudo pip install arky`` or ``sudo pip3 install arky``
+
 
 Windows 
 ^^^^^^^

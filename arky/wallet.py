@@ -50,8 +50,10 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 	votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
 	# list of voters given to wallet
 	voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
-	# return wallet balance in SATOSHI
-	balance = property(lambda obj: int(obj.account.get("balance", 0)), None, None, "")
+	# return voter contribution ratio
+	contribution = property(lambda obj: getVoterContribution(obj), None, None, "")
+	# return wallet balance in ARK
+	balance = property(lambda obj: int(obj.account.get("balance", 0))/100000000., None, None, "")
 	# return wallet WIF addres
 	wif = property(lambda obj: obj.K1.wif, None, None, "")
 
@@ -171,6 +173,7 @@ vendorField (str) -- 64-char-max message you want to send with (None by default)
 		object.__setattr__(tx, "signatures", [str(sig.decode() if isinstance(sig, bytes) else sig) for sig in q.queue if len(sig) > 0])
 		mgmt.push(tx)
 
+	# experimental... do not use. working on LAN for now
 	def remoteSign(self, ip, port):
 		s = socket.socket()
 		s.connect((ip, port))
@@ -245,6 +248,17 @@ secondSecret (str) -- a valid utf-8 encoded string
 			self._stop_setter_daemon = _setter(self, secondSecret)
 		else:
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
+
+
+def getVoterContribution(wlt):
+	data = {}
+	total_votes = float(wlt.delegate["vote"])
+	for voter in wlt.voters:
+		voter_addr = voter["address"]
+		nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
+		if nb_votes > 0:
+			data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
+	return data
 
 # used by Wallet.sendMultisignArk
 def askRemoteSignature(conn, data, q):

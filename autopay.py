@@ -1,13 +1,14 @@
 # -*- encoding -*-
 from arky.util import getArkPrice
-from arky import api, wallet
-import os, json, math, requests
+from arky import api, wallet, HOME
+import os, json, math, requests, datetime
 api.use("ark")
 
 __daily_fees__ = 5./30 # daily server cost
-__pythoners__ = ""
-__investments__ = ""
+__pythoners__ = 'APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY'
+__investments__ = 'AX8fQaCX73LR8DT8bAQ9atst7yDxcVhEfp'
 __exchange__ = ""
+
 
 # screen command line
 from optparse import OptionParser
@@ -19,16 +20,6 @@ parser.add_option("-w", "--wallet", dest="wallet", help="wallet file you want to
 
 def ARK2USD(value): return value * getArkPrice("usd")
 def USD2ARK(value): return value / getArkPrice("usd")
-
-def getVoterContribution(wlt):
-	data = {}
-	total_votes = float(wlt.delegate["vote"])
-	for voter in wlt.voters:
-		voter_addr = voter["address"]
-		nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
-		if nb_votes > 0:
-			data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
-	return data
 
 if len(args) == 1 and os.path.exists(args[0]):
 	in_ = open(args[0])
@@ -43,33 +34,39 @@ elif options.wallet:
 else:
 	raise Exception("Can not do something for now !")
 
-# do something
-contributors = getVoterContribution(wlt)
-amount = wlt.balance/100000000
-print("amount         :", amount)
-node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7)) # ARK to be exchanged for node fees payment
-# compute fees
-fees = 0.1 * (len(contributors) + 3)
-print("total fees     :", fees)
+logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d"))
+try: os.makedirs(os.path.dirname(logfile))
+except: pass
+log = open(os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d")), "w")
+
+amount = wlt.balance
+log.write("delegate amount : A%.8f\n" % amount)
+# ARK to be exchanged for node fees payment
+node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7))
+log.write("node fees       : A%.8f\n" % node_invest)
+contribution = wlt.contribution
+fees = 0.1 * (len(contribution) + 3)
+log.write("total fees      : A%.8f\n\n" % fees)
+
 # part to be distributed
 share = amount - node_invest - fees
-print("share          :", share)
+log.write("Share           : A%.8f\n" % share)
 pythoners = 0.15*share
-print("For pythoners  :", pythoners)
+log.write("For pythoners   : A%.8f\n" % pythoners)
 investments = 0.6*share
-print("For investments:", investments)
+log.write("For investments : A%.8f\n" % investments)
 voters = 0.25*share
-print("For voters     :", voters)
+log.write("For voters      : A%.8f\n" % voters)
 
-print("\nTransfering ARK...")
-for addr,ratio in contributors.items():
+log.write("\nFor arky contributors :\n")
+for addr,ratio in contribution.items():
 	amount = voters*ratio
 	if amount > 0.:
-		print("sending A%.8f to %s", (amount, addr))
+		log.write("%s : A%.8f\n" % (addr, amount))
 		wlt.sendArk(amount, addr, vendorField="Arky weekly refund. Thanks for you contribution !")
 
-# wlt.sendArk(pythoners, __pythoners__)
-# wlt.sendArk(investments, __investments__)
+wlt.sendArk(pythoners, __pythoners__)
+wlt.sendArk(investments, __investments__)
 # wlt.sendArk(node_invest, __exchange__)
 
 wallet.mgmt.join()

@@ -67,6 +67,11 @@ NETWORKS = ArkyDict(
 		"bip32"         : ArkyDict(public=0x043587cf, private=0x04358394),
 		"pubKeyHash"    : b"\x52",
 		"wif"           : b"\xef",
+	}, devnet={
+		"messagePrefix" : b"\x18Ark Testnet Signed Message:\n",
+		"bip32"         : ArkyDict(public=0x043587cf, private=0x04358394),
+		"pubKeyHash"    : b"\x52",
+		"wif"           : b"\xef",
 	}, ark={
 		"messagePrefix" : b"\x18Ark Signed Message:\n",
 		"bip32"         : ArkyDict(public=0x0488b21e, private=0x0488ade4),

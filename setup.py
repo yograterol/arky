@@ -24,10 +24,10 @@ kw.update(**{
 	"long_description": long_description.read(),
 	"packages": ["arky", "arky.api", "arky.util"],
 	"scripts":["delegate.py"],
-	"install_requires": ["requests", "ecdsa", "pytz", "base58"], #, "docopt"],
+	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt"],
 	"license": "Copyright 2015-2016, Toons, BSD licence",
 	"classifiers": [
-		'Development Status :: 4 - Beta',
+		'Development Status :: 3 - Alpha',
 		'Environment :: Console',
 		'Environment :: Web Environment',
 		'Intended Audience :: Developers',

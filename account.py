@@ -10,6 +10,7 @@ Usage: account use (<network>)
        account register delegate (<username>)
        account register secondSecret (<secret>)
        account vote [-u <list>] [-d <list>]
+       account contribution
        account send (<amount>) (<recipientId>) [<vendorField>]
        account save (<wallet>])
        account close
