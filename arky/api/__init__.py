@@ -2,7 +2,7 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import cfg, ArkyDict, choose, NETWORKS
+from .. import cfg, ArkyDict, choose, setInterval, NETWORKS
 import sys, json, requests, traceback, datetime, pytz
 UTC = pytz.UTC
 
@@ -182,11 +182,12 @@ NetworkError: Unknown bitcoin2 network properties
 			"http://5.39.9.248:4000",
 			"http://5.39.9.249:4000"
 		] if network == "testnet" else [
-			"http://167.114.29.42:4000"
+			"http://167.114.43.33:4000"
 		])
 	else:
 		# in js month value start from 0, in python month value start from 1
-		cfg.__BEGIN_TIME__ = datetime.datetime(2017, 2, 21, 19, 0, 0, 0, tzinfo=UTC)
+		# cfg.__BEGIN_TIME__ = datetime.datetime(2017, 2, 21, 19, 0, 0, 0, tzinfo=UTC)
+		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "mainnet"
 		cfg.__URL_BASE__ = choose([
 			"http://5.39.9.245:4000",
@@ -205,3 +206,15 @@ NetworkError: Unknown bitcoin2 network properties
 	})
 # initailize testnet by default
 use("testnet")
+
+@setInterval(500)
+def rotatePeer():
+	try: peer = choose(Peer.getPeersList().get("peers", []))
+	except: peer = {}
+	if "string" in peer:
+		old_one = cfg.__URL_BASE__
+		cfg.__URL_BASE__ = "http://" + peer["string"]
+		try: success = Loader.getNethash().get("success", False)
+		except: success = False
+		if success: cfg.__LOG__.put({"API info": "using peer %s" % cfg.__URL_BASE__})
+		else: cfg.__URL_BASE__ = old_one

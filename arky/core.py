@@ -5,7 +5,7 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, setInterval, choose, arkydify
+from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, choose, arkydify
 import base58, struct, hashlib, binascii, requests, json
 
 # byte as int conversion
@@ -495,16 +495,3 @@ def sendMultiple(*transactions, **kw):
 	result = ArkyDict()
 	for transaction in transactions:
 		sendTransaction(transaction, secret=kw.get('secret', None), secondSecret=kw.get('secondSecret', None))
-
-
-@setInterval(500)
-def rotatePeer():
-	try: peer = choose(api.Peer.getPeersList().get("peers", []))
-	except: peer = {}
-	if "string" in peer:
-		old_one = cfg.__URL_BASE__
-		cfg.__URL_BASE__ = "http://" + peer["string"]
-		try: success = api.Loader.getLoadingStatus().get("success", False)
-		except: success = False
-		if success: cfg.__LOG__.put({"API info": "using peer %s" % cfg.__URL_BASE__})
-		else: cfg.__URL_BASE__ = old_one

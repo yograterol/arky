@@ -12,13 +12,32 @@ Install
 Ubuntu
 ^^^^^^
 
-Open a terminal and type : ``sudo pip install arky`` or ``sudo pip3 install arky``
+Open a terminal and type :
 
+``sudo pip install arky``
+
+If you work with ``python3``
+
+``sudo pip3 install arky``
+
+For development version
+
+``sudo pip install git+https://github.com/Moustikitos/arky.git``
+
+If you work with ``python3``
+
+``sudo pip3 install git+https://github.com/Moustikitos/arky.git``
 
 Windows 
 ^^^^^^^
 
-Run a command as Administrator and type : ``pip install arky``
+Run a command as Administrator and type :
+
+``pip install arky``
+
+For development version
+
+``pip install git+https://github.com/Moustikitos/arky.git``
 
 Using ``arky``
 ==============

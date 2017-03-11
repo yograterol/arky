@@ -244,7 +244,7 @@ secondSecret (str) -- a valid utf-8 encoded string
 					cfg.__LOG__.put({"API info": "Second signature set for %s" % self})
 			if hasattr(self, "_stop_setter_daemon"):
 				self._stop_setter_daemon.set()
-				delattr(obj, "_stop_setter_daemon")
+				delattr(self, "_stop_setter_daemon")
 			self._stop_setter_daemon = _setter(self, secondSecret)
 		else:
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
@@ -252,12 +252,13 @@ secondSecret (str) -- a valid utf-8 encoded string
 
 def getVoterContribution(wlt):
 	data = {}
-	total_votes = float(wlt.delegate["vote"])
-	for voter in wlt.voters:
-		voter_addr = voter["address"]
-		nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
-		if nb_votes > 0:
-			data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
+	if wlt.delegate:
+		total_votes = float(wlt.delegate["vote"])
+		for voter in wlt.voters:
+			voter_addr = voter["address"]
+			nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
+			if nb_votes > 0:
+				data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
 	return data
 
 # used by Wallet.sendMultisignArk
