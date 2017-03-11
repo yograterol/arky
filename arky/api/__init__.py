@@ -181,9 +181,8 @@ NetworkError: Unknown bitcoin2 network properties
 			"http://5.39.9.247:4000",
 			"http://5.39.9.248:4000",
 			"http://5.39.9.249:4000"
-		] if network == "testnet" else [
-			"http://167.114.43.33:4000"
 		])
+
 	else:
 		# in js month value start from 0, in python month value start from 1
 		# cfg.__BEGIN_TIME__ = datetime.datetime(2017, 2, 21, 19, 0, 0, 0, tzinfo=UTC)
