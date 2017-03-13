@@ -22,11 +22,11 @@ If you work with ``python3``
 
 For development version
 
-``sudo pip install git+https://github.com/Moustikitos/arky.git``
+``sudo -H pip install git+https://github.com/Moustikitos/arky.git``
 
 If you work with ``python3``
 
-``sudo pip3 install git+https://github.com/Moustikitos/arky.git``
+``sudo -H pip3 install git+https://github.com/Moustikitos/arky.git``
 
 Windows 
 ^^^^^^^

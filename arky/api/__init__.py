@@ -12,7 +12,7 @@ class NetworkError(Exception): pass
 def get(api, dic={}, **kw):
 	returnkey = kw.pop("returnKey", False)
 	try:
-		text = requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw)).text
+		text = requests.get(cfg.__URL_BASE__+api, params=dict(dic, **kw), timeout=5).text
 		data = json.loads(text)
 	except Exception as error:
 		if hasattr(error, "__traceback__"):

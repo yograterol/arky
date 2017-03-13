@@ -5,7 +5,6 @@ from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from docopt import docopt
 import os, sys, imp, shlex, traceback, binascii
 
-__DEBUG__ = True if sys.argv[-1] in ["-d", "--debug"] else False
 input = raw_input if not __PY3__ else input 
 
 # return True if it runs from a frozen script (py2exe, cx_Freeze...)
@@ -20,6 +19,8 @@ ROOT = os.path.normpath(os.path.join(
 	os.path.abspath(os.path.dirname(sys.executable) if main_is_frozen() else os.path.dirname(__file__)),
 	".wallet")
 )
+
+LINES = [line for line in [l.strip() for l in sys.argv[1].split(";")] if line != ""] if len(sys.argv) > 1 else []
 PROMPT = "@ %s> " % cfg.__NET__
 WALLET = None
 
@@ -27,7 +28,7 @@ try: os.makedirs(ROOT)
 except:pass
 
 commands = {
-	"connect": "Usage: connect (<peer>)",
+	"connect": "Usage: connect [<peer>]",
 	"use" : "Usage: use (<network>)\n",
 	"account": """
 Usage: account open [[<secret> [<2ndSecret>]] | [-a <address>]]
@@ -50,8 +51,34 @@ Options:
 """
 }
 
+def _execute(line):
+	argv = [l for l in line.split(" ") if l != ""]
+	cmd = argv[0]
+	doc = commands.get(cmd, False)
+	if doc:
+		try:
+			arguments = docopt(doc, argv=argv[1:])
+		except:
+			print("bad command '%s'" % line)
+			return False
+		else:
+			func = COMMANDS.get(cmd, False)
+			if func:
+				try:
+					func(arguments)
+					return True
+				except Exception as error:
+					print(error)
+					return False
+			else:
+				print("Not implemented yet")
+				return False
+	else:
+		print("bad command '%s'" % line)
+		return False
+
 @setInterval(10)
-def secondSignatureSetter(wlt, passphrase):
+def _secondSignatureSetter(wlt, passphrase):
 	try: wlt.secondSecret = passphrase
 	except SecondSignatureError: pass
 	else:
@@ -59,26 +86,35 @@ def secondSignatureSetter(wlt, passphrase):
 		delattr(wlt, "_stop_2ndSignature_daemon")
 		WALLET.save(os.path.join(ROOT, WALLET.address+".awt"))
 
-def checkWallet(wlt):
+def _checkWallet(wlt):
 	if isinstance(wlt, wallet.Wallet) and wlt.account != {}: return True
 	else: print("Account not loaded or does not exists in blockchain yet")
 	return False
 
-def prettyPrint(dic, tab="    "):
+def _prettyPrint(dic, tab="    "):
 	if len(dic):
 		maxlen = max([len(e) for e in dic.keys()])
 		for k,v in dic.items():
 			if isinstance(v, dict):
 				print(tab + "%s:" % k.ljust(maxlen))
-				prettyPrint(v, tab*2)
+				_prettyPrint(v, tab*2)
 			else:
 				print(tab + "%s: %s" % (k.ljust(maxlen),v))
 	else:
 		print("Nothing here")
 
-def getAccount():
+def _getAccount():
 	start = "A" if cfg.__NET__ == "mainnet" else "a"
 	return [f for f in os.listdir(ROOT) if f.endswith(".awt") and f.startswith(start)]
+
+def connect(param):
+	if param["<peer>"]:
+		old_url = cfg.__URL_BASE__
+		cfg.__URL_BASE__ = "http://" + param["<peer>"]
+		test = api.Block.getNethash()
+		_prettyPrint(api.Block.getNethash())
+		if test == {}: cfg.__URL_BASE__ = old_url
+	print("    Actual peer : %s" % cfg.__URL_BASE__)
 
 def use(param):
 	global PROMPT, WALLET
@@ -101,7 +137,7 @@ def account(param):
 		elif param["<secret>"]:
 			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"))
 		else:
-			names = getAccount()
+			names = _getAccount()
 			nb_name = len(names)
 			if nb_name > 1:
 				for i in range(nb_name):
@@ -124,20 +160,20 @@ def account(param):
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
 
 	elif param["status"]:
-		if checkWallet(WALLET):
-			if WALLET.delegate: prettyPrint(WALLET.delegate)
-			else: prettyPrint(WALLET.account)
+		if _checkWallet(WALLET):
+			if WALLET.delegate: _prettyPrint(WALLET.delegate)
+			else: _prettyPrint(WALLET.account)
 
 	elif param["balance"]:
-		if checkWallet(WALLET):
+		if _checkWallet(WALLET):
 			acc = WALLET.account
-			prettyPrint({
+			_prettyPrint({
 				"confirmed": float(acc["balance"])/100000000,
 				"unconfirmed": float(acc["unconfirmedBalance"])/100000000
 			})
 
 	elif param["register"]:
-		if checkWallet(WALLET):
+		if _checkWallet(WALLET):
 			if param["2ndSecret"]:
 				secondSecret = param["<secret>"].encode("ascii")
 				newPublicKey = binascii.hexlify(core.getKeys(secondSecret).public)
@@ -146,16 +182,16 @@ def account(param):
 				if hasattr(WALLET, "_stop_2ndSignature_daemon"):
 					WALLET._stop_2ndSignature_daemon.set()
 					delattr(WALLET, "_stop_2ndSignature_daemon")
-				WALLET._stop_2ndSignature_daemon = secondSignatureSetter(WALLET, secondSecret)
+				WALLET._stop_2ndSignature_daemon = _secondSignatureSetter(WALLET, secondSecret)
 
 			else:
 				username = param["<username>"].encode("ascii").decode()
 				tx = WALLET._generate_tx(type=2, asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=WALLET.publicKey)))
 			
-			prettyPrint(core.sendTransaction(tx))
+			_prettyPrint(core.sendTransaction(tx))
 
 	elif param["vote"]:
-		if checkWallet(WALLET):
+		if _checkWallet(WALLET):
 			votes = WALLET.votes
 			up = param["--up"]
 			down = param["--down"]
@@ -170,13 +206,13 @@ def account(param):
 			# send votes
 			if len(usernames):
 				tx = WALLET._generate_tx(type=3, recipientId=WALLET.address, asset=ArkyDict(votes=usernames))
-				prettyPrint(core.sendTransaction(tx))
+				_prettyPrint(core.sendTransaction(tx))
 			else:
 				print(WALLET.votes)
 
 	elif param["contribution"]:
-		if checkWallet(WALLET): 
-			prettyPrint(WALLET.contribution)
+		if _checkWallet(WALLET): 
+			_prettyPrint(WALLET.contribution)
 
 	elif param["send"]:
 		tx = WALLET._generate_tx(
@@ -185,7 +221,7 @@ def account(param):
 			recipientId=param["<address>"],
 			vendorField=param["<message>"]
 		)
-		prettyPrint(core.sendTransaction(tx))
+		_prettyPrint(core.sendTransaction(tx))
 
 	elif param["share"]:
 		contribution = WALLET.contribution
@@ -195,12 +231,12 @@ def account(param):
 			for addr,ratio in [(a,r) for a,r in contribution.items() if r > 0.]:
 				txs.append(WALLET._generate_tx(type=0, amount=amount*ratio, recipientId=addr, vendorField=param["<message>"]))
 			for tx in txs:
-				prettyPrint(core.sendTransaction(tx))
+				_prettyPrint(core.sendTransaction(tx))
 		else:
 			print("No contributors to share A%.8f with" % float(param["<amount>"]))
 
 	elif param["save"]:
-		if checkWallet(WALLET):
+		if _checkWallet(WALLET):
 			name = param["<wallet>"]
 			if not name.endswith(".awt"): name += ".awt"
 			WALLET.save(name)
@@ -213,15 +249,20 @@ def account(param):
 			PROMPT = "@ %s> " % cfg.__NET__
 
 	elif param["clear"]:
-		for filename in getAccount():
+		for filename in _getAccount():
 			os.remove(os.path.join(ROOT, filename))
 			PROMPT = "@ %s> " % cfg.__NET__
 
 # create a dictionary with all function defined here
-COMMANDS = dict([n,f] for n,f in globals().items() if callable(f))
+COMMANDS = dict([n,f] for n,f in globals().items() if callable(f) and not n.startswith("_"))
 
 if __name__ == '__main__':
 	exit = False
+
+	if len(LINES):
+		for line in LINES:
+			if not _execute(line):
+				break
 
 	while not exit:
 		# wait for command line
@@ -247,8 +288,8 @@ if __name__ == '__main__':
 							try:
 								func(arguments)
 							except Exception as error:
-								if hasattr(error, "__traceback__") and __DEBUG__:
-									print("".join(traceback.format_tb(error.__traceback__)).rstrip())
+								# if hasattr(error, "__traceback__") and __DEBUG__:
+								# 	print("".join(traceback.format_tb(error.__traceback__)).rstrip())
 								print(error)
 						else:
 							print("Not implemented yet")
