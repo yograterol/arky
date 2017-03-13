@@ -30,6 +30,8 @@ var/
 .installed.cfg
 *.egg
 *tests/
+*.amd64/
+*.win32/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -151,3 +153,5 @@ test/deadwhile.py
 test/peerloop.py
 test/killingpool.py
 test/devnet-peers.py
+test/ghostfaceuk.py
+autopay.py

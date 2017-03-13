@@ -5,7 +5,8 @@ from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from docopt import docopt
 import os, sys, imp, shlex, traceback, binascii
 
-if not __PY3__: input = raw_input
+__DEBUG__ = True if sys.argv[-1] in ["-d", "--debug"] else False
+input = raw_input if not __PY3__ else input 
 
 # return True if it runs from a frozen script (py2exe, cx_Freeze...)
 def main_is_frozen(): return (
@@ -26,24 +27,26 @@ try: os.makedirs(ROOT)
 except:pass
 
 commands = {
-      "use" : "Usage: use (<network>)\n",
-      "account": """
+	"connect": "Usage: connect (<peer>)",
+	"use" : "Usage: use (<network>)\n",
+	"account": """
 Usage: account open [[<secret> [<2ndSecret>]] | [-a <address>]]
-       account status
-       account register (<username>)
-       account register 2ndSecret (<secret>)
-       account vote [-u <list>] [-d <list>]
-       account contribution
-       account send (<amount> <address>) [<message>]
-       account share (<amount>) [<message>]
        account save (<wallet>)
        account clear
        account close
+       account status
+       account balance
+       account contributors
+       account register (<username>)
+       account register 2ndSecret (<secret>)
+       account vote [-u <list>] [-d <list>]
+       account send (<amount> <address>) [<message>]
+       account share (<amount>) [<message>]
 
 Options:
--u <list>, --up <list>            coma-separated username list to be voted up (no spaces)
--d <list>, --down <list>          coma-separated username list to be voted down (no spaces)
--a <address>, --account <address> registered ark address
+-u <list> --up <list>            coma-separated username list to be voted up (no spaces)
+-d <list> --down <list>          coma-separated username list to be voted down (no spaces)
+-a <address> --account <address> registered ark address
 """
 }
 
@@ -94,9 +97,9 @@ def account(param):
 			else:
 				print("Ark address %s not registered yet" % param["--address"])
 		elif param["<2ndSecret>"]:
-			WALLET = wallet.Wallet(param["<secret>"].encode("utf8"), param["<2ndSecret>"].encode("utf8"))
+			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"), param["<2ndSecret>"].encode("ascii"))
 		elif param["<secret>"]:
-			WALLET = wallet.Wallet(param["<secret>"].encode("utf8"))
+			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"))
 		else:
 			names = getAccount()
 			nb_name = len(names)
@@ -125,10 +128,18 @@ def account(param):
 			if WALLET.delegate: prettyPrint(WALLET.delegate)
 			else: prettyPrint(WALLET.account)
 
+	elif param["balance"]:
+		if checkWallet(WALLET):
+			acc = WALLET.account
+			prettyPrint({
+				"confirmed": float(acc["balance"])/100000000,
+				"unconfirmed": float(acc["unconfirmedBalance"])/100000000
+			})
+
 	elif param["register"]:
 		if checkWallet(WALLET):
 			if param["2ndSecret"]:
-				secondSecret = param["<secret>"].encode("utf8")
+				secondSecret = param["<secret>"].encode("ascii")
 				newPublicKey = binascii.hexlify(core.getKeys(secondSecret).public)
 				newPublicKey = newPublicKey.decode() if isinstance(newPublicKey, bytes) else newPublicKey
 				tx = WALLET._generate_tx(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey)))
@@ -160,6 +171,8 @@ def account(param):
 			if len(usernames):
 				tx = WALLET._generate_tx(type=3, recipientId=WALLET.address, asset=ArkyDict(votes=usernames))
 				prettyPrint(core.sendTransaction(tx))
+			else:
+				print(WALLET.votes)
 
 	elif param["contribution"]:
 		if checkWallet(WALLET): 
@@ -188,7 +201,9 @@ def account(param):
 
 	elif param["save"]:
 		if checkWallet(WALLET):
-			WALLET.save(param["<wallet>"])
+			name = param["<wallet>"]
+			if not name.endswith(".awt"): name += ".awt"
+			WALLET.save(name)
 
 	elif param["close"]:
 		if WALLET:
@@ -232,8 +247,11 @@ if __name__ == '__main__':
 							try:
 								func(arguments)
 							except Exception as error:
-								if hasattr(error, "__traceback__"):
+								if hasattr(error, "__traceback__") and __DEBUG__:
 									print("".join(traceback.format_tb(error.__traceback__)).rstrip())
 								print(error)
+						else:
+							print("Not implemented yet")
 				else:
-					print("\n".join(["---\n%s\n%s\n" % (k,v.strip()) for k,v in commands.items()]))
+					print("\narky-cli © Toons\nHere is a list of command\n")
+					print("\n".join(["-- %s --\n%s\n" % (k,v.strip()) for k,v in commands.items()]))
