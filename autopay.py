@@ -1,7 +1,7 @@
 # -*- encoding -*-
 from arky.util import getArkPrice
 from arky import api, wallet, HOME
-import os, json, math, requests, datetime
+import os, json, math, datetime
 api.use("ark")
 
 __daily_fees__ = 5./30 # daily server cost

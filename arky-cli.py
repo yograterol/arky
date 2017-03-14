@@ -210,7 +210,7 @@ def account(param):
 			else:
 				print(WALLET.votes)
 
-	elif param["contribution"]:
+	elif param["contributors"]:
 		if _checkWallet(WALLET): 
 			_prettyPrint(WALLET.contribution)
 
@@ -288,8 +288,8 @@ if __name__ == '__main__':
 							try:
 								func(arguments)
 							except Exception as error:
-								# if hasattr(error, "__traceback__") and __DEBUG__:
-								# 	print("".join(traceback.format_tb(error.__traceback__)).rstrip())
+								if hasattr(error, "__traceback__"):
+									print("".join(traceback.format_tb(error.__traceback__)).rstrip())
 								print(error)
 						else:
 							print("Not implemented yet")
