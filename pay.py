@@ -19,7 +19,7 @@ if len(args) == 1 and os.path.exists(args[0]):
 	conf = json.loads(content.decode() if isinstance(content, bytes) else content)
 	wlt = wallet.Wallet(conf["forging"]["secret"][0])
 elif options.secret:
-	wlt = wallet.Wallet(option.secret)
+	wlt = wallet.Wallet(options.secret)
 elif options.wallet:
 	wlt = wallet.open(options.wallet)
 else:
