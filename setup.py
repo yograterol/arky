@@ -24,7 +24,7 @@ kw.update(**{
 	"long_description": long_description.read(),
 	"packages": ["arky", "arky.api", "arky.util"],
 	"scripts":["arky-cli.py"],
-	"install_requires": ["requests", "ecdsa", "pytz", "base58"],
+	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt"],
 	"license": "Copyright 2015-2016, Toons, BSD licence",
 	"classifiers": [
 		'Development Status :: 6 - Mature',
