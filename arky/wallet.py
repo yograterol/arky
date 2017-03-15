@@ -50,8 +50,8 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 	votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
 	# list of voters given to wallet
 	voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
-	# return voter contribution ratio
-	contribution = property(lambda obj: getVoterContribution(obj), None, None, "")
+	# return voter contributors ratio
+	contributors = property(lambda obj: getVoterContribution(obj), None, None, "")
 	# return wallet balance in ARK
 	balance = property(lambda obj: int(obj.account.get("balance", 0))/100000000., None, None, "")
 	# return wallet WIF addres
@@ -236,9 +236,8 @@ secondSecret (str) -- a valid utf-8 encoded string
 			# automaticaly set secondSignature when transaction is applied
 			@setInterval(10)
 			def _setter(obj, passphrase):
-				try: obj.secondSecret = passphrase
-				except SecondSignatureError: pass
-				else:
+				if obj.account.get('secondSignature', False):
+					obj.secondSecret = passphrase
 					obj._stop_setter_daemon.set()
 					delattr(obj, "_stop_setter_daemon")
 					cfg.__LOG__.put({"API info": "Second signature set for %s" % self})

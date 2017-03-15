@@ -23,7 +23,7 @@ kw.update(**{
 	"description": "Pythonic way to work with Ark.io EcoSystem.",
 	"long_description": long_description.read(),
 	"packages": ["arky", "arky.api", "arky.util"],
-	"scripts":["delegate.py"],
+	"scripts":["arky-cli.py"],
 	"install_requires": ["requests", "ecdsa", "pytz", "base58"],
 	"license": "Copyright 2015-2016, Toons, BSD licence",
 	"classifiers": [
