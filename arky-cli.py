@@ -28,9 +28,21 @@ try: os.makedirs(ROOT)
 except:pass
 
 commands = {
-	"connect": "Usage: connect [<peer>]",
-	"use" : "Usage: use (<network>)\n",
+	"connect": """
+DSC MSG
+
+Usage: connect [<peer>]
+""",
+
+	"use" : """
+DSC MSG
+
+Usage: use (<network>)\n
+""",
+
 	"account": """
+DSC MSG
+
 Usage: account open [[<secret> [<2ndSecret>]] | [-a <address>]]
        account save (<wallet>)
        account clear

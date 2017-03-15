@@ -1,6 +1,5 @@
 # -*- encoding -*-
-from arky.util import getArkPrice
-from arky import api, wallet, HOME
+from arky import api, wallet
 import os, json, datetime
 api.use("ark")
 
@@ -25,10 +24,10 @@ elif options.wallet:
 else:
 	raise Exception("Can not do something for now !")
 
-# here you put ARK addresses except for voters... it is handled
+# here you put ARK addresses and share you want to send
 payment = {
-	"AX8fQaCX73LR8DT8bAQ9atst7yDxcVhEfp": 0.50,
-	"APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY": 0.35,
+	"AX8fQaCX73LR8DT8bAQ9atst7yDxcVhEfp": 0.60,
+	"APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY": 0.15,
 	"Voters": 0.25
 }
 
@@ -40,24 +39,29 @@ total = wlt.balance - fees
 
 out = open("accounting.csv", "a")
 
-header = [datetime.datetime.now()]
-content = [total]
+header = ["date", datetime.datetime.now(), ""]
+content = ["ARK amount", total, ""]
 
 for addr,ratio in payment.items():
-	if addr == "Voters":
-		amount = total*ratio
-		for a,r in  contribution.items():
-			share = amount*r
-			if share > 0.:
-				wlt.sendArk(share, a, vendorField="your custom message to voters here")
-				header.append(a)
-				content.append(share)
-	else:
+	if addr != "Voters":
 		share = total*ratio
 		wlt.sendArk(share, addr, vendorField="your custom message here")
 		header.append(addr)
 		content.append(share)
 
+if "Voters" in payment:
+	header.append("")
+	content.append("")
+	amount = total*payment["Voters"]
+	for a,r in  contribution.items():
+		share = amount*r
+		if share > 0.:
+			wlt.sendArk(share, a, vendorField="your custom message to voters here")
+		header.append(a)
+		content.append(share)
+
 out.write(";".join(["%s"%e for e in header])  + "\n")
 out.write(";".join(["%s"%e for e in content]) + "\n")
 out.close()
+
+wallet.mgmt.join()

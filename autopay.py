@@ -41,32 +41,54 @@ log = open(os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strf
 
 amount = wlt.balance
 log.write("delegate amount : A%.8f\n" % amount)
+header = ["Date", datetime.datetime.now(), ""]
+content = ["ARK amount", amount, ""]
 # ARK to be exchanged for node fees payment
 node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7))
 log.write("node fees       : A%.8f\n" % node_invest)
+header.append("Node fees")
+content.append(node_invest)
 contribution = wlt.contribution
+
 fees = 0.1 * (len(contribution) + 3)
 log.write("total fees      : A%.8f\n\n" % fees)
+header.append("Fees")
+content.append(fees)
+# wlt.sendArk(node_invest, __exchange__)
 
 # part to be distributed
 share = amount - node_invest - fees
 log.write("Share           : A%.8f\n" % share)
+
 pythoners = 0.15*share
 log.write("For pythoners   : A%.8f\n" % pythoners)
+header.append("Pythoners")
+content.append(pythoners)
+wlt.sendArk(pythoners, __pythoners__)
+
 investments = 0.6*share
 log.write("For investments : A%.8f\n" % investments)
+header.append("Investments")
+content.append(investments)
+wlt.sendArk(investments, __investments__)
+
 voters = 0.25*share
 log.write("For voters      : A%.8f\n" % voters)
 
 log.write("\nFor arky contributors :\n")
+header.append("")
+content.append("")
 for addr,ratio in contribution.items():
 	amount = voters*ratio
 	if amount > 0.:
-		log.write("%s : A%.8f\n" % (addr, amount))
 		wlt.sendArk(amount, addr, vendorField="Arky weekly refund. Thanks for you contribution !")
+	log.write("%s : A%.8f\n" % (addr, amount))
+	header.append(addr)
+	content.append(amount)
 
-wlt.sendArk(pythoners, __pythoners__)
-wlt.sendArk(investments, __investments__)
-# wlt.sendArk(node_invest, __exchange__)
+out = open("accounting.csv", "a")
+out.write(";".join(["%s"%e for e in header])  + "\n")
+out.write(";".join(["%s"%e for e in content]) + "\n")
+out.close()
 
 wallet.mgmt.join()

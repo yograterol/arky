@@ -155,3 +155,5 @@ test/killingpool.py
 test/devnet-peers.py
 test/ghostfaceuk.py
 autopay.py
+test/config.testnet.json
+*.csv
