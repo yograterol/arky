@@ -1,5 +1,5 @@
 # -*- encoding -*-
-from arky import api, wallet
+from arky import api, wallet, __PY3__
 import os, json, datetime
 api.use("ark")
 
@@ -33,8 +33,8 @@ payment = {
 
 if sum(payment.values()) > 1.0: raise Exception("Share is not fair enough")
 
-contribution = wlt.contribution
-fees = 0.1 * (len(contribution) + len(payment) - 1)
+contributors = wlt.contributors
+fees = 0.1 * (len(contributors) + len(payment) - 1)
 total = wlt.balance - fees
 
 out = open("accounting.csv", "a")
@@ -53,7 +53,7 @@ if "Voters" in payment:
 	header.append("")
 	content.append("")
 	amount = total*payment["Voters"]
-	for a,r in  contribution.items():
+	for a,r in  contributors.items():
 		share = amount*r
 		if share > 0.:
 			wlt.sendArk(share, a, vendorField="your custom message to voters here")

@@ -20,7 +20,6 @@ ROOT = os.path.normpath(os.path.join(
 	".wallet")
 )
 
-LINES = [line for line in [l.strip() for l in sys.argv[1].split(";")] if line != ""] if len(sys.argv) > 1 else []
 PROMPT = "@ %s> " % cfg.__NET__
 WALLET = None
 
@@ -28,22 +27,49 @@ try: os.makedirs(ROOT)
 except:pass
 
 commands = {
+# 	"execute":"""
+# This command execute an arky script file.
+
+# Usage : execute (<file>)
+# """,
+
 	"connect": """
-DSC MSG
+    This command select a specific node address to send requests to the blockchain.
+    This action is not needed and is used only by developper.
 
 Usage: connect [<peer>]
 """,
 
 	"use" : """
-DSC MSG
+    This command select the network you want to work with. Two networks are
+    presently available : ark and testnet. by default, command line interface
+    starts on testnet.
 
-Usage: use (<network>)\n
+Usage: use (<network>)
 """,
 
-	"account": """
-DSC MSG
+	"account": '''
+    This command allows you to perform all kind of transactions available within ARK
+    blockchain (except multisignature) and to check some informations.
 
-Usage: account open [[<secret> [<2ndSecret>]] | [-a <address>]]
+    The very first action to do is to link to an ARK account using link subcommand.
+
+    Example:
+    @ mainnet> account link secret
+    AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff @ mainnet>
+
+    When account is linked, keys are registers localy in .wallet directory as an
+    *.awt file according to PEM format. This way secrets are only typed once and can
+    not be read from disk.
+
+    You can remove thoses files manualy or via close or clear subcommand. No ARK are
+    stored in *.awt files. Note that *.awt files gives total access to associated
+    account within arky API.
+
+    With send and share subcommands, ratio can be used instead of float value. 63%
+    of total balance can be easily set by 63:100.
+
+Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>]  | [-w <wallet>]]
        account save (<wallet>)
        account clear
        account close
@@ -57,10 +83,30 @@ Usage: account open [[<secret> [<2ndSecret>]] | [-a <address>]]
        account share (<amount>) [<message>]
 
 Options:
--u <list> --up <list>            coma-separated username list to be voted up (no spaces)
--d <list> --down <list>          coma-separated username list to be voted down (no spaces)
+-u <list> --up <list>            coma-separated username list with no spaces
+-d <list> --down <list>          coma-separated username list with no spaces
 -a <address> --account <address> registered ark address
-"""
+-w <wallet> --wallet <wallet>    a valid *.awt pathfile
+
+Subcommands:
+    link         : link to account using secrets, Ark address or *.awt file. If
+                   secrets contains spaces, it must be enclosed by double quotes
+                   ("secret with spaces"). Note that you can use address only if
+                   you already have some *.awt files registered localy.
+    save         : save linked account to an *.awt file.
+    clear        : unlink account and delete all *.awt files registered localy.
+    close        : unlink account and delete its associated *.awt file.
+    status       : show informations about linked account.
+    balance      : show account balance in ARK.
+    contributors : show voters contributions ([address - vote weight] pairs).
+    register     : register linked account as delegate (cost 25 ARK);
+                   or
+                   register second signature to linked account (cost 5 ARK).
+    vote         : up or/and down vote delegates from linked account.
+    send         : send ARK amount to address. You can set a 64-char message.
+    share        : share ARK amount to voters if any according to their weight.
+                   You can set a 64-char message.
+'''
 }
 
 def _execute(line):
@@ -91,12 +137,12 @@ def _execute(line):
 
 @setInterval(10)
 def _secondSignatureSetter(wlt, passphrase):
-	try: wlt.secondSecret = passphrase
-	except SecondSignatureError: pass
-	else:
+	if wlt.account.get('secondSignature', False):
+		wlt.secondSecret = passphrase
 		wlt._stop_2ndSignature_daemon.set()
 		delattr(wlt, "_stop_2ndSignature_daemon")
 		WALLET.save(os.path.join(ROOT, WALLET.address+".awt"))
+		print("\n    Second signature set for %s" % wlt)
 
 def _checkWallet(wlt):
 	if isinstance(wlt, wallet.Wallet) and wlt.account != {}: return True
@@ -119,6 +165,16 @@ def _getAccount():
 	start = "A" if cfg.__NET__ == "mainnet" else "a"
 	return [f for f in os.listdir(ROOT) if f.endswith(".awt") and f.startswith(start)]
 
+def _getAmmount(amount):
+	if ":" in amount:
+		n, d = (float(e) for e in amount.split(":"))
+		return WALLET.balance * n/d
+	else:
+		return float(amount)
+
+def execute(param):
+	_prettyPrint(param)
+
 def connect(param):
 	if param["<peer>"]:
 		old_url = cfg.__URL_BASE__
@@ -137,7 +193,9 @@ def use(param):
 def account(param):
 	global PROMPT, WALLET
 
-	if param["open"]:
+	if param["link"]:
+		if param["--wallet"]:
+			WALLET = wallet.open(param["--wallet"])
 		if param["--account"]:
 			pathfile = os.path.join(ROOT, param["--account"]+".awt")
 			if os.path.exists(pathfile):
@@ -171,6 +229,12 @@ def account(param):
 		if not os.path.exists(pathfile): WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
 
+	elif param["clear"]:
+		for filename in _getAccount():
+			os.remove(os.path.join(ROOT, filename))
+		PROMPT = "@ %s> " % cfg.__NET__
+		WALLET = None
+
 	elif param["status"]:
 		if _checkWallet(WALLET):
 			if WALLET.delegate: _prettyPrint(WALLET.delegate)
@@ -195,11 +259,9 @@ def account(param):
 					WALLET._stop_2ndSignature_daemon.set()
 					delattr(WALLET, "_stop_2ndSignature_daemon")
 				WALLET._stop_2ndSignature_daemon = _secondSignatureSetter(WALLET, secondSecret)
-
 			else:
 				username = param["<username>"].encode("ascii").decode()
 				tx = WALLET._generate_tx(type=2, asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=WALLET.publicKey)))
-			
 			_prettyPrint(core.sendTransaction(tx))
 
 	elif param["vote"]:
@@ -224,45 +286,42 @@ def account(param):
 
 	elif param["contributors"]:
 		if _checkWallet(WALLET): 
-			_prettyPrint(WALLET.contribution)
+			_prettyPrint(WALLET.contributors)
 
 	elif param["send"]:
-		tx = WALLET._generate_tx(
-			type=0,
-			amount=float(param["<amount>"])*100000000,
-			recipientId=param["<address>"],
-			vendorField=param["<message>"]
-		)
-		_prettyPrint(core.sendTransaction(tx))
+		if _checkWallet(WALLET):
+			tx = WALLET._generate_tx(
+				type=0,
+				amount=_getAmmount(param["<amount>"])*100000000,
+				recipientId=param["<address>"],
+				vendorField=param["<message>"]
+			)
+			_prettyPrint(core.sendTransaction(tx))
 
 	elif param["share"]:
-		contribution = WALLET.contribution
-		if len(contribution):
-			amount = float(param["<amount>"])*100000000
-			txs = []
-			for addr,ratio in [(a,r) for a,r in contribution.items() if r > 0.]:
-				txs.append(WALLET._generate_tx(type=0, amount=amount*ratio, recipientId=addr, vendorField=param["<message>"]))
-			for tx in txs:
-				_prettyPrint(core.sendTransaction(tx))
-		else:
-			print("No contributors to share A%.8f with" % float(param["<amount>"]))
+		if _checkWallet(WALLET):
+			contributors = WALLET.contributors
+			if len(contributors):
+				share = _getAmmount(param["<amount>"])*100000000
+				for addr,ratio in [(a,r) for a,r in contributors.items() if r > 0.]:
+					tx = WALLET._generate_tx(type=0, amount=share*ratio, recipientId=addr, vendorField=param["<message>"])
+					_prettyPrint(core.sendTransaction(tx))
+			else:
+				print("No contributors to share A%.8f with" % _getAmmount(param["<amount>"]))
 
 	elif param["save"]:
 		if _checkWallet(WALLET):
 			name = param["<wallet>"]
-			if not name.endswith(".awt"): name += ".awt"
+			if not name.endswith(".awt"):
+				name += ".awt"
 			WALLET.save(name)
 
 	elif param["close"]:
-		if WALLET:
+		if _checkWallet(WALLET):
 			pathfile = os.path.join(ROOT, WALLET.address+".awt")
 			if os.path.exists(pathfile):
 				os.remove(pathfile)
-			PROMPT = "@ %s> " % cfg.__NET__
-
-	elif param["clear"]:
-		for filename in _getAccount():
-			os.remove(os.path.join(ROOT, filename))
+			WALLET = None
 			PROMPT = "@ %s> " % cfg.__NET__
 
 # create a dictionary with all function defined here
@@ -270,11 +329,6 @@ COMMANDS = dict([n,f] for n,f in globals().items() if callable(f) and not n.star
 
 if __name__ == '__main__':
 	exit = False
-
-	if len(LINES):
-		for line in LINES:
-			if not _execute(line):
-				break
 
 	while not exit:
 		# wait for command line
@@ -293,7 +347,7 @@ if __name__ == '__main__':
 					try:
 						arguments = docopt(doc, argv=argv[1:])
 					except:
-						print("\n"+commands.get(cmd).strip()+"\n")
+						print(commands.get(cmd))
 					else:
 						func = COMMANDS.get(cmd, False)
 						if func:
@@ -307,4 +361,4 @@ if __name__ == '__main__':
 							print("Not implemented yet")
 				else:
 					print("\narky-cli © Toons\nHere is a list of command\n")
-					print("\n".join(["-- %s --\n%s\n" % (k,v.strip()) for k,v in commands.items()]))
+					print("\n".join(["-- %s --%s" % (k,v) for k,v in commands.items()]))

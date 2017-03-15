@@ -157,3 +157,8 @@ test/ghostfaceuk.py
 autopay.py
 test/config.testnet.json
 *.csv
+misc/5days.py
+misc/delegate.py
+misc/devnet-peers.py
+misc/killingpool.py
+misc/peerloop.py
