@@ -30,17 +30,26 @@ payment = {
 	"APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY": 0.15,
 	"Voters": 0.25
 }
+# put here ark voter addresse to be blacklisted
 
 if sum(payment.values()) > 1.0: raise Exception("Share is not fair enough")
 
+blacklist = []
 contributors = wlt.contributors
+spare_ratio = 0.
+for addr in [a for a in blacklist if a in contributors]: 
+	spare_ratio += contributors.pop(addr)
+spare_ratio /= len(contributors)
+for addr in contributors:
+	contributors[addr] += spare_ratio
+
 fees = 0.1 * (len(contributors) + len(payment) - 1)
 total = wlt.balance - fees
 
 out = open("accounting.csv", "a")
 
-header = ["date", datetime.datetime.now(), ""]
-content = ["ARK amount", total, ""]
+header = ["Date", datetime.datetime.now(), ""]
+content = ["Amount", total, ""]
 
 for addr,ratio in payment.items():
 	if addr != "Voters":
@@ -53,11 +62,11 @@ if "Voters" in payment:
 	header.append("")
 	content.append("")
 	amount = total*payment["Voters"]
-	for a,r in  contributors.items():
-		share = amount*r
+	for addr,ratio in contributors.items():
+		share = amount*ratio
 		if share > 0.:
-			wlt.sendArk(share, a, vendorField="your custom message to voters here")
-		header.append(a)
+			wlt.sendArk(share, addr, vendorField="your custom message to voters here")
+		header.append(addr)
 		content.append(share)
 
 out.write(";".join(["%s"%e for e in header])  + "\n")

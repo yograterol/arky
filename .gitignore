@@ -162,3 +162,4 @@ misc/delegate.py
 misc/devnet-peers.py
 misc/killingpool.py
 misc/peerloop.py
+*.zip
