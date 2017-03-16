@@ -2,8 +2,6 @@
    :target: https://ark.io
    :width: 100
 
-**Arky** is the Python API for `ARK ecosystem`_.
-
 Copyright 2015-2016, **Toons**, `BSD licence`_
 
 Install
@@ -231,6 +229,5 @@ Create your delegate
    :target: http://www.vultr.com/?ref=7071726
    :width: 100
 
-.. _ARK ecosystem: https://github.com/ArkEcosystem
 .. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
