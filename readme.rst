@@ -1,4 +1,4 @@
-.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
+.. image:: https://github.com/Moustikitos/arky/raw/master/arky-logo.png
    :target: https://ark.io
    :width: 100
 
@@ -20,7 +20,7 @@ If you work with ``python3``
 
 ``sudo pip3 install arky``
 
-For development version
+From development version
 
 ``sudo -H pip install git+https://github.com/Moustikitos/arky.git``
 
@@ -42,21 +42,32 @@ For development version
 Using ``arky``
 ==============
 
-Select network
-^^^^^^^^^^^^^^
+``arky`` relies on three major elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You need to import ``api`` module first and eventualy change from ``testnet`` (default) via ``api.use`` function.
+**api package**
+
+``api`` package allows developpers to send requests to the blockchain according to `ARK API`_.
+For security reason only ``GET`` methods are implemented in ``api`` package.
 
 >>> from arky import api
 >>> api.use("ark")
+>>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
+{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
+e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
+5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
+tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
 
-``arky.core``
-^^^^^^^^^^^^^
+More on ``arky.api`` ?
+
+>>> help(api)
+
+**core module**
 
 >>> from arky import core
 >>> core.api.use("ark") # api is loaded by core
 
-``core`` module allows python developpers to interact with ARK ecosystem.
+``core`` module allows developpers to access core functions.
 
 >>> keys = core.getKeys("secret")
 >>> keys.public.hex()
@@ -79,66 +90,12 @@ More on ``arky.core`` ?
 
 >>> help(core)
 
-``arky.api``
-^^^^^^^^^^^^
-
->>> from arky import api
->>> api.use("ark")
->>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
-{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
-e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
-5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
-tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
-
-More on ``arky.api`` ?
-
->>> help(api)
-
-``arky.mgmt``
-^^^^^^^^^^^^^
-
->>> from arky import mgmt
-
-``mgmt`` deploys threaded transaction managment. Threads are automaticaly launched with ``mgmt`` module import.
-
->>> mgmt.THREADS
-[<TxMGMT(Thread-1, started 2436)>, <TxMGMT(Thread-2, started 5832)>, <TxLOG(Thread-3, started 6580)>]
-
-To send a transaction :
-
->>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4")
->>> mgmt.push(tx, "secret")
->>> tx = core.Transaction(amount=100000000, recipientId="AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4", secret="secret")
->>> mgmt.push(tx) # no secret needed here
-
-Then, check into the ``.arky.mgmt`` logfile into your `home` directory :
-
-::
-
-  ...
-  [2017-02-11 20:16:02,721] success:True - transaction:<1.00000000 ARK signed transaction type 0 from AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff to AQpqHHVFfEgwahYja9DpfCrKMyMeCuSav4> - transactionIds:['df65053eea80fa4ce035c79698554f725f189ee653c474bbf722df99cf513ebe']
-
-To stop threads :
-
->>> mgmt.stop()
->>> mgmt.THREADS
-[<TxMGMT(Thread-1, stopped 2436)>, <TxMGMT(Thread-2, stopped 5832)>, <TxLOG(Thread-3, stopped 6580)>]
-
-To start threads, you may change thread number for transaction managment :
-
->>> mgmt.cfg.__NB_THREAD__ = 1 # only one TxMGMT thread
->>> mgmt.start()
->>> mgmt.THREADS # last thread is always a TxLOG
-[<TxMGMT(Thread-4, started 1988)>, <TxLOG(Thread-5, started 6240)>]
-
-
-``arky.wallet``
-^^^^^^^^^^^^^^^
+**wallet module**
 
 >>> from arky import wallet
 >>> wallet.api.use("ark") # api is loaded by wallet
 
-``Wallet`` class allows developper to send ARK, to register address as delegate and to vote for delegates.
+``Wallet`` class allows developpers to send ARK, register address as delegate and vote for delegates.
 
 >>> w = wallet.Wallet("secret")
 >>> w.delegate
@@ -146,7 +103,7 @@ False
 >>> w.registered
 False
 >>> w.balance
-1076464600000
+10764.646
 >>> w.candidates # valid username that can be up/down voted
 ['techbytes', '4miners.net', 'kostik', 'boldninja', 'sonobit', 'marco229', 'dotnet70', 'arkfuturesma
 rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmirnov', 'ark_faucet', 
@@ -166,6 +123,92 @@ More on ``arky.wallet`` ?
 
 >>> help(wallet)
 
+
+Easy way to use ``arky``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Use command line interface**
+
+``arky-cli`` script provides a command line interface that simplify interaction with ARK blockchain.
+Once script is executed, it loads all needed environment to execute simple commands. Type ``exit`` to close the interface
+
+::
+
+  arky-cli © Toons
+  Here is a list of command
+
+  -- connect --
+      This command select a specific node address to send requests to the blockchain.
+      This action is not needed and is used only by developper.
+
+  Usage: connect [<peer>]
+
+  -- use --
+      This command select the network you want to work with. Two networks are
+      presently available : ark and testnet. by default, command line interface
+      starts on testnet.
+
+  Usage: use (<network>)
+
+  -- account --
+      This command allows you to perform all kind of transactions available within ARK
+      blockchain (except multisignature) and to check some informations.
+
+      The very first action to do is to link to an ARK account using link subcommand.
+
+      Example:
+      @ mainnet> account link secret
+      AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff @ mainnet>
+
+      When account is linked, keys are registers localy in .wallet directory as an
+      *.awt file according to PEM format. This way secrets are only typed once and can
+      not be read from disk.
+
+      You can remove thoses files manualy or via close or clear subcommand. No ARK are
+      stored in *.awt files. Note that *.awt files gives total access to associated
+      account within arky API.
+
+      With send and share subcommands, ratio can be used instead of float value. 63%
+      of total balance can be easily set by 63:100.
+
+  Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>]  | [-w <wallet>]]
+         account save (<wallet>)
+         account clear
+         account close
+         account status
+         account balance
+         account contributors
+         account register (<username>)
+         account register 2ndSecret (<secret>)
+         account vote [-u <list>] [-d <list>]
+         account send (<amount> <address>) [<message>]
+         account share (<amount>) [<message>]
+
+  Options:
+  -u <list> --up <list>            coma-separated username list with no spaces
+  -d <list> --down <list>          coma-separated username list with no spaces
+  -a <address> --account <address> registered ark address
+  -w <wallet> --wallet <wallet>    a valid *.awt pathfile
+
+  Subcommands:
+      link         : link to account using secrets, Ark address or *.awt file. If
+                     secrets contains spaces, it must be enclosed by double quotes
+                     ("secret with spaces"). Note that you can use address for
+                     only *.awt files registered localy.
+      save         : save linked account to an *.awt file.
+      clear        : unlink account and delete all *.awt files registered localy.
+      close        : unlink account and delete its associated *.awt file.
+      status       : show informations about linked account.
+      balance      : show account balance in ARK.
+      contributors : show voters contributions ([address - vote weight] pairs).
+      register     : register linked account as delegate (cost 25 ARK);
+                     or
+                     register second signature to linked account (cost 5 ARK).
+      vote         : up or/and down vote delegates from linked account.
+      send         : send ARK amount to address. You can set a 64-char message.
+      share        : share ARK amount to voters if any according to their weight.
+                     You can set a 64-char message.
+
 Support this project
 ====================
 
@@ -176,6 +219,10 @@ Support this project
 
 ``16SPHzxaxjCYccnJCRY3RG711oybQj4KZ4``
 
+.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
+   :height: 30
+
+``A...``
 
 Create your delegate
 ====================
@@ -184,6 +231,6 @@ Create your delegate
    :target: http://www.vultr.com/?ref=7071726
    :width: 100
 
-
 .. _ARK ecosystem: https://github.com/ArkEcosystem
 .. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
+.. _ARK API: https://github.com/ArkEcosystem/ark-api
