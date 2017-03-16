@@ -154,7 +154,6 @@ test/peerloop.py
 test/killingpool.py
 test/devnet-peers.py
 test/ghostfaceuk.py
-autopay.py
 test/config.testnet.json
 *.csv
 misc/5days.py

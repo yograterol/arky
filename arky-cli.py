@@ -91,8 +91,8 @@ Options:
 Subcommands:
     link         : link to account using secrets, Ark address or *.awt file. If
                    secrets contains spaces, it must be enclosed by double quotes
-                   ("secret with spaces"). Note that you can use address only if
-                   you already have some *.awt files registered localy.
+                   ("secret with spaces"). Note that you can use address for 
+                   only *.awt files registered localy.
     save         : save linked account to an *.awt file.
     clear        : unlink account and delete all *.awt files registered localy.
     close        : unlink account and delete its associated *.awt file.
@@ -142,7 +142,7 @@ def _secondSignatureSetter(wlt, passphrase):
 		wlt._stop_2ndSignature_daemon.set()
 		delattr(wlt, "_stop_2ndSignature_daemon")
 		WALLET.save(os.path.join(ROOT, WALLET.address+".awt"))
-		print("\n    Second signature set for %s" % wlt)
+		print("\n    Second signature set for %s\n%s" % (wlt.address, PROMPT), end="")
 
 def _checkWallet(wlt):
 	if isinstance(wlt, wallet.Wallet) and wlt.account != {}: return True

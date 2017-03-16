@@ -30,10 +30,8 @@ payment = {
 	"APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY": 0.15,
 	"Voters": 0.25
 }
+
 # put here ark voter addresse to be blacklisted
-
-if sum(payment.values()) > 1.0: raise Exception("Share is not fair enough")
-
 blacklist = []
 contributors = wlt.contributors
 spare_ratio = 0.
@@ -42,6 +40,9 @@ for addr in [a for a in blacklist if a in contributors]:
 spare_ratio /= len(contributors)
 for addr in contributors:
 	contributors[addr] += spare_ratio
+
+if sum(payment.values()) > 1.0:
+	raise Exception("Share is not fair enough")
 
 fees = 0.1 * (len(contributors) + len(payment) - 1)
 total = wlt.balance - fees
