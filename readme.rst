@@ -225,6 +225,8 @@ Once script is executed, it loads all needed environment to execute simple comma
       send         : send ARK amount to address. You can set a 64-char message.
       share        : share ARK amount with voters (if any) according to their
                      weight. You can set a 64-char message.
+      support      : share ARK amount to relay nodes according to their vote rate.
+                     You can set a 64-char message.
 
 Support this project
 ====================
