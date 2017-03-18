@@ -196,7 +196,8 @@ Once script is executed, it loads all needed environment to execute simple comma
          account vote [-u <list>] [-d <list>]
          account send (<amount> <address>) [<message>]
          account share (<amount>) [-b <blacklist> -f <floor> -c <ceil> <message>]
-  
+         account support (<amount>) [<message>]
+
   Options:
   -u <list> --up <list>                  comma-separated username list (no space)
   -d <list> --down <list>                comma-separated username list (no space)
