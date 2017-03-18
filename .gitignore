@@ -15,7 +15,6 @@ env/
 build/
 develop-eggs/
 dist/
-downloads/
 eggs/
 .eggs/
 wrk/
@@ -30,8 +29,6 @@ var/
 .installed.cfg
 *.egg
 *tests/
-*.amd64/
-*.win32/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -146,19 +143,18 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-rst/notification.jpg
+
+# misceleanous
 *.wlt
-*.awt
-test/deadwhile.py
-test/peerloop.py
-test/killingpool.py
-test/devnet-peers.py
-test/ghostfaceuk.py
-test/config.testnet.json
+*.akr
 *.csv
+*.bat
+*.awt
+*.ast
+test/config.testnet.json
 misc/5days.py
 misc/delegate.py
 misc/devnet-peers.py
 misc/killingpool.py
 misc/peerloop.py
-*.zip
+misc/cont.py

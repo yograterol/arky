@@ -185,7 +185,7 @@ NetworkError: Unknown bitcoin2 network properties
 
 	else:
 		# in js month value start from 0, in python month value start from 1
-		# cfg.__BEGIN_TIME__ = datetime.datetime(2017, 2, 21, 19, 0, 0, 0, tzinfo=UTC)
+		# cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 19, 0, 0, 0, tzinfo=UTC)
 		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "mainnet"
 		cfg.__URL_BASE__ = choose([
@@ -194,6 +194,11 @@ NetworkError: Unknown bitcoin2 network properties
 			"http://5.39.9.247:4000",
 			"http://5.39.9.248:4000",
 			"http://5.39.9.249:4000"
+			# "http://40.68.214.86:8000",
+			# "http://13.70.207.248:8000",
+			# "http://13.89.42.130:8000",
+			# "http://52.160.98.183:8000",
+			# "http://40.121.84.254:8000",
 		])
 
 	cfg.__HEADERS__.update({

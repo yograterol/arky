@@ -29,4 +29,4 @@ def getPoloniexPair(pair):
 def load():
 	global poloniex_json
 	poloniex_json = json.loads(requests.get("https://poloniex.com/public?command=returnTicker").text)
-load()
+# load()

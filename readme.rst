@@ -128,51 +128,62 @@ Easy way to use ``arky``
 **Use command line interface**
 
 ``arky-cli`` script provides a command line interface that simplify interaction with ARK blockchain.
-Once script is executed, it loads all needed environment to execute simple commands. Type ``exit`` to close the interface
+Once script is executed, it loads all needed environment to execute simple commands. Type ``exit`` to close the interface.
 
 ::
 
-  arky-cli © Toons
-  Here is a list of command
+  arky-cli v1.0 © Toons
+  Here is a list of CLI commands
+
+  -- execute --
+  This command execute an arky script file.
+
+  Usage : execute (<script>)
 
   -- connect --
-      This command select a specific node address to send requests to the blockchain.
-      This action is not needed and is used only by developper.
+      This command selects a specific node address to send requests to the
+      blockchain. This action is not needed and is used only by developer.
 
   Usage: connect [<peer>]
 
   -- use --
-      This command select the network you want to work with. Two networks are
-      presently available : ark and testnet. by default, command line interface
+      This command selects the network you want to work with. Two networks are
+      presently available : ark and testnet. By default, command line interface
       starts on testnet.
 
   Usage: use (<network>)
 
   -- account --
-      This command allows you to perform all kind of transactions available within ARK
-      blockchain (except multisignature) and to check some informations.
-
-      The very first action to do is to link to an ARK account using link subcommand.
-
+      This command allows you to perform all kinds of transactions available
+      within the ARK blockchain (except for multisignature) and to check some
+      information.
+  
+      The very first step is to link to an ARK account using link subcommand
+      below.
+  
       Example:
       @ mainnet> account link secret
       AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff @ mainnet>
-
-      When account is linked, keys are registers localy in .wallet directory as an
-      *.awt file according to PEM format. This way secrets are only typed once and can
-      not be read from disk.
-
-      You can remove thoses files manualy or via close or clear subcommand. No ARK are
-      stored in *.awt files. Note that *.awt files gives total access to associated
-      account within arky API.
-
-      With send and share subcommands, ratio can be used instead of float value. 63%
-      of total balance can be easily set by 63:100.
-
-  Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>]  | [-w <wallet>]]
-         account save (<wallet>)
+  
+      When account is linked, keys are registered locally in .keyring directory as
+      an *.akr file according to PEM format. This way secret passphrases are only
+      typed once and can not be read from disk.
+  
+      You can remove thoses files manually or via unlink or clear subcommand. No
+      ARK are stored in *.akr files. Please note that *.akr files gives total
+      access to associated an account within arky API.
+  
+      With send and share subcommands, there are three ways to define amount:
+      1. ARK value (not in SATOSHI) using sinple float
+      2. a percentage of the account balance using semicolon marker (63:100 = 63%,
+         1:4 = 25%)
+      3. a currency value using $, £, € or ¥ symbol ($45.6 will be converted in 
+         ARK using coinmarketcap API)
+  
+  Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>]  | [-k <keyring>]]
+         account save (<keyring>)
          account clear
-         account close
+         account unlink
          account status
          account balance
          account contributors
@@ -180,23 +191,27 @@ Once script is executed, it loads all needed environment to execute simple comma
          account register 2ndSecret (<secret>)
          account vote [-u <list>] [-d <list>]
          account send (<amount> <address>) [<message>]
-         account share (<amount>) [<message>]
-
+         account share (<amount>) [-b <blacklist> -f <floor> -c <ceil> <message>]
+  
   Options:
-  -u <list> --up <list>            coma-separated username list with no spaces
-  -d <list> --down <list>          coma-separated username list with no spaces
-  -a <address> --account <address> registered ark address
-  -w <wallet> --wallet <wallet>    a valid *.awt pathfile
-
+  -u <list> --up <list>                  comma-separated username list (no space)
+  -d <list> --down <list>                comma-separated username list (no space)
+  -b <blacklist> --blacklist <blacklist> comma-separated ark addresse list (no space)
+  -a <address> --account <address>       registered ark address
+  -k <keyring> --keyring <keyring>       a valid *.akr pathfile
+  -f <floor> --floor <floor>             minimum treshold ratio to benefit from share
+  -c <ceil> --ceil <ceil>                maximum share ratio benefit
+  
   Subcommands:
-      link         : link to account using secrets, Ark address or *.awt file. If
-                     secrets contains spaces, it must be enclosed by double quotes
-                     ("secret with spaces"). Note that you can use address for
-                     only *.awt files registered localy.
-      save         : save linked account to an *.awt file.
-      clear        : unlink account and delete all *.awt files registered localy.
-      close        : unlink account and delete its associated *.awt file.
-      status       : show informations about linked account.
+      link         : link to account using secret passphrases, Ark address or
+                     *.akr file. If secret passphrases contains spaces, it must be
+                     enclosed within double quotes ("secret with spaces"). Note
+                     that you can use address only for *.akr files registered
+                     locally.
+      save         : save linked account to an *.akr file.
+      clear        : unlink account and delete all *.akr files registered locally.
+      unlink       : unlink account and delete its associated *.akr file.
+      status       : show information about linked account.
       balance      : show account balance in ARK.
       contributors : show voters contributions ([address - vote weight] pairs).
       register     : register linked account as delegate (cost 25 ARK);
@@ -204,8 +219,8 @@ Once script is executed, it loads all needed environment to execute simple comma
                      register second signature to linked account (cost 5 ARK).
       vote         : up or/and down vote delegates from linked account.
       send         : send ARK amount to address. You can set a 64-char message.
-      share        : share ARK amount to voters if any according to their weight.
-                     You can set a 64-char message.
+      share        : share ARK amount with voters (if any) according to their
+                     weight. You can set a 64-char message.
 
 Support this project
 ====================

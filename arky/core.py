@@ -76,7 +76,7 @@ keys (ArkyDict) -- keyring returned by getKeys
 
 Returns ArkyDict
 
->>> serializeKeys(getKeys("secret"))['signingKey']
+>>> serializeKeys(getKeys("secret"))['data']
 '2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143415145454943753444\
 564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314a364a626f416347425\
 375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353306630527039473750\
@@ -86,7 +86,7 @@ Returns ArkyDict
 """
 	skeys = ArkyDict()
 	sk = binascii.hexlify(keys.signingKey.to_pem())
-	skeys.signingKey = sk.decode() if isinstance(sk, bytes) else sk
+	skeys.data = sk.decode() if isinstance(sk, bytes) else sk
 	if "wif" in keys: skeys.wif = keys.wif
 	return skeys
 
@@ -102,17 +102,17 @@ Returns ArkyDict ready to be used as keyring
 
 >>> binascii.hexlify(unserializeKeys({
 ...	'wif': 'SB3BGPGRh1SRuQd52h7f5jsHUg1G9ATEvSeA7L5Bz4qySQww4k7N',
-...	'signingKey': '2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143\
-415145454943753444564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314\
-a364a626f416347425375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353\
-3066305270394737507a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2\
-b354b393853704275464a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445\
+...	'data': '2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143415145\
+454943753444564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314a364a6\
+26f416347425375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353306630\
+5270394737507a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2b354b3\
+93853704275464a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445\
 204b45592d2d2d2d2d0a'}).public)
 b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 """
 	keys = ArkyDict()
 	keys.network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
-	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["signingKey"]))
+	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["data"]))
 	keys.checkingKey = keys.signingKey.get_verifying_key()
 	keys.public = _compressEcdsaPublicKey(keys.checkingKey.to_string())
 	if "wif" in serial: keys.wif = serial["wif"]
