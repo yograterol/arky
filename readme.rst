@@ -130,6 +130,10 @@ Easy way to use ``arky``
 ``arky-cli`` script provides a command line interface that simplify interaction with ARK blockchain.
 Once script is executed, it loads all needed environment to execute simple commands. Type ``exit`` to close the interface.
 
+`Dowload arky CLI for windows x64`_
+
+`Dowload arky CLI for windows x32`_
+
 ::
 
   arky-cli v1.0 © Toons
@@ -246,3 +250,5 @@ Create your delegate
 
 .. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
+.. _Dowload arky CLI for windows x64: https://github.com/Moustikitos/arky/raw/master/downloads/arky-cli-amd64.zip
+.. _Dowload arky CLI for windows x32: https://github.com/Moustikitos/arky/raw/master/downloads/arky-cli-win32.zip

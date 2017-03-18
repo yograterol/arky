@@ -90,6 +90,7 @@ Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
        account vote [-u <list>] [-d <list>]
        account send (<amount> <address>) [<message>]
        account share (<amount>) [-b <blacklist> -f <floor> -c <ceil> <message>]
+       account support (<amount>) [<message>]
 
 Options:
 -u <list> --up <list>                  comma-separated username list (no space)
@@ -119,6 +120,7 @@ Subcommands:
     send         : send ARK amount to address. You can set a 64-char message.
     share        : share ARK amount with voters (if any) according to their
                    weight. You can set a 64-char message.
+    support      : share ARK amount to relay nodes according to their vote rate.
 '''
 }
 
@@ -360,16 +362,20 @@ def account(param):
 
 	elif param["send"]:
 		if _checkWallet(WALLET):
+			amount = _float(param["<amount>"], WALLET.balance)
+			if ":" in param["<amount>"]:
+				amount = (amount-0.1)*100000000
+			else:
+				amount *= 100000000
 			tx = WALLET._generate_tx(
 				type=0,
-				amount=_float(param["<amount>"], WALLET.balance)*100000000,
+				amount=amount,
 				recipientId=param["<address>"],
 				vendorField=param["<message>"]
 			)
 			_prettyPrint(core.sendTransaction(tx))
 
 	elif param["share"]:
-		fee = 0.1*100000000
 		if _checkWallet(WALLET):
 			contributors = WALLET.contributors
 			if param["--blacklist"]:
@@ -379,12 +385,28 @@ def account(param):
 			if param["--ceil"]:
 				contributors = _ceilContributors(contributors, _float(param["--ceil"]))
 			if len(contributors):
-				share = _float(param["<amount>"], WALLET.balance)*100000000
+				amount = _float(param["<amount>"], WALLET.balance)
 				for addr,ratio in [(a,r) for a,r in contributors.items() if r > 0.]:
-					tx = WALLET._generate_tx(type=0, amount=share*ratio-fee, recipientId=addr, vendorField=param["<message>"])
+					if ":" in param["<amount>"]:
+						share = (amount*ratio - 0.1)*100000000
+					else:
+						share = (amount*ratio)*100000000
+					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
 					_prettyPrint(core.sendTransaction(tx))
 			else:
 				print("No contributors to share A%.8f with" % _float(param["<amount>"], WALLET.balance))
+
+	elif param["support"]:
+		if _checkWallet(WALLET):
+			amount = _float(param["<amount>"], WALLET.balance)
+			relays = api.Delegate.getCandidates()[52:]
+			vote_sum = sum([float(d.get("vote", 0.)) for d in relays])
+			dist = dict([(r["address"], float(r.get("vote", 0.))/vote_sum) for r in relays])
+			for addr,ratio in dist.items():
+				share = (amount*ratio - 0.1)*100000000
+				if share > 1.0:
+					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
+					_prettyPrint(core.sendTransaction(tx))
 
 	elif param["save"]:
 		if _checkWallet(WALLET):

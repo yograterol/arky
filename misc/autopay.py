@@ -37,7 +37,45 @@ else:
 logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
-log = open(os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d")), "w")
+log = open(logfile, "w")
+
+if wlt.delegate["rate"] > 51:
+	log.write("%s is not an active delegate right now !" % wlt.delegate["username"])
+	log.close()
+	raise Exception("%s is not an active delegate right now !" % wlt.delegate["username"])
+
+# 
+def _blacklistContributors(contributors, lst):
+	share = 0.
+	for addr,ratio in [(a,r) for a,r in contributors.items() if a in lst]:
+		share += contributors.pop(addr)
+	share /= len(contributors)
+	for addr,ratio in [(a,r) for a,r in contributors.items()]:
+		contributors[addr] += share
+	return contributors
+
+def _floorContributors(contributors, min_ratio):
+	return _blacklistContributors(contributors, [a for a,r in contributors.items() if r < min_ratio])
+
+def _ceilContributors(contributors, max_ratio):
+	nb_cont = len(contributors)
+	test = 1./nb_cont
+	if test >= max_ratio:
+		return dict([(a,test) for a in contributors])
+	else:
+		share = 0
+		nb_cuts = 0
+		for addr,ratio in contributors.items():
+			diff = ratio - max_ratio
+			if diff > 0:
+				share += diff
+				nb_cuts += 1
+				contributors[addr] = max_ratio
+		share /= (nb_cont - nb_cuts)
+		for addr in [a for a in contributors if contributors[a] <= (max_ratio-share)]:
+			contributors[addr] += share
+		return contributors
+#
 
 amount = wlt.balance
 log.write("delegate amount : A%.8f\n" % amount)
@@ -48,7 +86,11 @@ node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7))
 log.write("node fees       : A%.8f\n" % node_invest)
 header.append("Node fees")
 content.append(node_invest)
+
+# get contributors and make a selection
 contributors = wlt.contributors
+contributors = _floorContributors(contributors, 5./100)
+contributors = _ceilContributors(contributors, 70./100)
 
 fees = 0.1 * (len(contributors) + 3)
 log.write("total fees      : A%.8f\n\n" % fees)
@@ -92,3 +134,4 @@ out.write(";".join(["%s"%e for e in content]) + "\n")
 out.close()
 
 wallet.mgmt.join()
+log.close()

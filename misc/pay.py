@@ -31,6 +31,9 @@ payment = {
 	"Voters": 0.25
 }
 
+if wlt.delegate["rate"] > 51:
+	raise Exception("%s is not an active delegate right now !" % wlt.delegate["username"])
+
 # put here ark voter addresse to be blacklisted
 blacklist = []
 contributors = wlt.contributors
