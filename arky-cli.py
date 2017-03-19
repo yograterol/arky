@@ -4,7 +4,8 @@
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from arky.util import getArkPrice
 from docopt import docopt
-import os, sys, imp, shlex, traceback, binascii
+import os, sys, imp, shlex, traceback, binascii, logging
+
 
 __version__ = "1.0"
 
@@ -17,23 +18,30 @@ def main_is_frozen(): return (
 	imp.is_frozen("__main__")    # tools/freeze
 )
 
-# path setup on package import
-ROOT = os.path.normpath(os.path.join(
-	os.path.abspath(os.path.dirname(sys.executable) if main_is_frozen() else os.path.dirname(__file__)),
-	".keyring")
-)
-
+# configure globals
+ROOT = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable if main_is_frozen() else __file__)))
+KEYRINGS = os.path.normpath(os.path.join(ROOT, ".keyring"))
 PROMPT = "@ %s> " % cfg.__NET__
 WALLET = None
-
-try: os.makedirs(ROOT)
+try: os.makedirs(KEYRINGS)
 except:pass
 
+# redirect logging
+logger = logging.getLogger() # get root logger
+formatter = logging.Formatter('[%(asctime)s] %(message)s')
+file_handler = logging.FileHandler(os.path.normpath(os.path.join(ROOT, "tx.log")), 'a')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+for handler in logger.handlers[:]:
+	logger.removeHandler(handler)
+logger.addHandler(file_handler) 
+
+# define commands according docopt lib
 commands = {
 	"execute":"""
 This command execute an arky script file.
 
-Usage: execute (<script>)
+Usage: execute <script>
 """,
 
 	"connect": """
@@ -48,10 +56,10 @@ Usage: connect [<peer>]
     presently available : ark and testnet. By default, command line interface
     starts on testnet.
 
-Usage: use (<network>)
+Usage: use <network>
 """,
 
-	"account": '''
+	"account": u'''
     This command allows you to perform all kinds of transactions available
     within the ARK blockchain (except for multisignature) and to check some
     information.
@@ -73,30 +81,32 @@ Usage: use (<network>)
 
     With send and share subcommands, there are three ways to define amount:
     1. ARK value (not in SATOSHI) using sinple float
-    2. a percentage of the account balance using semicolon marker (63:100 = 63%,
-       1:4 = 25%)
-    3. a currency value using $, £, € or ¥ symbol ($45.6 will be converted in 
+    2. a percentage of the account balance using % symbol (%63 will take 63
+       percent of wallet balance)
+    3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
        ARK using coinmarketcap API)
 
 Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
-       account save (<keyring>)
+       account save <keyring>
        account clear
        account unlink
        account status
        account balance
        account contributors
-       account register (<username>)
-       account register 2ndSecret (<secret>)
-       account vote [-u <list>] [-d <list>]
-       account send (<amount> <address>) [<message>]
-       account share (<amount>) [-b <blacklist> -f <floor> -c <ceil> <message>]
-       account support (<amount>) [<message>]
+       account register <username>
+       account register 2ndSecret <secret>
+       account vote [-u <delegate>... | -d <delegate>...]
+       account send <amount> <address> [<message>]
+       account split <amount> <recipient>... [-m <message>]
+       account share <amount> [-b <blacklist> -f <floor> -c <ceil> <message>]
+       account support <amount> [<message>]
 
 Options:
--u <list> --up <list>                  comma-separated username list (no space)
--d <list> --down <list>                comma-separated username list (no space)
+-u --up                                up vote all delegates name folowing
+-d --down                              down vote all delegates name folowing
 -b <blacklist> --blacklist <blacklist> comma-separated ark addresse list (no space)
 -a <address> --address <address>       already linked ark address
+-m <message> --message <message>       64-char message
 -k <keyring> --keyring <keyring>       a valid *.akr pathfile
 -f <floor> --floor <floor>             minimum treshold ratio to benefit from share
 -c <ceil> --ceil <ceil>                maximum share ratio benefit
@@ -118,6 +128,8 @@ Subcommands:
                    register second signature to linked account (cost 5 ARK).
     vote         : up or/and down vote delegates from linked account.
     send         : send ARK amount to address. You can set a 64-char message.
+    split        : equal-split ARK amount to different recipient. You can set a
+                   64-char message.
     share        : share ARK amount with voters (if any) according to their
                    weight. You can set a 64-char message.
     support      : share ARK amount to relay nodes according to their vote rate.
@@ -164,13 +176,18 @@ def _execute(lines):
 				return False
 	return True
 
+# this function is called every 10 s and stops when second secret is set
 @setInterval(10)
 def _secondSignatureSetter(wlt, passphrase):
+	# if second signature is updated in wallet
 	if wlt.account.get('secondSignature', False):
+		# set second secret
 		wlt.secondSecret = passphrase
+		# stop setInterval thread
 		wlt._stop_2ndSignature_daemon.set()
 		delattr(wlt, "_stop_2ndSignature_daemon")
-		WALLET.save(os.path.join(ROOT, WALLET.address+".akr"))
+		# update keyring
+		WALLET.save(os.path.join(KEYRINGS, WALLET.address+".akr"))
 		print("\n    Second signature set for %s\n%s" % (wlt.address, PROMPT), end="")
 
 def _checkWallet(wlt):
@@ -190,20 +207,23 @@ def _prettyPrint(dic, tab="    "):
 	else:
 		print("Nothing here")
 
-def _getAccount():
+# get all keyrings registered in KEYRINGS folder
+def _getKeyring():
 	start = "A" if cfg.__NET__ == "mainnet" else "a"
-	return [f for f in os.listdir(ROOT) if f.endswith(".akr") and f.startswith(start)]
+	return [f for f in os.listdir(KEYRINGS) if f.endswith(".akr") and f.startswith(start)]
 
-def _float(amount, what=1.0):
-	if ":" in amount:
-		n, d = (float(e) for e in amount.split(":"))
-		return n/d * what
+# return ark value according to amount
+def _floatAmount(amount):
+	global WALLET
+	if amount.startswith("%"): return float(amount[1:])/100 * WALLET.balance
+	# $10, €10, £10 and ¥10 are converted into ARK using coinmarketcap API
 	elif amount.startswith("$"): return float(amount[1:])/getArkPrice("usd")
 	elif amount.startswith("€"): return float(amount[1:])/getArkPrice("eur")
 	elif amount.startswith("£"): return float(amount[1:])/getArkPrice("gbp")
 	elif amount.startswith("¥"): return float(amount[1:])/getArkPrice("cny")
 	else: return float(amount)
 
+# 
 def _blacklistContributors(contributors, lst):
 	share = 0.
 	for addr,ratio in [(a,r) for a,r in contributors.items() if a in lst]:
@@ -269,7 +289,7 @@ def account(param):
 				print("Keyring '%s' does not exist" % param["--keyring"])
 				return False
 		if param["--address"]:
-			pathfile = os.path.join(ROOT, param["--address"]+".akr")
+			pathfile = os.path.join(KEYRINGS, param["--address"]+".akr")
 			if os.path.exists(pathfile):
 				WALLET = wallet.open(pathfile)
 			else:
@@ -280,7 +300,7 @@ def account(param):
 		elif param["<secret>"]:
 			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"))
 		else:
-			names = _getAccount()
+			names = _getKeyring()
 			nb_name = len(names)
 			if nb_name > 1:
 				for i in range(nb_name):
@@ -296,15 +316,15 @@ def account(param):
 			else:
 				print("No account found localy")
 				return
-			WALLET = wallet.open(os.path.join(ROOT, name))
+			WALLET = wallet.open(os.path.join(KEYRINGS, name))
 
-		pathfile = os.path.join(ROOT, WALLET.address+".akr")
+		pathfile = os.path.join(KEYRINGS, WALLET.address+".akr")
 		if not os.path.exists(pathfile): WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
 
 	elif param["clear"]:
-		for filename in _getAccount():
-			os.remove(os.path.join(ROOT, filename))
+		for filename in _getKeyring():
+			os.remove(os.path.join(KEYRINGS, filename))
 		PROMPT = "@ %s> " % cfg.__NET__
 		WALLET = None
 
@@ -340,22 +360,20 @@ def account(param):
 	elif param["vote"]:
 		if _checkWallet(WALLET):
 			votes = WALLET.votes
-			up = param["--up"]
-			down = param["--down"]
-			# first filter
-			up = [u for u in up.split(",") if u not in votes and u in wallet.Wallet.candidates] if up else []
-			down = [u for u in down.split(",") if u in votes] if down else []
-			#second filter
-			up = [d1['publicKey'] for d1 in [d0 for d0 in wallet.Wallet.delegates if d0['username'] in up]]
-			down = [d1['publicKey'] for d1 in [d0 for d0 in wallet.Wallet.delegates if d0['username'] in down]]
-			# concatenate votes
-			usernames = ['+'+c for c in up] + ['-'+c for c in down]
-			# send votes
-			if len(usernames):
-				tx = WALLET._generate_tx(type=3, recipientId=WALLET.address, asset=ArkyDict(votes=usernames))
-				_prettyPrint(core.sendTransaction(tx))
-			else:
-				print(WALLET.votes)
+			if param["--up"]:
+				usernames = [c for c in param["<delegate>"] if c not in votes]
+				delegates = ["+"+d1['publicKey'] for d1 in [d0 for d0 in wallet.Wallet.delegates if d0['username'] in usernames]]
+			elif param["--down"]:
+				usernames = [c for c in param["<delegate>"] if c in votes]
+				delegates = ["-"+d1['publicKey'] for d1 in [d0 for d0 in wallet.Wallet.delegates if d0['username'] in usernames]]
+			try:
+				if len(delegates):
+					tx = WALLET._generate_tx(type=3, recipientId=WALLET.address, asset=ArkyDict(votes=delegates))
+					_prettyPrint(core.sendTransaction(tx))
+				else:
+					print("Nothing to change on the vote")
+			except:
+					print("Your curent vote%s: %r" % ("s" if len(votes)>1 else "", votes))
 
 	elif param["contributors"]:
 		if _checkWallet(WALLET): 
@@ -363,17 +381,10 @@ def account(param):
 
 	elif param["send"]:
 		if _checkWallet(WALLET):
-			amount = _float(param["<amount>"], WALLET.balance)
-			if ":" in param["<amount>"]:
-				amount = (amount-0.1)*100000000
-			else:
-				amount *= 100000000
-			tx = WALLET._generate_tx(
-				type=0,
-				amount=amount,
-				recipientId=param["<address>"],
-				vendorField=param["<message>"]
-			)
+			amount = _floatAmount(param["<amount>"])
+			if "%" in param["<amount>"]: amount = amount*100000000 - cfg.__FEES__["send"]
+			else: amount *= 100000000
+			tx = WALLET._generate_tx(type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
 			_prettyPrint(core.sendTransaction(tx))
 
 	elif param["share"]:
@@ -382,32 +393,39 @@ def account(param):
 			if param["--blacklist"]:
 				contributors = _blacklistContributors(contributors, param["--blacklist"].split(","))
 			if param["--floor"]:
-				contributors = _floorContributors(contributors, _float(param["--floor"]))
+				contributors = _floorContributors(contributors, _floatAmount(param["--floor"]))
 			if param["--ceil"]:
-				contributors = _ceilContributors(contributors, _float(param["--ceil"]))
+				contributors = _ceilContributors(contributors, _floatAmount(param["--ceil"]))
 			if len(contributors):
-				amount = _float(param["<amount>"], WALLET.balance)
+				amount = _floatAmount(param["<amount>"])
 				for addr,ratio in [(a,r) for a,r in contributors.items() if r > 0.]:
-					if ":" in param["<amount>"]:
-						share = (amount*ratio - 0.1)*100000000
-					else:
-						share = (amount*ratio)*100000000
+					if "%" in param["<amount>"]: share = amount*ratio*100000000 - cfg.__FEES__["send"]
+					else: share = (amount*ratio)*100000000
 					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
 					_prettyPrint(core.sendTransaction(tx))
 			else:
-				print("No contributors to share A%.8f with" % _float(param["<amount>"], WALLET.balance))
+				print("No contributors to share A%.8f with" % _floatAmount(param["<amount>"]))
 
 	elif param["support"]:
 		if _checkWallet(WALLET):
-			amount = _float(param["<amount>"], WALLET.balance)
+			amount = _floatAmount(param["<amount>"])
 			relays = api.Delegate.getCandidates()[52:]
 			vote_sum = sum([float(d.get("vote", 0.)) for d in relays])
 			dist = dict([(r["address"], float(r.get("vote", 0.))/vote_sum) for r in relays])
 			for addr,ratio in dist.items():
-				share = (amount*ratio - 0.1)*100000000
-				if share > 1.0:
+				share = amount*ratio*100000000 - cfg.__FEES__["send"]
+				if share > 100000000.:
 					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
 					_prettyPrint(core.sendTransaction(tx))
+
+	elif param["split"]:
+		if _checkWallet(WALLET):
+			share = _floatAmount(param["<amount>"]) / len(param["<recipient>"])
+			if "%" in param["<amount>"]: share = share*100000000 - cfg.__FEES__["send"]
+			else: share *= 100000000
+			for addr in param["<recipient>"]:
+				tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["--message"])
+				_prettyPrint(core.sendTransaction(tx))
 
 	elif param["save"]:
 		if _checkWallet(WALLET):
@@ -418,7 +436,7 @@ def account(param):
 
 	elif param["unlink"]:
 		if _checkWallet(WALLET):
-			pathfile = os.path.join(ROOT, WALLET.address+".akr")
+			pathfile = os.path.join(KEYRINGS, WALLET.address+".akr")
 			if os.path.exists(pathfile):
 				os.remove(pathfile)
 			WALLET = None
@@ -463,6 +481,7 @@ Options:
 				if doc:
 					try:
 						arguments = docopt(doc, argv=argv[1:])
+						# _prettyPrint(arguments)
 					except:
 						print(commands.get(cmd))
 					else:
@@ -477,5 +496,5 @@ Options:
 						else:
 							print("Not implemented yet")
 				else:
-					print("\narky-cli v%s © Toons\nHere is a list of command\n" % __version__)
+					print(u"\narky-cli v%s \u00a9 Toons\nHere is a list of command\n" % __version__)
 					print("\n".join(["-- %s --%s" % (k,v) for k,v in commands.items()]))

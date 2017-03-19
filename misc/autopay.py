@@ -1,6 +1,6 @@
 # -*- encoding -*-
 from arky.util import getArkPrice
-from arky import api, wallet, HOME
+from arky import cfg, api, wallet, HOME
 import os, json, math, datetime
 api.use("ark")
 
@@ -8,7 +8,7 @@ __daily_fees__ = 5./30 # daily server cost
 __pythoners__ = 'APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY'
 __investments__ = 'AX8fQaCX73LR8DT8bAQ9atst7yDxcVhEfp'
 __exchange__ = ""
-
+__tx_fee__ = cfg.__FEES__["send"]/100000000.
 
 # screen command line
 from optparse import OptionParser
@@ -75,40 +75,35 @@ def _ceilContributors(contributors, max_ratio):
 		for addr in [a for a in contributors if contributors[a] <= (max_ratio-share)]:
 			contributors[addr] += share
 		return contributors
-#
+
+# get contributors and make a selection
+contributors = wallet.getVoterContribution(wlt) #.contributors
+contributors = _floorContributors(contributors, 5./100)
+contributors = _ceilContributors(contributors, 70./100)
 
 amount = wlt.balance
 log.write("delegate amount : A%.8f\n" % amount)
 header = ["Date", datetime.datetime.now(), ""]
 content = ["ARK amount", amount, ""]
+
 # ARK to be exchanged for node fees payment
-node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7))
+node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7)) + __tx_fee__
 log.write("node fees       : A%.8f\n" % node_invest)
 header.append("Node fees")
 content.append(node_invest)
-
-# get contributors and make a selection
-contributors = wlt.contributors
-contributors = _floorContributors(contributors, 5./100)
-contributors = _ceilContributors(contributors, 70./100)
-
-fees = 0.1 * (len(contributors) + 3)
-log.write("total fees      : A%.8f\n\n" % fees)
-header.append("Fees")
-content.append(fees)
 # wlt.sendArk(node_invest, __exchange__)
 
 # part to be distributed
-share = amount - node_invest - fees
+share = amount - node_invest
 log.write("Share           : A%.8f\n" % share)
 
-pythoners = 0.15*share
+pythoners = 0.15*share - __tx_fee__
 log.write("For pythoners   : A%.8f\n" % pythoners)
 header.append("Pythoners")
 content.append(pythoners)
 wlt.sendArk(pythoners, __pythoners__)
 
-investments = 0.6*share
+investments = 0.6*share - __tx_fee__
 log.write("For investments : A%.8f\n" % investments)
 header.append("Investments")
 content.append(investments)
@@ -121,7 +116,7 @@ log.write("\nFor arky contributors :\n")
 header.append("")
 content.append("")
 for addr,ratio in contributors.items():
-	amount = voters*ratio
+	amount = voters*ratio - __tx_fee__
 	if amount > 0.:
 		wlt.sendArk(amount, addr, vendorField="Arky weekly refund. Thanks for you contributors !")
 	log.write("%s : A%.8f\n" % (addr, amount))

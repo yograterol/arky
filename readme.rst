@@ -137,12 +137,12 @@ Once script is executed, it loads all needed environment to execute simple comma
 ::
 
   arky-cli v1.0 © Toons
-  Here is a list of CLI commands
+  Here is a list of command
 
   -- execute --
   This command execute an arky script file.
 
-  Usage : execute (<script>)
+  Usage: execute (<script>)
 
   -- connect --
       This command selects a specific node address to send requests to the
@@ -161,52 +161,54 @@ Once script is executed, it loads all needed environment to execute simple comma
       This command allows you to perform all kinds of transactions available
       within the ARK blockchain (except for multisignature) and to check some
       information.
-  
+
       The very first step is to link to an ARK account using link subcommand
       below.
-  
+
       Example:
       @ mainnet> account link secret
       AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff @ mainnet>
-  
+
       When account is linked, keys are registered locally in .keyring directory as
       an *.akr file according to PEM format. This way secret passphrases are only
       typed once and can not be read from disk.
-  
+
       You can remove thoses files manually or via unlink or clear subcommand. No
       ARK are stored in *.akr files. Please note that *.akr files gives total
       access to associated an account within arky API.
-  
+
       With send and share subcommands, there are three ways to define amount:
       1. ARK value (not in SATOSHI) using sinple float
       2. a percentage of the account balance using semicolon marker (63:100 = 63%,
          1:4 = 25%)
-      3. a currency value using $, £, € or ¥ symbol ($45.6 will be converted in 
+      3. a currency value using $, £, € or ¥ symbol ($45.6 will be converted in
          ARK using coinmarketcap API)
-  
-  Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>]  | [-k <keyring>]]
-         account save (<keyring>)
+
+  Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
+         account save <keyring>
          account clear
          account unlink
          account status
          account balance
          account contributors
-         account register (<username>)
-         account register 2ndSecret (<secret>)
-         account vote [-u <list>] [-d <list>]
-         account send (<amount> <address>) [<message>]
-         account share (<amount>) [-b <blacklist> -f <floor> -c <ceil> <message>]
-         account support (<amount>) [<message>]
+         account register <username>
+         account register 2ndSecret <secret>
+         account vote [-u <delegate>... | -d <delegate>...]
+         account send <amount> <address> [<message>]
+         account split <amount> <recipient>... [-m <message>]
+         account share <amount> [-b <blacklist> -f <floor> -c <ceil> <message>]
+         account support <amount> [<message>]
 
   Options:
-  -u <list> --up <list>                  comma-separated username list (no space)
-  -d <list> --down <list>                comma-separated username list (no space)
+  -u --up                                up vote all delegates name folowing
+  -d --down                              down vote all delegates name folowing
   -b <blacklist> --blacklist <blacklist> comma-separated ark addresse list (no space)
-  -a <address> --account <address>       registered ark address
+  -a <address> --address <address>       already linked ark address
+  -m <message> --message <message>       64-char message
   -k <keyring> --keyring <keyring>       a valid *.akr pathfile
   -f <floor> --floor <floor>             minimum treshold ratio to benefit from share
   -c <ceil> --ceil <ceil>                maximum share ratio benefit
-  
+
   Subcommands:
       link         : link to account using secret passphrases, Ark address or
                      *.akr file. If secret passphrases contains spaces, it must be
@@ -224,6 +226,8 @@ Once script is executed, it loads all needed environment to execute simple comma
                      register second signature to linked account (cost 5 ARK).
       vote         : up or/and down vote delegates from linked account.
       send         : send ARK amount to address. You can set a 64-char message.
+      split        : equal-split ARK amount to different recipient. You can set a
+                     64-char message.
       share        : share ARK amount with voters (if any) according to their
                      weight. You can set a 64-char message.
       support      : share ARK amount to relay nodes according to their vote rate.
