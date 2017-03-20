@@ -4,6 +4,8 @@
 
 Copyright 2015-2016, **Toons**, `BSD licence`_
 
+**ONLY FOR TESTNET FOR NOW**
+
 Install
 =======
 
@@ -136,7 +138,7 @@ Once script is executed, it loads all needed environment to execute simple comma
 
 ::
 
-  arky-cli v1.0 © Toons
+  arky-cli vx.y © Toons
   Here is a list of command
 
   -- execute --

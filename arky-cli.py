@@ -1,7 +1,7 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__version__ = "1.0"
+__version__ = "1.0(t)"
 
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from arky.util import getArkPrice
@@ -285,27 +285,27 @@ def account(param):
 	if param["link"]:
 		if param["--keyring"]:
 			if os.path.exists(param["--keyring"]):
-				WALLET = wallet.open(param["--keyring"])
+				pathfile = param["--keyring"]
 			else:
 				print("Keyring '%s' does not exist" % param["--keyring"])
 				return False
 		if param["--address"]:
 			pathfile = os.path.join(KEYRINGS, cfg.__NET__, param["--address"]+".akr")
-			if os.path.exists(pathfile):
-				WALLET = wallet.open(pathfile)
-			else:
+			if not os.path.exists(pathfile):
 				print("Ark address %s not linked yet" % param["--address"])
 				return False
 		elif param["<2ndSecret>"]:
 			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"), param["<2ndSecret>"].encode("ascii"))
+			pathfile = os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr")
 		elif param["<secret>"]:
 			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"))
+			pathfile = os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr")
 		else:
 			names = _getKeyring()
 			nb_name = len(names)
 			if nb_name > 1:
 				for i in range(nb_name):
-					print("    %d - %s" % (i+1, names[i]))
+					print("    %d - %s" % (i+1, names[i].split(".")[0]))
 				i = 0
 				while i < 1 or i > nb_name:
 					i = input("Choose a keyring [1-%d]> " % nb_name)
@@ -316,16 +316,17 @@ def account(param):
 				name = names[0]
 			else:
 				print("No account found localy")
-				return
-			WALLET = wallet.open(os.path.join(KEYRINGS, cfg.__NET__, name))
+				return False
+			pathfile = os.path.join(KEYRINGS, cfg.__NET__, name)
 
-		pathfile = os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr")
-		if not os.path.exists(pathfile): WALLET.save(pathfile)
+		WALLET = wallet.open(pathfile)
+		if not os.path.exists(pathfile):
+			WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
 
 	elif param["clear"]:
 		for filename in _getKeyring():
-			os.remove(os.path.join(KEYRINGS, filename))
+			os.remove(os.path.join(KEYRINGS, cfg.__NET__, filename))
 		PROMPT = "@ %s> " % cfg.__NET__
 		WALLET = None
 
@@ -437,7 +438,7 @@ def account(param):
 
 	elif param["unlink"]:
 		if _checkWallet(WALLET):
-			pathfile = os.path.join(KEYRINGS, WALLET.address+".akr")
+			pathfile = os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr")
 			if os.path.exists(pathfile):
 				os.remove(pathfile)
 			WALLET = None
