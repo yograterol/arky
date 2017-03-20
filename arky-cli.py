@@ -319,7 +319,8 @@ def account(param):
 				return False
 			pathfile = os.path.join(KEYRINGS, cfg.__NET__, name)
 
-		WALLET = wallet.open(pathfile)
+		if not WALLET:
+			wallet.open(pathfile)
 		if not os.path.exists(pathfile):
 			WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
