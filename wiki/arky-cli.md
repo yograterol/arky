@@ -13,7 +13,7 @@ you should consider `arky-cli`.
 You want to do some basic checkings :
 
 ```
-## Welcome to arky-cli v1.0 (c) Toons ##
+## Welcome to arky-cli vx.y © Toons ##
 @ testnet> use ark
 @ mainnet> account link "my secret between quotes"
 AY9ho6i6LQ82D3VDkdP7yBjSWhNHWkMvHg @ mainnet> account contributors
@@ -76,7 +76,7 @@ for developers named `testnet` and one for the real world named `mainnet`.
 `arky-cli` is connected to `testnet` on startup so you have to swich first.
 
 ```
-## Welcome to arky-cli v1.0 (c) Toons ##
+## Welcome to arky-cli vx.y © Toons ##
 @ testnet> use ark
 @ mainnet> 
 ```

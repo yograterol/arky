@@ -136,6 +136,8 @@ Once script is executed, it loads all needed environment to execute simple comma
 
 `Dowload arky CLI for windows x32`_
 
+`Here is a FAQ`_ 
+
 ::
 
   arky-cli vx.y © Toons
@@ -262,3 +264,4 @@ Create your delegate
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
 .. _Dowload arky CLI for windows x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFYkJDc0NnWHdQdVE/view?usp=sharing
 .. _Dowload arky CLI for windows x32: https://drive.google.com/file/d/0Bz6dDtWRLNUFUVo1bGY3R3BlcVk/view?usp=sharing
+.. _Here is a FAQ: https://github.com/Moustikitos/arky/blob/master/wiki/arky-cli.md
