@@ -47,8 +47,9 @@ Using ``arky``
 
 **api package**
 
-``api`` package allows developpers to send requests to the blockchain according to `ARK API`_.
-For security reason only ``GET`` methods are implemented in ``api`` package.
+``api`` package allows developpers to send requests to the blockchain according
+to `ARK API`_. For security reason only ``GET`` methods are implemented in
+``api`` package.
 
 >>> from arky import api
 >>> api.use("ark")
@@ -95,7 +96,8 @@ More on ``arky.core`` ?
 >>> from arky import wallet
 >>> wallet.api.use("ark") # api is loaded by wallet
 
-``Wallet`` class allows developpers to send ARK, register address as delegate and vote for delegates.
+``Wallet`` class allows developpers to send ARK, register address as delegate
+and vote for delegates.
 
 >>> w = wallet.Wallet("secret")
 >>> w.delegate
@@ -129,12 +131,15 @@ Easy way to use ``arky``
 
 **Use command line interface**
 
-``arky-cli`` script provides a command line interface that simplify interaction with ARK blockchain.
-Once script is executed, it loads all needed environment to execute simple commands. Type ``exit`` to close the interface.
+``arky-cli`` script provides a command line interface that simplify interaction
+with ARK blockchain. Once script is executed, it loads all needed environment to
+execute simple commands. Type ``exit`` to close the interface.
 
 `Dowload arky CLI for windows x64`_
 
 `Dowload arky CLI for windows x32`_
+
+`Dowload arky CLI for ubuntu x64`_
 
 `Here is a FAQ`_ 
 
@@ -264,4 +269,5 @@ Create your delegate
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
 .. _Dowload arky CLI for windows x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFYkJDc0NnWHdQdVE/view?usp=sharing
 .. _Dowload arky CLI for windows x32: https://drive.google.com/file/d/0Bz6dDtWRLNUFUVo1bGY3R3BlcVk/view?usp=sharing
+.. _Dowload arky CLI for ubuntu x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFU2tfSjhTUnd1azQ/view?usp=sharing
 .. _Here is a FAQ: https://github.com/Moustikitos/arky/blob/master/wiki/arky-cli.md
