@@ -54,22 +54,22 @@ multisignature, you can check informations about your ARK addresses and you
 can do some meta-transactions.
 
   1. Transactions
-    a. create an ARK address
-    b. register a second signature for an ARK address
-    c. register ARK address as a delegate
-    d. upvote or downvote a delegate
-    e. send ARK
+    1. create an ARK address
+    2. register a second signature for an ARK address
+    3. register ARK address as a delegate
+    4. upvote or downvote a delegate
+    5. send ARK
 
   2. Checkings
-    a. balance of ARK address
-    b. votes made with the ARK address
-    c. votes received by ARK address
-    e. account or delegate status
+    1. balance of ARK address
+    2. votes made with the ARK address
+    3. votes received by ARK address
+    4. account or delegate status
 
   3. Meta-transactions
-    a. split ARK amount between differents ARK addresses
-    b. share ARK amount between voters
-    c. support relay nodes sending ARK amount according to their vote weight
+    1. split ARK amount between differents ARK addresses
+    2. share ARK amount between voters
+    3. support relay nodes sending ARK amount according to their vote weight
 
 First thing to know if you want to go further is there are two ARK networks, one
 for developers named `testnet` and one for the real world named `mainnet`.
