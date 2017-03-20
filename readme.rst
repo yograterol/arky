@@ -258,5 +258,5 @@ Create your delegate
 
 .. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
-.. _Dowload arky CLI for windows x64: https://github.com/Moustikitos/arky/raw/master/downloads/arky-cli-amd64.zip
-.. _Dowload arky CLI for windows x32: https://github.com/Moustikitos/arky/raw/master/downloads/arky-cli-win32.zip
+.. _Dowload arky CLI for windows x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFYkJDc0NnWHdQdVE/view?usp=sharing
+.. _Dowload arky CLI for windows x32: https://drive.google.com/file/d/0Bz6dDtWRLNUFUVo1bGY3R3BlcVk/view?usp=sharing
