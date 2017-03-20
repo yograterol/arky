@@ -177,7 +177,8 @@ Once script is executed, it loads all needed environment to execute simple comma
       ARK are stored in *.akr files. Please note that *.akr files gives total
       access to associated an account within arky API.
 
-      With send and share subcommands, there are three ways to define amount:
+      With send, split, share and support subcommands, there are three ways to
+      define amount:
       1. ARK value (not in SATOSHI) using sinple float
       2. a percentage of the account balance using semicolon marker (63:100 = 63%,
          1:4 = 25%)

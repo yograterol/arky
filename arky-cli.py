@@ -1,13 +1,12 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
+__version__ = "1.0"
+
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from arky.util import getArkPrice
 from docopt import docopt
 import os, sys, imp, shlex, traceback, binascii, logging
-
-
-__version__ = "1.0"
 
 input = raw_input if not __PY3__ else input 
 
@@ -79,9 +78,10 @@ Usage: use <network>
     ARK are stored in *.akr files. Please note that *.akr files gives total
     access to associated an account within arky API.
 
-    With send and share subcommands, there are three ways to define amount:
+    With send, split, share and support subcommands, there are three ways to
+    define amount:
     1. ARK value (not in SATOSHI) using sinple float
-    2. a percentage of the account balance using % symbol (%63 will take 63
+    2. a percentage of the account balance using % symbol (63% will take 63
        percent of wallet balance)
     3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
        ARK using coinmarketcap API)
@@ -209,13 +209,12 @@ def _prettyPrint(dic, tab="    "):
 
 # get all keyrings registered in KEYRINGS folder
 def _getKeyring():
-	start = "A" if cfg.__NET__ == "mainnet" else "a"
-	return [f for f in os.listdir(KEYRINGS) if f.endswith(".akr") and f.startswith(start)]
+	return [f for f in os.listdir(os.path.join(KEYRINGS, cfg.__NET__)) if f.endswith(".akr")]
 
 # return ark value according to amount
 def _floatAmount(amount):
 	global WALLET
-	if amount.startswith("%"): return float(amount[1:])/100 * WALLET.balance
+	if amount.endswith("%"): return float(amount[:-1])/100 * WALLET.balance
 	# $10, €10, £10 and ¥10 are converted into ARK using coinmarketcap API
 	elif amount.startswith("$"): return float(amount[1:])/getArkPrice("usd")
 	elif amount.startswith("€"): return float(amount[1:])/getArkPrice("eur")
@@ -277,9 +276,11 @@ def use(param):
 	api.use(param["<network>"])
 	PROMPT = "@ %s> " % cfg.__NET__
 	WALLET = None
+	try: os.makedirs(os.path.join(KEYRINGS, cfg.__NET__))
+	except:pass
 
 def account(param):
-	global PROMPT, WALLET
+	global PROMPT, WALLET, KEYRINGS
 
 	if param["link"]:
 		if param["--keyring"]:
@@ -289,7 +290,7 @@ def account(param):
 				print("Keyring '%s' does not exist" % param["--keyring"])
 				return False
 		if param["--address"]:
-			pathfile = os.path.join(KEYRINGS, param["--address"]+".akr")
+			pathfile = os.path.join(KEYRINGS, cfg.__NET__, param["--address"]+".akr")
 			if os.path.exists(pathfile):
 				WALLET = wallet.open(pathfile)
 			else:
@@ -316,9 +317,9 @@ def account(param):
 			else:
 				print("No account found localy")
 				return
-			WALLET = wallet.open(os.path.join(KEYRINGS, name))
+			WALLET = wallet.open(os.path.join(KEYRINGS, cfg.__NET__, name))
 
-		pathfile = os.path.join(KEYRINGS, WALLET.address+".akr")
+		pathfile = os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr")
 		if not os.path.exists(pathfile): WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
 
@@ -393,9 +394,9 @@ def account(param):
 			if param["--blacklist"]:
 				contributors = _blacklistContributors(contributors, param["--blacklist"].split(","))
 			if param["--floor"]:
-				contributors = _floorContributors(contributors, _floatAmount(param["--floor"]))
+				contributors = _floorContributors(contributors, float(param["--floor"])/100)
 			if param["--ceil"]:
-				contributors = _ceilContributors(contributors, _floatAmount(param["--ceil"]))
+				contributors = _ceilContributors(contributors, float(param["--ceil"])/100)
 			if len(contributors):
 				amount = _floatAmount(param["<amount>"])
 				for addr,ratio in [(a,r) for a,r in contributors.items() if r > 0.]:
@@ -447,6 +448,7 @@ COMMANDS = dict([n,f] for n,f in globals().items() if callable(f) and not n.star
 
 if __name__ == '__main__':
 	exit = False
+	use({"<network>":"testnet"})
 
 	launch_args = docopt("""
 Usage: arky-cli [-s <script>]
