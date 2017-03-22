@@ -2,6 +2,10 @@
 from arky.util import getArkPrice
 from arky import cfg, api, wallet, HOME
 import os, json, math, datetime
+
+import sys
+print(sys.version)
+
 api.use("ark")
 
 __daily_fees__ = 5./30 # daily server cost
@@ -28,21 +32,29 @@ if len(args) == 1 and os.path.exists(args[0]):
 	conf = json.loads(content.decode() if isinstance(content, bytes) else content)
 	wlt = wallet.Wallet(conf["forging"]["secret"][0])
 elif options.secret:
-	wlt = wallet.Wallet(secret)
+	wlt = wallet.Wallet(options.secret)
 elif options.keyring:
 	wlt = wallet.open(options.keyring)
 else:
 	raise Exception("Can not do something for now !")
+
+print(wlt.address)
 
 logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
 log = open(logfile, "w")
 
-if wlt.delegate["rate"] > 51 or wlt.balance > 200:
+wlt.update()
+if wlt.delegate["rate"] > 51:
 	log.write("%s is not an active delegate right now !" % wlt.delegate["username"])
 	log.close()
 	raise Exception("%s is not an active delegate right now !" % wlt.delegate["username"])
+	
+elif wlt.balance < 200:
+	log.write("%s does not have more than 200 Arks !" % wlt.delegate["username"])
+	log.close()
+	raise Exception("%s does not have more than 200 Arks !" % wlt.delegate["username"])
 
 # 
 def _blacklistContributors(contributors, lst):

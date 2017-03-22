@@ -43,7 +43,7 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 '''
 
 	# list of all registered delegates
-	delegates = api.Delegate.getCandidates()
+	delegates = []
 	# list of delegate usernames a wallet can vote
 	candidates = []
 	# list of votes done through wallet
@@ -101,13 +101,13 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 		in_.close()
 
 	def update(self):
+		Wallet.delegates = api.Delegate.getCandidates()
+		Wallet.candidates = [d["username"] for d in Wallet.delegates]
 		search = [d for d in Wallet.delegates if d['publicKey'] == self.publicKey]
 		search51 = [d for d in Wallet.delegates[:51] if d['publicKey'] == self.publicKey]
 		object.__setattr__(self, "delegate", search[0] if len(search) else False)
 		object.__setattr__(self, "forger", True if len(search51) else False)
 		object.__setattr__(self, "account", api.Account.getAccount(self.address).get("account", {}))
-		Wallet.delegates = api.Delegate.getCandidates()
-		Wallet.candidates = [d["username"] for d in Wallet.delegates]
 
 	def _generate_tx(self, **kw):
 		"""
