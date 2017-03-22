@@ -1,7 +1,7 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__version__ = "1.0(t)"
+__version__ = "1.0"
 
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from arky.util import getArkPrice
@@ -83,8 +83,6 @@ Usage: use <network>
     1. ARK value (not in SATOSHI) using sinple float
     2. a percentage of the account balance using % symbol (63% will take 63
        percent of wallet balance)
-    3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
-       ARK using coinmarketcap API)
 
 Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
        account save <keyring>
@@ -136,11 +134,13 @@ Subcommands:
                    You can set a 64-char message.
 '''
 }
+    # 3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
+    #    ARK using coinmarketcap API)
 
 def _check(line, num=0):
 	global PROMPT
 	argv = shlex.split(line.strip())
-	print("%s%r" % (PROMPT, argv))
+	sys.stdout.write("%s%r\n" % (PROMPT, argv))
 	cmd = argv[0]
 	doc = commands.get(cmd, False)
 	if doc:
@@ -167,10 +167,10 @@ def _execute(lines):
 					try:
 						func(arguments)
 					except Exception as error:
-						print(error)
+						sys.stdout.write("%s\n" % error)
 						return False
 				else:
-					print("Not implemented yet")
+					sys.stdout.write("Not implemented yet\n")
 					return False
 			else:
 				return False
@@ -187,12 +187,12 @@ def _secondSignatureSetter(wlt, passphrase):
 		wlt._stop_2ndSignature_daemon.set()
 		delattr(wlt, "_stop_2ndSignature_daemon")
 		# update keyring
-		WALLET.save(os.path.join(KEYRINGS, WALLET.address+".akr"))
-		print("\n    Second signature set for %s\n%s" % (wlt.address, PROMPT), end="")
+		WALLET.save(os.path.join(KEYRINGS, cfg.__NET__, WALLET.address+".akr"))
+		# sys.stdout.write("\n    Second signature set for %s\n%s" % (wlt.address, PROMPT))
 
 def _checkWallet(wlt):
 	if isinstance(wlt, wallet.Wallet) and wlt.account != {}: return True
-	else: print("Account not linked or does not exist in blockchain yet")
+	else: sys.stdout.write("Account not linked or does not exist in blockchain yet\n")
 	return False
 
 def _prettyPrint(dic, tab="    "):
@@ -200,12 +200,12 @@ def _prettyPrint(dic, tab="    "):
 		maxlen = max([len(e) for e in dic.keys()])
 		for k,v in dic.items():
 			if isinstance(v, dict):
-				print(tab + "%s:" % k.ljust(maxlen))
+				sys.stdout.write(tab + "%s:\n" % k.ljust(maxlen))
 				_prettyPrint(v, tab*2)
 			else:
-				print(tab + "%s: %s" % (k.ljust(maxlen),v))
+				sys.stdout.write(tab + "%s: %s\n" % (k.ljust(maxlen),v))
 	else:
-		print("Nothing here")
+		sys.stdout.write("Nothing here\n")
 
 # get all keyrings registered in KEYRINGS folder
 def _getKeyring():
@@ -215,11 +215,11 @@ def _getKeyring():
 def _floatAmount(amount):
 	global WALLET
 	if amount.endswith("%"): return float(amount[:-1])/100 * WALLET.balance
-	# $10, €10, £10 and ¥10 are converted into ARK using coinmarketcap API
-	elif amount.startswith("$"): return float(amount[1:])/getArkPrice("usd")
-	elif amount.startswith("€"): return float(amount[1:])/getArkPrice("eur")
-	elif amount.startswith("£"): return float(amount[1:])/getArkPrice("gbp")
-	elif amount.startswith("¥"): return float(amount[1:])/getArkPrice("cny")
+	# # $10, €10, £10 and ¥10 are converted into ARK using coinmarketcap API
+	# elif amount.startswith("$"): return float(amount[1:])/getArkPrice("usd")
+	# elif amount.startswith("€"): return float(amount[1:])/getArkPrice("eur")
+	# elif amount.startswith("£"): return float(amount[1:])/getArkPrice("gbp")
+	# elif amount.startswith("¥"): return float(amount[1:])/getArkPrice("cny")
 	else: return float(amount)
 
 # 
@@ -259,7 +259,7 @@ def execute(param):
 		with open(param["<script>"]) as src:
 			return _execute(src.readlines())
 	else:
-		print("'%s' script file does not exist" % param["<script>"])
+		sys.stdout.write("'%s' script file does not exist\n" % param["<script>"])
 		return False
 
 def connect(param):
@@ -269,7 +269,7 @@ def connect(param):
 		test = api.Block.getNethash()
 		_prettyPrint(api.Block.getNethash())
 		if test == {}: cfg.__URL_BASE__ = old_url
-	print("    Actual peer : %s" % cfg.__URL_BASE__)
+	sys.stdout.write("    Actual peer : %s\n" % cfg.__URL_BASE__)
 
 def use(param):
 	global PROMPT, WALLET
@@ -287,12 +287,12 @@ def account(param):
 			if os.path.exists(param["--keyring"]):
 				pathfile = param["--keyring"]
 			else:
-				print("Keyring '%s' does not exist" % param["--keyring"])
+				sys.stdout.write("Keyring '%s' does not exist\n" % param["--keyring"])
 				return False
 		if param["--address"]:
 			pathfile = os.path.join(KEYRINGS, cfg.__NET__, param["--address"]+".akr")
 			if not os.path.exists(pathfile):
-				print("Ark address %s not linked yet" % param["--address"])
+				sys.stdout.write("Ark address %s not linked yet\n" % param["--address"])
 				return False
 		elif param["<2ndSecret>"]:
 			WALLET = wallet.Wallet(param["<secret>"].encode("ascii"), param["<2ndSecret>"].encode("ascii"))
@@ -305,7 +305,7 @@ def account(param):
 			nb_name = len(names)
 			if nb_name > 1:
 				for i in range(nb_name):
-					print("    %d - %s" % (i+1, names[i].split(".")[0]))
+					sys.stdout.write("    %d - %s\n" % (i+1, names[i].split(".")[0]))
 				i = 0
 				while i < 1 or i > nb_name:
 					i = input("Choose a keyring [1-%d]> " % nb_name)
@@ -315,12 +315,13 @@ def account(param):
 			elif nb_name == 1:
 				name = names[0]
 			else:
-				print("No account found localy")
+				sys.stdout.write("No account found localy\n")
 				return False
 			pathfile = os.path.join(KEYRINGS, cfg.__NET__, name)
+			WALLET = None #wallet.open(pathfile)
 
 		if not WALLET:
-			wallet.open(pathfile)
+			WALLET = wallet.open(pathfile)
 		if not os.path.exists(pathfile):
 			WALLET.save(pathfile)
 		PROMPT = "%s @ %s> " % (WALLET.address, cfg.__NET__)
@@ -374,9 +375,9 @@ def account(param):
 					tx = WALLET._generate_tx(type=3, recipientId=WALLET.address, asset=ArkyDict(votes=delegates))
 					_prettyPrint(core.sendTransaction(tx))
 				else:
-					print("Nothing to change on the vote")
+					sys.stdout.write("Nothing to change on the vote\n")
 			except:
-					print("Your curent vote%s: %r" % ("s" if len(votes)>1 else "", votes))
+					sys.stdout.write("Your curent vote%s: %r\n" % ("s" if len(votes)>1 else "", votes))
 
 	elif param["contributors"]:
 		if _checkWallet(WALLET): 
@@ -407,7 +408,7 @@ def account(param):
 					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
 					_prettyPrint(core.sendTransaction(tx))
 			else:
-				print("No contributors to share A%.8f with" % _floatAmount(param["<amount>"]))
+				sys.stdout.write("No contributors to share A%.8f with\n" % _floatAmount(param["<amount>"]))
 
 	elif param["support"]:
 		if _checkWallet(WALLET):
@@ -466,9 +467,9 @@ Options:
 			if not error:
 				sys.exit()
 		else:
-			print("'%s' script file does not exists" % launch_args["--script"])
+			sys.stdout.write("'%s' script file does not exists\n" % launch_args["--script"])
 
-	print("### Welcome to arky command line interface v%s ###" % __version__)
+	sys.stdout.write("### Welcome to arky command line interface v%s ###\n" % __version__)
 	while not exit:
 		# wait for command line
 		try: argv = shlex.split(input(PROMPT).strip())
@@ -487,7 +488,7 @@ Options:
 						arguments = docopt(doc, argv=argv[1:])
 						# _prettyPrint(arguments)
 					except:
-						print(commands.get(cmd))
+						sys.stdout.write(commands.get(cmd) + "\n")
 					else:
 						func = COMMANDS.get(cmd, False)
 						if func:
@@ -495,10 +496,10 @@ Options:
 								func(arguments)
 							except Exception as error:
 								if hasattr(error, "__traceback__"):
-									print("".join(traceback.format_tb(error.__traceback__)).rstrip())
-								print(error)
+									sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
+								sys.stdout.write("%s\n" % error)
 						else:
-							print("Not implemented yet")
+							sys.stdout.write("Not implemented yet\n")
 				else:
-					print(u"\narky-cli v%s \u00a9 Toons\nHere is a list of command\n" % __version__)
-					print("\n".join(["-- %s --%s" % (k,v) for k,v in commands.items()]))
+					sys.stdout.write(u"\narky-cli v%s \u00a9 Toons\nHere is a list of command\n\n" % __version__)
+					sys.stdout.write("\n".join(["-- %s --%s" % (k,v) for k,v in commands.items()]) + "\n")

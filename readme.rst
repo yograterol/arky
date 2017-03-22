@@ -4,8 +4,6 @@
 
 Copyright 2015-2016, **Toons**, `BSD licence`_
 
-**ONLY FOR TESTNET FOR NOW**
-
 Install
 =======
 
@@ -256,7 +254,7 @@ Support this project
 .. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
    :height: 30
 
-``A...``
+``APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ``
 
 Create your delegate
 ====================

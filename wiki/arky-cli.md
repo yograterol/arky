@@ -125,6 +125,8 @@ manualy without any risks for your accounts.
 
 When you want to define amount of a transaction, there are three ways:
 
+__Option 2. is not available yet__
+
   1. Giving a float value corresponding to the ARK amount you want to send.
 
   2. Giving a currency-style value. This value is transformed into equivalent
@@ -134,6 +136,7 @@ When you want to define amount of a transaction, there are three ways:
      due to well known `cp850` encoding bug.
 
   3. Giving a percentage of total balance value to send, fees included.
+
 
 # Where can I have more details about available commands ?
 
