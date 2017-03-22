@@ -5,9 +5,9 @@ import os, json, math, datetime
 api.use("ark")
 
 __daily_fees__ = 5./30 # daily server cost
-__pythoners__ = 'APW7bFmpzSQr7s9p56oo93ec2s6boDFZQY'
-__investments__ = 'AX8fQaCX73LR8DT8bAQ9atst7yDxcVhEfp'
-__exchange__ = ""
+__pythoners__ =   "AGvTiwbXykX6zpDMYUEBd9E5J818YmPZ4H"
+__investments__ = "AUahWfkfr5J4tYakugRbfow7RWVTK35GPW"
+__exchange__ =    "APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ"
 __tx_fee__ = cfg.__FEES__["send"]/100000000.
 
 # screen command line
@@ -15,7 +15,7 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.set_usage("usage: %prog arg1 ....argN [options]")
 parser.add_option("-s", "--secret", dest="secret", help="wallet secret you want to use")
-parser.add_option("-w", "--wallet", dest="wallet", help="wallet file you want to use")
+parser.add_option("-k", "--keyring", dest="keyring", help="wallet file you want to use")
 (options, args) = parser.parse_args()
 
 def ARK2USD(value): return value * getArkPrice("usd")
@@ -29,8 +29,8 @@ if len(args) == 1 and os.path.exists(args[0]):
 	wlt = wallet.Wallet(conf["forging"]["secret"][0])
 elif options.secret:
 	wlt = wallet.Wallet(secret)
-elif options.wallet:
-	wlt = wallet.open(options.wallet)
+elif options.keyring:
+	wlt = wallet.open(options.keyring)
 else:
 	raise Exception("Can not do something for now !")
 
@@ -39,7 +39,7 @@ try: os.makedirs(os.path.dirname(logfile))
 except: pass
 log = open(logfile, "w")
 
-if wlt.delegate["rate"] > 51:
+if wlt.delegate["rate"] > 51 or wlt.balance > 200:
 	log.write("%s is not an active delegate right now !" % wlt.delegate["username"])
 	log.close()
 	raise Exception("%s is not an active delegate right now !" % wlt.delegate["username"])
@@ -77,7 +77,7 @@ def _ceilContributors(contributors, max_ratio):
 		return contributors
 
 # get contributors and make a selection
-contributors = wallet.getVoterContribution(wlt) #.contributors
+contributors = wallet.getVoterContribution(wlt)
 contributors = _floorContributors(contributors, 5./100)
 contributors = _ceilContributors(contributors, 70./100)
 
@@ -87,11 +87,11 @@ header = ["Date", datetime.datetime.now(), ""]
 content = ["ARK amount", amount, ""]
 
 # ARK to be exchanged for node fees payment
-node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7)) + __tx_fee__
+node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7)) - __tx_fee__
 log.write("node fees       : A%.8f\n" % node_invest)
 header.append("Node fees")
 content.append(node_invest)
-# wlt.sendArk(node_invest, __exchange__)
+wlt.sendArk(node_invest, __exchange__)
 
 # part to be distributed
 share = amount - node_invest

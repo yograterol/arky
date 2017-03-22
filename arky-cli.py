@@ -218,8 +218,10 @@ def _floatAmount(amount):
 		return float(amount[:-1])/100 * WALLET.balance
 	elif amount[0] in "$€£¥":
 		price = getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
-		sys.stdout.write("Coinmarketcap price : Ѧ/%s = %f\n" % (amount[0], price))
-		return float(amount[1:])/price
+		result = float(amount[1:])/price
+		sys.stdout.write("Coinmarketcap price : ARK/%s = %f -> " % (amount[0], price))
+		sys.stdout.write("%s = ARK%f\n" % (amount, result))
+		return result
 	else:
 		return float(amount)
 
@@ -342,6 +344,7 @@ def account(param):
 		if _checkWallet(WALLET):
 			acc = WALLET.account
 			_prettyPrint({
+
 				"confirmed": float(acc["balance"])/100000000,
 				"unconfirmed": float(acc["unconfirmedBalance"])/100000000
 			})

@@ -176,11 +176,7 @@ NetworkError: Unknown bitcoin2 network properties
 		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = network
 		cfg.__URL_BASE__ = choose([
-			"http://5.39.9.245:4000",
-			"http://5.39.9.246:4000",
-			"http://5.39.9.247:4000",
-			"http://5.39.9.248:4000",
-			"http://5.39.9.249:4000"
+			"http://188.165.177.41:4000",
 		])
 
 	else:
