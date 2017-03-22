@@ -1,7 +1,7 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
 from arky.util import getArkPrice
@@ -83,6 +83,8 @@ Usage: use <network>
     1. ARK value (not in SATOSHI) using sinple float
     2. a percentage of the account balance using % symbol (63% will take 63
        percent of wallet balance)
+    3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
+       ARK using coinmarketcap API)
 
 Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
        account save <keyring>
@@ -134,8 +136,6 @@ Subcommands:
                    You can set a 64-char message.
 '''
 }
-    # 3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in 
-    #    ARK using coinmarketcap API)
 
 def _check(line, num=0):
 	global PROMPT
@@ -214,13 +214,14 @@ def _getKeyring():
 # return ark value according to amount
 def _floatAmount(amount):
 	global WALLET
-	if amount.endswith("%"): return float(amount[:-1])/100 * WALLET.balance
-	# # $10, €10, £10 and ¥10 are converted into ARK using coinmarketcap API
-	# elif amount.startswith("$"): return float(amount[1:])/getArkPrice("usd")
-	# elif amount.startswith("€"): return float(amount[1:])/getArkPrice("eur")
-	# elif amount.startswith("£"): return float(amount[1:])/getArkPrice("gbp")
-	# elif amount.startswith("¥"): return float(amount[1:])/getArkPrice("cny")
-	else: return float(amount)
+	if amount.endswith("%"):
+		return float(amount[:-1])/100 * WALLET.balance
+	elif amount[0] in "$€£¥":
+		price = getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
+		sys.stdout.write("Coinmarketcap price : Ѧ/%s = %f\n" % (amount[0], price))
+		return float(amount[1:])/price
+	else:
+		return float(amount)
 
 # 
 def _blacklistContributors(contributors, lst):

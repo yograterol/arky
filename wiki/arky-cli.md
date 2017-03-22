@@ -125,8 +125,6 @@ manualy without any risks for your accounts.
 
 When you want to define amount of a transaction, there are three ways:
 
-__Option 2. is not available yet__
-
   1. Giving a float value corresponding to the ARK amount you want to send.
 
   2. Giving a currency-style value. This value is transformed into equivalent

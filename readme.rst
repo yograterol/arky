@@ -137,8 +137,6 @@ execute simple commands. Type ``exit`` to close the interface.
 
 `Dowload arky CLI for windows x32`_
 
-`Dowload arky CLI for ubuntu x64`_
-
 `Here is a FAQ`_ 
 
 ::
@@ -187,8 +185,8 @@ execute simple commands. Type ``exit`` to close the interface.
       With send, split, share and support subcommands, there are three ways to
       define amount:
       1. ARK value (not in SATOSHI) using sinple float
-      2. a percentage of the account balance using semicolon marker (63:100 = 63%,
-         1:4 = 25%)
+      2. a percentage of the account balance using % symbol (63% will take 63
+         percent of wallet balance)
       3. a currency value using $, £, € or ¥ symbol ($45.6 will be converted in
          ARK using coinmarketcap API)
 
@@ -267,5 +265,4 @@ Create your delegate
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
 .. _Dowload arky CLI for windows x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFYkJDc0NnWHdQdVE/view?usp=sharing
 .. _Dowload arky CLI for windows x32: https://drive.google.com/file/d/0Bz6dDtWRLNUFUVo1bGY3R3BlcVk/view?usp=sharing
-.. _Dowload arky CLI for ubuntu x64: https://drive.google.com/file/d/0Bz6dDtWRLNUFU2tfSjhTUnd1azQ/view?usp=sharing
 .. _Here is a FAQ: https://github.com/Moustikitos/arky/blob/master/wiki/arky-cli.md
