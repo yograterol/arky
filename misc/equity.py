@@ -28,7 +28,7 @@ if wlt.delegate["rate"] > 51:
 	raise Exception("%s is not an active delegate right now !" % wlt.delegate["username"])
 
 relays = api.Delegate.getCandidates()[52:]
-vote_sum = sum([float(d.get("vote", 0.)) for d in relays])
+vote_sum = max(1, sum([float(d.get("vote", 0.)) for d in relays]))
 dist = dict([(r["address"], float(r.get("vote", 0.))/vote_sum) for r in relays])
 balance = wlt.balance
 

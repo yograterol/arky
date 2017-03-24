@@ -109,22 +109,36 @@ wlt.sendArk(node_invest, __exchange__)
 share = amount - node_invest
 log.write("Share           : A%.8f\n" % share)
 
-pythoners = 0.15*share - __tx_fee__
+pythoners = 0.10*share - __tx_fee__
 log.write("For pythoners   : A%.8f\n" % pythoners)
 header.append("Pythoners")
 content.append(pythoners)
 wlt.sendArk(pythoners, __pythoners__)
 
-investments = 0.6*share - __tx_fee__
+investments = 0.50*share - __tx_fee__
 log.write("For investments : A%.8f\n" % investments)
 header.append("Investments")
 content.append(investments)
 wlt.sendArk(investments, __investments__)
 
-voters = 0.25*share
+# relays = 0.05*share
+# log.write("For relay nodes : A%.8f\n" % relays)
+# relays = api.Delegate.getCandidates()[52:]
+# vote_sum = max(1, sum([float(d.get("vote", 0.)) for d in relays]))
+# dist, count = dict([(r["address"], float(r.get("vote", 0.))/vote_sum) for r in relays]), 0
+# for d,ratio in dist.items():
+# 	amount = (relays * ratio) - __tx_fee__
+# 	if amount > 0.:
+# 		wlt.sendArk(amount, d, vendorField="Arky contribution for relay nodes")
+# 		count += 1
+# 	log.write("%s : A%.8f\n" % (addr, amount))
+# header.append("Relay nodes (%d)" % count)
+# content.append(relays)
+
+voters = 0.40*share
 log.write("For voters      : A%.8f\n" % voters)
 
-log.write("\nFor arky contributors :\n")
+log.write("\nArky contributors :\n")
 header.append("")
 content.append("")
 for addr,ratio in contributors.items():

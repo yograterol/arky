@@ -1,10 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__version__ = "1.1"
+__version__ = "1.3"
 
 from arky import cfg, api, core, wallet, ArkyDict, __PY3__, setInterval
-from arky.util import getArkPrice
+from arky import util #util.getArkPrice
 from docopt import docopt
 import os, sys, imp, shlex, traceback, binascii, logging
 
@@ -51,11 +51,18 @@ Usage: connect [<peer>]
 """,
 
 	"use" : """
-    This command selects the network you want to work with. Two networks are
-    presently available : ark and testnet. By default, command line interface
-    starts on testnet.
+    This command selects the ARK network you want to work with or your ARK 
+    exchange platform.
 
-Usage: use <network>
+    Two ARK networks are presently available : ark and testnet. By default,
+    command line interface starts on testnet.
+
+    Only one platform exchange is implemented : coinmarketcap
+
+Usage: use (<network> | -x <exchange>)
+
+Options:
+-x <exchange> --exchange <exchange> exchange API name you want to use
 """,
 
 	"account": u'''
@@ -196,6 +203,9 @@ def _checkWallet(wlt):
 	return False
 
 def _prettyPrint(dic, tab="    "):
+
+	# add something to ask second signature and check it
+
 	if len(dic):
 		maxlen = max([len(e) for e in dic.keys()])
 		for k,v in dic.items():
@@ -217,10 +227,15 @@ def _floatAmount(amount):
 	if amount.endswith("%"):
 		return float(amount[:-1])/100 * WALLET.balance
 	elif amount[0] in "$€£¥":
-		price = getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
+		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
 		sys.stdout.write("Coinmarketcap price : ARK/%s = %f -> " % (amount[0], price))
-		sys.stdout.write("%s = ARK%f\n" % (amount, result))
+		answer = ""
+		while answer not in ["y", "Y", "n", "N"]:
+			answer = input("%s = ARK%f. Validate ?[y-n]> " % (amount, result))
+		if answer in ["n", "N"]:
+			sys.stdout.write("Transaction aborted\n")
+			return False
 		return result
 	else:
 		return float(amount)
@@ -230,7 +245,7 @@ def _blacklistContributors(contributors, lst):
 	share = 0.
 	for addr,ratio in [(a,r) for a,r in contributors.items() if a in lst]:
 		share += contributors.pop(addr)
-	share /= len(contributors)
+	share /= max(1, len(contributors))
 	for addr,ratio in [(a,r) for a,r in contributors.items()]:
 		contributors[addr] += share
 	return contributors
@@ -276,11 +291,14 @@ def connect(param):
 
 def use(param):
 	global PROMPT, WALLET
-	api.use(param["<network>"])
-	PROMPT = "@ %s> " % cfg.__NET__
-	WALLET = None
-	try: os.makedirs(os.path.join(KEYRINGS, cfg.__NET__))
-	except:pass
+	if param["--exchange"]:
+		util.useExchange(param["--exchange"])
+	else:
+		api.use(param["<network>"])
+		PROMPT = "@ %s> " % cfg.__NET__
+		WALLET = None
+		try: os.makedirs(os.path.join(KEYRINGS, cfg.__NET__))
+		except:pass
 
 def account(param):
 	global PROMPT, WALLET, KEYRINGS
@@ -390,7 +408,8 @@ def account(param):
 	elif param["send"]:
 		if _checkWallet(WALLET):
 			amount = _floatAmount(param["<amount>"])
-			if "%" in param["<amount>"]: amount = amount*100000000 - cfg.__FEES__["send"]
+			if not amount: return
+			elif "%" in param["<amount>"]: amount = amount*100000000 - cfg.__FEES__["send"]
 			else: amount *= 100000000
 			tx = WALLET._generate_tx(type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
 			_prettyPrint(core.sendTransaction(tx))
@@ -406,19 +425,21 @@ def account(param):
 				contributors = _ceilContributors(contributors, float(param["--ceil"])/100)
 			if len(contributors):
 				amount = _floatAmount(param["<amount>"])
+				if not amount: return
 				for addr,ratio in [(a,r) for a,r in contributors.items() if r > 0.]:
 					if "%" in param["<amount>"]: share = amount*ratio*100000000 - cfg.__FEES__["send"]
 					else: share = (amount*ratio)*100000000
 					tx = WALLET._generate_tx(type=0, amount=share, recipientId=addr, vendorField=param["<message>"])
 					_prettyPrint(core.sendTransaction(tx))
 			else:
-				sys.stdout.write("No contributors to share A%.8f with\n" % _floatAmount(param["<amount>"]))
+				sys.stdout.write("No contributors to share %s with\n" % param["<amount>"])
 
 	elif param["support"]:
 		if _checkWallet(WALLET):
 			amount = _floatAmount(param["<amount>"])
+			if not amount: return
 			relays = api.Delegate.getCandidates()[52:]
-			vote_sum = sum([float(d.get("vote", 0.)) for d in relays])
+			vote_sum = max(1, sum([float(d.get("vote", 0.)) for d in relays]))
 			dist = dict([(r["address"], float(r.get("vote", 0.))/vote_sum) for r in relays])
 			for addr,ratio in dist.items():
 				share = amount*ratio*100000000 - cfg.__FEES__["send"]
@@ -428,7 +449,8 @@ def account(param):
 
 	elif param["split"]:
 		if _checkWallet(WALLET):
-			share = _floatAmount(param["<amount>"]) / len(param["<recipient>"])
+			share = _floatAmount(param["<amount>"]) / max(1, len(param["<recipient>"]))
+			if not share: return
 			if "%" in param["<amount>"]: share = share*100000000 - cfg.__FEES__["send"]
 			else: share *= 100000000
 			for addr in param["<recipient>"]:
@@ -455,7 +477,7 @@ COMMANDS = dict([n,f] for n,f in globals().items() if callable(f) and not n.star
 
 if __name__ == '__main__':
 	exit = False
-	use({"<network>":"testnet"})
+	use({"<network>":"testnet", "--exchange":None})
 
 	launch_args = docopt("""
 Usage: arky-cli [-s <script>]

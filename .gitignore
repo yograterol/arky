@@ -158,3 +158,4 @@ misc/devnet-peers.py
 misc/killingpool.py
 misc/peerloop.py
 misc/cont.py
+misc/okinawa.py

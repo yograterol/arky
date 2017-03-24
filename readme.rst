@@ -247,8 +247,6 @@ Support this project
 
 ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
-``16SPHzxaxjCYccnJCRY3RG711oybQj4KZ4``
-
 .. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
    :height: 30
 
