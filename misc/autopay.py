@@ -115,7 +115,7 @@ header.append("Pythoners")
 content.append(pythoners)
 wlt.sendArk(pythoners, __pythoners__)
 
-investments = 0.50*share - __tx_fee__
+investments = 0.65*share - __tx_fee__
 log.write("For investments : A%.8f\n" % investments)
 header.append("Investments")
 content.append(investments)
@@ -135,7 +135,7 @@ wlt.sendArk(investments, __investments__)
 # header.append("Relay nodes (%d)" % count)
 # content.append(relays)
 
-voters = 0.40*share
+voters = 0.25*share
 log.write("For voters      : A%.8f\n" % voters)
 
 log.write("\nArky contributors :\n")

@@ -1,32 +1,49 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-import json, requests
+import sys, json, requests, traceback
 # from .. import setInterval
 
 class ExchangeNoImplemented(Exception): pass
+class ExchangeApiError(Exception): pass
 
 class Exchange:
-	# 
+
+	@staticmethod
+	def _printError(error):
+		if hasattr(error, "__traceback__"):
+			sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
+		sys.stdout.write("%s\n" % error)
+
+	@staticmethod
 	def coinmarketcap(curency):
-		try: cmc_ark = json.loads(requests.get("http://coinmarketcap.northpole.ro/api/v5/ARK.json").text)
-		except: cmc_ark = {"price": {"usd":1.0/34}}
-		return float(cmc_ark["price"][curency])
+		try:
+			cmc_ark = json.loads(requests.get("http://coinmarketcap.northpole.ro/api/v5/ARK.json").text)
+			return float(cmc_ark["price"][curency])
+		except Exception as error:
+			Exchange._printError(error)
+
+	@staticmethod
+	def cryptocompare(curency):
+		try:
+			ccp_ark = json.loads(requests.get("https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=USD,EUR,GBP,CNY").text)
+			return float(ccp_ark[curency.upper()])
+		except Exception as error:
+			Exchange._printError(error)
 
 def useExchange(name):
 	global getArkPrice
 	try: getArkPrice = getattr(Exchange, name)
 	except: raise ExchangeNoImplemented("%s exchange not implemented yet" % name.capitalize())
+	else: return name.capitalize()
 
 useExchange("coinmarketcap")
 
 
+# https://bittrex.com/api/v1.1/public/getticker?market=BTC-ARK
 
-
-
-
-
-
+# https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=BTC,USD,EUR,GBP,ETH,CNY
+# {"BTC":0.00008688,"USD":0.07902,"EUR":0.07241,"GBP":0.06313,"ETH":0.001609,"CNY":0.5517}
 
 
 
