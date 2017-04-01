@@ -257,7 +257,7 @@ def getVoterContribution(wlt):
 			voter_addr = voter["address"]
 			nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
 			if nb_votes > 0:
-				data[voter_addr] = round(float(voter['balance'])/nb_votes/total_votes, 3)
+				data[voter_addr] = float(voter['balance'])/nb_votes/total_votes
 	return data
 
 # used by Wallet.sendMultisignArk

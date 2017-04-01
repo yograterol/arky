@@ -3,6 +3,23 @@
 
 Copyright 2015-2016, **Toons**, `BSD licence`_
 
+Support this project
+====================
+
+Vote for delegate : ``arky``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
+   :width: 100
+
+``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
+
+.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
+   :height: 30
+
+``APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ``
+
+
 Install
 =======
 
@@ -130,19 +147,6 @@ blockchain. Once script is executed, it loads all needed environment to execute
 simple commands. Type ``exit`` to close the interface.
 
 `Arky Command Line Interface`_
-
-Support this project
-====================
-
-.. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
-   :width: 100
-
-``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
-
-.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
-   :height: 30
-
-``APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ``
 
 Create your delegate
 ====================
