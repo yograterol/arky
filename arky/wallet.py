@@ -46,12 +46,14 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 	delegates = []
 	# list of delegate usernames a wallet can vote
 	candidates = []
-	# list of votes done through wallet
-	votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
-	# list of voters given to wallet
-	voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
-	# return voter contributors ratio
-	contributors = property(lambda obj: getVoterContribution(obj), None, None, "")
+
+	# # list of votes done through wallet
+	# votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
+	# # list of voters given to wallet
+	# voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
+	# # return voter contributors ratio
+	# contributors = property(lambda obj: getVoterContribution(obj), None, None, "")
+
 	# return wallet balance in ARK
 	balance = property(lambda obj: int(obj.account.get("balance", 0))/100000000., None, None, "")
 	# return wallet WIF addres
@@ -108,6 +110,10 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 		object.__setattr__(self, "delegate", search[0] if len(search) else False)
 		object.__setattr__(self, "forger", True if len(search51) else False)
 		object.__setattr__(self, "account", api.Account.getAccount(self.address).get("account", {}))
+		object.__setattr__(self, "votes", [d["username"] for d in api.Account.getVotes(self.address).get("delegates", [])])
+		object.__setattr__(self, "voters", api.Delegate.getVoters(self.publicKey).get("accounts", []))
+		k = 1.0/sum([int(v["balance"]) for v in self.voters])
+		object.__setattr__(self, "contributors", dict((v["address"],int(v["balance"])*k) for v in self.voters))
 
 	def _generate_tx(self, **kw):
 		"""
@@ -250,15 +256,10 @@ secondSecret (str) -- a valid utf-8 encoded string
 
 
 def getVoterContribution(wlt):
-	data = {}
 	if wlt.delegate:
-		total_votes = float(wlt.delegate["vote"])
-		for voter in wlt.voters:
-			voter_addr = voter["address"]
-			nb_votes = len(api.Account.getVotes(voter_addr).get("delegates", []))
-			if nb_votes > 0:
-				data[voter_addr] = float(voter['balance'])/nb_votes/total_votes
-	return data
+		voters = wlt.voters
+		k = 1.0/sum([int(v["balance"]) for v in voters])
+		return dict((v["address"],int(v["balance"])*k) for v in voters)
 
 # used by Wallet.sendMultisignArk
 def askRemoteSignature(conn, data, q):

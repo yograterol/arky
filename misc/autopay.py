@@ -1,4 +1,4 @@
-# -*- encoding -*-
+# -*- encoding: utf-8 -*-
 from arky.util import getArkPrice
 from arky import cfg, api, wallet, HOME
 import os, json, math, datetime
@@ -90,7 +90,7 @@ def _ceilContributors(contributors, max_ratio):
 
 # get contributors and make a selection
 contributors = wallet.getVoterContribution(wlt)
-contributors = _floorContributors(contributors, 5./100)
+# contributors = _floorContributors(contributors, 5./100)
 contributors = _ceilContributors(contributors, 70./100)
 
 amount = wlt.balance

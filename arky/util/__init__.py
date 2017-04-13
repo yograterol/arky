@@ -1,13 +1,18 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-import sys, json, requests, traceback
+import sys, imp, json, requests, traceback
 # from .. import setInterval
 
 class ExchangeNoImplemented(Exception): pass
 class ExchangeApiError(Exception): pass
 
+def main_is_frozen():
+	return (hasattr(sys, "frozen") or hasattr(sys, "importers") or imp.is_frozen("__main__"))
+
 class Exchange:
+
+	frozen_mode = False
 
 	@staticmethod
 	def _printError(error):
@@ -26,24 +31,22 @@ class Exchange:
 	@staticmethod
 	def cryptocompare(curency):
 		try:
-			ccp_ark = json.loads(requests.get("https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=USD,EUR,GBP,CNY").text)
+			if Exchange.frozen_mode:
+				ccp_ark = json.loads(requests.get("https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=USD,EUR,GBP,CNY", verify='cacert.pem').text)
+			else:
+				ccp_ark = json.loads(requests.get("https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=USD,EUR,GBP,CNY").text)
 			return float(ccp_ark[curency.upper()])
 		except Exception as error:
 			Exchange._printError(error)
 
 def useExchange(name):
+	Exchange.frozen_mode = main_is_frozen()
 	global getArkPrice
 	try: getArkPrice = getattr(Exchange, name)
 	except: raise ExchangeNoImplemented("%s exchange not implemented yet" % name.capitalize())
 	else: return name.capitalize()
 
 useExchange("coinmarketcap")
-
-
-# https://bittrex.com/api/v1.1/public/getticker?market=BTC-ARK
-
-# https://min-api.cryptocompare.com/data/price?fsym=ARK&tsyms=BTC,USD,EUR,GBP,ETH,CNY
-# {"BTC":0.00008688,"USD":0.07902,"EUR":0.07241,"GBP":0.06313,"ETH":0.001609,"CNY":0.5517}
 
 
 
