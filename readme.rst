@@ -24,8 +24,8 @@ Version
 
 **0.1.5**
 
-+ `wallet` mod : code improvement
-+ `util` pkg : https bug fix in frozen mode
++ ``wallet`` mod : code improvement
++ ``util`` pkg : https bug fix in frozen mode
 
 **0.1.4**
 
