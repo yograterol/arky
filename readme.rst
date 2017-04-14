@@ -19,6 +19,16 @@ Vote for delegate : ``arky``
 
 ``APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ``
 
+Version
+=======
+
+**0.1.5**
+
++ `wallet.py` : code improvement
+
+**0.1.4**
+
++ first mainnet release
 
 Install
 =======

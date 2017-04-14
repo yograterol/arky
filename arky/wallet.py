@@ -46,14 +46,6 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 	delegates = []
 	# list of delegate usernames a wallet can vote
 	candidates = []
-
-	# # list of votes done through wallet
-	# votes = property(lambda obj: [d["username"] for d in api.Account.getVotes(obj.address).get("delegates", [])], None, None, "")
-	# # list of voters given to wallet
-	# voters = property(lambda obj: api.Delegate.getVoters(obj.publicKey).get("accounts", []), None, None, "")
-	# # return voter contributors ratio
-	# contributors = property(lambda obj: getVoterContribution(obj), None, None, "")
-
 	# return wallet balance in ARK
 	balance = property(lambda obj: int(obj.account.get("balance", 0))/100000000., None, None, "")
 	# return wallet WIF addres
@@ -78,7 +70,7 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 			object.__setattr__(self, "publicKey", public_key.decode() if isinstance(public_key, bytes) else public_key)
 			object.__setattr__(self, "K1", keys)
 			self.update()
-			@setInterval(15)
+			@setInterval(20)
 			def _check(obj): obj.update()
 			self._stop_check_daemon = _check(self)
 		elif attr == "secondSecret":
@@ -283,7 +275,7 @@ def open(filename):
 	obj.update()
 	if K2: object.__setattr__(obj, "K2", core.unserializeKeys(K2))
 	
-	@setInterval(15)
+	@setInterval(20)
 	def _check(o): obj.update()
 	obj._stop_check_daemon = _check(obj)
 
