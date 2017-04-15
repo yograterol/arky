@@ -104,7 +104,7 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 		object.__setattr__(self, "account", api.Account.getAccount(self.address).get("account", {}))
 		object.__setattr__(self, "votes", [d["username"] for d in api.Account.getVotes(self.address).get("delegates", [])])
 		object.__setattr__(self, "voters", api.Delegate.getVoters(self.publicKey).get("accounts", []))
-		k = 1.0/sum([int(v["balance"]) for v in self.voters])
+		k = 1.0/max(1, sum([int(v["balance"]) for v in self.voters]))
 		object.__setattr__(self, "contributors", dict((v["address"],int(v["balance"])*k) for v in self.voters))
 
 	def _generate_tx(self, **kw):

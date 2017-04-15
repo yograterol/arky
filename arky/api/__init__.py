@@ -112,8 +112,8 @@ class Delegate:
 class Transaction(object):
 
 	@staticmethod
-	def getTransactionsList():
-		return get('/api/transactions')
+	def getTransactionsList(**param):
+		return get('/api/transactions', **param)
 
 	@staticmethod
 	def getTransaction(transactionId):
