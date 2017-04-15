@@ -32,7 +32,10 @@ else:
 logfile = os.path.join(HOME, "Lucky", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
+
 log = open(logfile, "w")
+header = ["Date", datetime.datetime.now(), ""]
+content = ["ARK amount", amount, ""]
 
 wlt.update()
 now = datetime.datetime.now(slots.UTC)
@@ -65,11 +68,23 @@ if len(tx):
 		if senderId in summary: summary[senderId] += t["amount"]
 		else: summary[senderId] = t["amount"]
 
-	if share > 2*summary[recipientId]:
-		wlt.sendArk(share/100000000., recipientId, vendorField="You are the lucky donator of the week")
+	header +=  ["donator number", "Total ARK",               ""]
+	content += [len(summary),     total_received/100000000., ""]
+	if share >= summary[recipientId]:
+		wlt.sendArk(share/100000000., recipientId, vendorField="from arky delegate: You are the lucky donator of the week !")
+		header +=  ["Lucky one", "Received", "Ratio"]
+		content += [recipientId, share, (share/summary[recipientId]-1)*100]
 	else:
+		header +=  ["Lucky one"]
+		content += ["None"]
 		for recipientId, share in summary.items():
-			wlt.sendArk(share/100000000. + 0.2, recipientId, vendorField="No lucky donator defined this week")
+			log.write("No lucky donator found this week\n")
+			wlt.sendArk(share/100000000., recipientId, vendorField="from arky delegate: No lucky donator found this week")
+
+out = open("lucky.csv", "a")
+out.write(";".join(["%s"%e for e in header])  + "\n")
+out.write(";".join(["%s"%e for e in content]) + "\n")
+out.close()
 
 wallet.mgmt.join()
 log.close()
