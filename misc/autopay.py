@@ -144,8 +144,8 @@ content.append("")
 for addr,ratio in contributors.items():
 	amount = voters*ratio - __tx_fee__
 	if amount > 0.:
-		wlt.sendArk(amount, addr, vendorField="Arky weekly refund. Thanks for you contributors !")
-	log.write("%s : A%.8f\n" % (addr, amount))
+		wlt.sendArk(amount, addr, vendorField="Arky weekly interests. Thanks for your contribution !")
+		log.write("%s : A%.8f\n" % (addr, amount))
 	header.append(addr)
 	content.append(amount)
 
