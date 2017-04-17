@@ -26,6 +26,7 @@ Version
 
 + ``wallet`` mod : code improvement
 + ``util`` pkg : https bug fix in frozen mode
++ ``api`` pkg : update
 
 **0.1.4**
 

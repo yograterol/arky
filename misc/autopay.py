@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 from arky.util import getArkPrice
-from arky import cfg, api, wallet, HOME
+from arky import cfg, api, slots, wallet, HOME
 import os, json, math, datetime
 
 import sys
@@ -56,15 +56,13 @@ elif wlt.balance < 200:
 	log.close()
 	raise Exception("%s does not have more than 200 Arks !" % wlt.delegate["username"])
 
-# 
+#
 def _blacklistContributors(contributors, lst):
-	share = 0.
-	for addr,ratio in [(a,r) for a,r in contributors.items() if a in lst]:
-		share += contributors.pop(addr)
-	share /= len(contributors)
-	for addr,ratio in [(a,r) for a,r in contributors.items()]:
-		contributors[addr] += share
-	return contributors
+	if not(len(contributors)):
+		return {}
+	else:
+		k = 1./sum([r for a,r in contributors.items() if a not in lst])
+		return dict((a,r*k) for a,r in contributors.items() if a not in lst)
 
 def _floorContributors(contributors, min_ratio):
 	return _blacklistContributors(contributors, [a for a,r in contributors.items() if r < min_ratio])
@@ -88,9 +86,47 @@ def _ceilContributors(contributors, max_ratio):
 			contributors[addr] += share
 		return contributors
 
-# get contributors and make a selection
-contributors = wallet.getVoterContribution(wlt)
-# contributors = _floorContributors(contributors, 5./100)
+def _getVoteFidelity(*contributors, delay=7):
+	now = datetime.datetime.now(slots.UTC)
+	delta = datetime.timedelta(days=delay)
+	total_second = delta.total_seconds()
+	limit = now - delta
+	timestamp_limit = slots.getTime(limit)
+	public_key = wlt.publicKey
+
+	fidelity = {}
+	print("Checking %s-day-fidelity from vote history..." % delay)
+	for addr in contributors:
+		tx = [t for t in api.Transaction.getTransactionsList(senderId=addr).get("transactions", []) if t["type"] == 3]
+		if len(tx):
+			# get all tx received after timestamp limit
+			if tx[0]["timestamp"] > timestamp_limit:
+				while tx[0]["timestamp"] > timestamp_limit:
+					search = [t for t in api.Transaction.getTransactionsList(senderId=addr, offset=len(tx)).get("transactions", []) if t["type"] == 3]
+					tx = search + tx
+					if len(search) < 50:
+						break
+
+			details = sorted([[t["timestamp"], t["asset"]["votes"][0][0]] for t in tx if t["timestamp"] >= timestamp_limit and public_key in t["asset"]["votes"][0] and t["senderId"] != wlt.address], key=lambda e:e[0])
+
+		if len(details):
+			cumul = 0.
+			start = timestamp_limit
+			for elem in details:
+				if elem[-1] == "+": start = elem[0]
+				else: cumul += elem[0] - start
+			if elem[-1] == "+": cumul += slots.getTime(now) - start
+			fidelity[addr] = cumul/total_second
+		else:
+			fidelity[addr] = 1.0
+
+	return fidelity
+
+contributors = dict((v["address"],int(v["balance"])) for v in wlt.voters)
+fidelity = _getVoteFidelity(*contributors.keys(), delay=7)
+contributors = dict([addr,vote*fidelity[addr]] for addr,vote in contributors.items())
+k = 1.0/max(1.0, sum(contributors.values()))
+contributors = dict([addr,vote*k] for addr,vote in contributors.items())
 contributors = _ceilContributors(contributors, 70./100)
 
 amount = wlt.balance
@@ -136,7 +172,7 @@ wlt.sendArk(investments, __investments__)
 # content.append(relays)
 
 voters = 0.25*share
-log.write("For voters      : A%.8f\n" % voters)
+log.write("For voters      : A%.8f [checksum:%f]\n" % (voters, sum(contributors.values())))
 
 log.write("\nArky contributors :\n")
 header.append("")
@@ -145,7 +181,7 @@ for addr,ratio in contributors.items():
 	amount = voters*ratio - __tx_fee__
 	if amount > 0.:
 		wlt.sendArk(amount, addr, vendorField="Arky weekly interests. Thanks for your contribution !")
-		log.write("%s : A%.8f\n" % (addr, amount))
+		log.write("%s [fidelity:%f]: A%.8f\n" % (addr, fidelity[addr], amount))
 	header.append(addr)
 	content.append(amount)
 

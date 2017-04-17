@@ -88,8 +88,8 @@ class Account:
 class Delegate:
 
 	@staticmethod
-	def getDelegates(offset=0):
-		return get('/api/delegates', offset=offset)
+	def getDelegates(**param):
+		return get('/api/delegates', **param)
 
 	@staticmethod
 	def getDelegate(username):
@@ -103,9 +103,10 @@ class Delegate:
 	def getCandidates():
 		delegates = []
 		while 1:
-			found = Delegate.getDelegates(offset=len(delegates)).get("delegates", [])
+			found = Delegate.getDelegates(offset=len(delegates), limit=51).get("delegates", [])
 			delegates += found
-			if len(found) < 51: break
+			if len(found) < 51:
+				break
 		return delegates
 
 
