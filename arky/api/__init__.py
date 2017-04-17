@@ -337,6 +337,10 @@ NetworkError: Unknown bitcoin2 network properties
 		'port'         : '1',
 		'nethash'      : Block.getNethash().get("nethash", "")
 	})
+
+	# check if nethash is updated from peer. If not: relaunch use
+	if cfg.__HEADERS__["nethash"] == "": use(network)
+
 # initailize testnet by default
 use("testnet")
 
