@@ -1,7 +1,7 @@
 .. image:: https://github.com/Moustikitos/arky/raw/master/arky-logo.png
    :target: https://ark.io
 
-Copyright 2015-2016, **Toons**, `MIT licence`_
+Copyright 2017 **ARK**, `MIT licence`_
 
 Support this project
 ====================
