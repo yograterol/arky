@@ -1,13 +1,10 @@
 .. image:: https://github.com/Moustikitos/arky/raw/master/arky-logo.png
    :target: https://ark.io
 
-Copyright 2015-2016, **Toons**, `BSD licence`_
+Copyright 2017 **ARK**, `MIT licence`_
 
 Support this project
 ====================
-
-Vote for delegate : ``arky``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
    :width: 100
@@ -17,7 +14,14 @@ Vote for delegate : ``arky``
 .. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
    :height: 30
 
-``APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ``
+``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
+
+**Show gratitude on Gratipay:**
+
+.. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
+   :target: https://gratipay.com/~b_py
+
+**Vote for delegate arky**
 
 Version
 =======
@@ -167,6 +171,6 @@ Create your delegate
    :target: http://www.vultr.com/?ref=7071726
    :width: 100
 
-.. _BSD licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
+.. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
 .. _Arky Command Line Interface: https://github.com/Moustikitos/arky-cli
