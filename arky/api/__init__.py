@@ -6,6 +6,25 @@ from .. import cfg, ArkyDict, choose, setInterval, NETWORKS
 import sys, json, requests, traceback, datetime, pytz
 UTC = pytz.UTC
 
+def url_check(url):
+    #Description
+
+    """Boolean return - check to see if the site exists.
+       This function takes a url as input and then it requests the site
+       head - not the full html and then it checks the response to see if
+       it's less than 400. If it is less than 400 it will return TRUE
+       else it will return False.
+    """
+    try:
+            site_ping = head(url)
+            if site_ping.status_code < 400:
+                #  To view the return status code, type this   :   **print(site.ping.status_code)**
+                return True
+    except Exception:
+        return False
+
+
+
 class NetworkError(Exception): pass
 
 # GET generic method for ARK API
@@ -26,7 +45,6 @@ def get(api, dic={}, **kw):
 		if data["success"]:
 			return ArkyDict(data[returnkey]) if returnkey else ArkyDict(data)
 	return ArkyDict()
-
 
 class Loader:
 
@@ -172,13 +190,14 @@ NetworkError: Unknown bitcoin2 network properties
 	sys.ps1 = "@%s>>> " % network
 	sys.ps2 = "@%s... " % network
 	
-	if network in ["testnet", "devnet"]:
+	if network in ["testnet", "devnet"] and url_check("http://188.165.177.41:4000"):
 		# in js month value start from 0, in python month value start from 1
 		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = network
 		cfg.__URL_BASE__ = choose([
 			"http://188.165.177.41:4000",
 		])
+
 
 	else:
 		# in js month value start from 0, in python month value start from 1
