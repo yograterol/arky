@@ -361,7 +361,7 @@ NetworkError: Unknown bitcoin2 network properties
 	if cfg.__HEADERS__["nethash"] == "": use(network)
 
 # initailize testnet by default
-use("testnet")
+# use("testnet")
 
 @setInterval(500)
 def rotatePeer():
