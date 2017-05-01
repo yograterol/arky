@@ -447,6 +447,7 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 			object.__setattr__(self, "signSignature", checkStrictDER(stamp2))
 		# generate id
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
+		return self
 
 	def serialize(self):
 		"""

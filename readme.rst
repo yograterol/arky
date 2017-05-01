@@ -1,40 +1,7 @@
 .. image:: https://github.com/Moustikitos/arky/raw/master/arky-logo.png
    :target: https://ark.io
 
-Copyright 2017 **ARK**, `MIT licence`_
-
-Support this project
-====================
-
-.. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
-   :width: 100
-
-``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
-
-.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
-   :height: 30
-
-``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
-
-**Show gratitude on Gratipay:**
-
-.. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
-   :target: https://gratipay.com/~b_py
-
-**Vote for delegate arky**
-
-Version
-=======
-
-**0.1.5**
-
-+ ``wallet`` mod : code improvement
-+ ``util`` pkg : https bug fix in frozen mode
-+ ``api`` pkg : update
-
-**0.1.4**
-
-+ first mainnet release
+Copyright 2016-2017 **Toons**, Copyright 2017 **ARK**, `MIT licence`_
 
 Install
 =======
@@ -164,12 +131,48 @@ simple commands. Type ``exit`` to close the interface.
 
 `Arky Command Line Interface`_
 
-Create your delegate
+Authors
+=======
+
+Toons <moustikitos@gmail.com>
+
+Support this project
 ====================
 
-.. image:: https://github.com/Moustikitos/arky/raw/master/vultr-logo.png
-   :target: http://www.vultr.com/?ref=7071726
+.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
+   :height: 30
+
+Toons Ark address: ``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
+
+.. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
    :width: 100
+
+Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
+
+
+**Show gratitude on Gratipay:**
+
+.. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
+   :target: https://gratipay.com/~b_py
+
+**Vote for Toons' delegate arky**
+
+Version
+=======
+
+**0.1.6**
++ ``api`` pkg : improve peer connection
+
+**0.1.5**
+
++ ``wallet`` mod : code improvement
++ ``util`` pkg : https bug fix in frozen mode
++ ``api`` pkg : update
+
+**0.1.4**
+
++ first mainnet release
+
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
