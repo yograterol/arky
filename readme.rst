@@ -161,6 +161,7 @@ Version
 =======
 
 **0.1.6**
+
 + ``api`` pkg : improve peer connection
 
 **0.1.5**
