@@ -217,7 +217,7 @@ def use(network="testnet", broadcast=5):
 	cfg.__URL_BASE__ = choose(peerlist)
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
-		'os'           : 'arky',
+		'os'           : 'arky','port': '1',
 		'version'      : __version__,
 		'nethash'      : Block.getNethash().get("nethash", "")
 	})
