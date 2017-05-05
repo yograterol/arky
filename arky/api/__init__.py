@@ -6,9 +6,22 @@ from .. import cfg, core, ArkyDict, choose, setInterval, NETWORKS, SEEDLIST, __v
 import os, sys, json, requests, traceback, datetime, pytz
 UTC = pytz.UTC
 
+# define api exceptions 
 class NetworkError(Exception): pass
+class SeedError(Exception): pass
+class PeerError(Exception): pass
+
 
 def log_exception(error):
+	"""
+This function allow package to log exceptions without stoping program execution.
+Error and traceback (if any) are logged using __LOG__ queue.
+
+Argument:
+error (Exception) -- error cautch by except statement
+
+Returns None
+"""
 	if hasattr(error, "__traceback__"):
 		cfg.__LOG__.put({
 			"API error": error,
@@ -17,174 +30,100 @@ def log_exception(error):
 	else:
 		cfg.__LOG__.put({"API error": error})
 
-# GET generic method for ARK API
 def get(api, dic={}, **kw):
 	"""
+ARK API call using requests lib. It returns server response as ArkyDict object.
+It uses default peer registered in cfg.__URL_BASE__ variable.
+
+Argument:
+api (str) -- api url path
+
+Keyword argument:
+dic (dict) -- api parameters as dict type
+**kw       -- api parameters as keyword argument (overwriting dic ones)
+
+Returns ArkyDict
 """
+	# merge dic and kw values
 	args = dict(dic, **kw)
-	returnkey = args.pop("returnKey", False)
+	# API response contains several fields and wanted one can be extracted using
+	# a returnKey that match the field name
+	returnKey = args.pop("returnKey", False)
+
 	try:
 		text = requests.get(cfg.__URL_BASE__+api, params=args, headers=cfg.__HEADERS__, timeout=2).text
-		data = json.loads(text)
+		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		log_exception(error)
 	else:
-		if data["success"]:
-			return ArkyDict(data[returnkey]) if returnkey else ArkyDict(data)
+		if data.success:
+			return ArkyDict(data[returnKey]) if returnKey in data else data
 	return ArkyDict()
 
-# The only POST here that send transactions
-def post_tx(url_base, *transactions):
+def send_tx(tx, url_base=None, secret=None, secondSecret=None):
 	"""
+Send backed transaction using optional url_base and eventualy secrets. It
+returns server response as ArkyDict object. If secrets are given, transaction is
+signed and then broadcasted with signatures and id. It does not send secrets.
+
+Argument:
+tx (core.Trnasaction) -- transaction object to be send
+
+Keyword argument:
+url_base     (str) -- the base api url to use
+secret       (str) -- secret of the account sending the transaction
+secondSecret (str) -- second secret of account sending the transaction
+
+Returns ArkyDict
 """
-	transactions = json.dumps({"transactions": [tx.serialize() for tx in transactions]})
+	# sign transaction using secret
+	if secret != None: tx.sign(secret, secondSecret)
+	# use registered peer if no url_base is given
+	if url_base == None: url_base = cfg.__URL_BASE__
+
+	transactions = json.dumps({"transactions": [tx.serialize()]})
 	try:
 		text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=2).text
-		data = json.loads(text)
+		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		log_exception(error)
 	else:
-		if data["success"]:
-			return ArkyDict(data)
+		if data.success:
+			if len(tx.asset):
+				data.asset = tx.asset
+			else:
+				data.transaction = "%r" % tx
+			return data
 	return ArkyDict()
 
-def broadcast(*transactions, secret=None, secondSecret=None):
+def broadcast(tx, secret=None, secondSecret=None):
 	"""
+Send transaction using multiple peers. It avoid broadcasting errors when large
+amount of peers are unresponsive or not up to date.
+
+Argument:
+tx (core.Trnasaction) -- transaction object to be send
+
+Keyword argument:
+secret       (str) -- secret of the account sending the transaction
+secondSecret (str) -- second secret of account sending the transaction
+
+Returns ArkyDict
 """
-	transactions = [tx.sign(secret, secondSecret) for tx in transactions if isinstance(tx, core.Transaction)]
-	if len(transactions):
-		for peer in PEERS:
-			post_tx(peer, *transactions)
-
-class Loader:
-
-	@staticmethod
-	def getLoadingStatus():
-		return get('/api/loader/status')
-
-	@staticmethod
-	def getSynchronisationStatus():
-		return get('/api/loader/status/sync')
-
-
-class Block:
-
-	@staticmethod
-	def getBlock(blockId):
-		return get('/api/blocks/get', id=blockId)
-
-	@staticmethod
-	def getNethash():
-		return get('/api/blocks/getNethash')
-
-	@staticmethod
-	def getBlocks():
-		return get('/api/blocks')
-
-	@staticmethod
-	def getBlockchainFee():
-		return get('/api/blocks/getFee')
-
-	@staticmethod
-	def getBlockchainHeight():
-		return get('/api/blocks/getHeight')
-
-	@staticmethod
-	def getForgedByAccount(publicKey):
-		return get('/api/delegates/forging/getForgedByAccount', generatorPublicKey=publicKey)
-
-
-class Account:
-
-	@staticmethod
-	def getBalance(address):
-		return get('/api/accounts/getBalance', address=address)
-
-	@staticmethod
-	def getPublicKey(address):
-		return get('/api/accounts/getPublicKey', address=address)
-
-	@staticmethod
-	def getAccount(address):
-		return get('/api/accounts', address=address)
-
-	@staticmethod
-	def getVotes(address):
-		return get('/api/accounts/delegates', address=address)
-
-
-class Delegate:
-
-	@staticmethod
-	def getDelegates(**param):
-		return get('/api/delegates', **param)
-
-	@staticmethod
-	def getDelegate(username):
-		return get('/api/delegates/get', username=username)
-
-	@staticmethod
-	def getVoters(publicKey):
-		return get('/api/delegates/voters', publicKey=publicKey)
-
-	@staticmethod
-	def getCandidates():
-		delegates = []
-		while 1:
-			found = Delegate.getDelegates(offset=len(delegates), limit=51).get("delegates", [])
-			delegates += found
-			if len(found) < 51:
-				break
-		return delegates
-
-
-class Transaction(object):
-
-	@staticmethod
-	def getTransactionsList(**param):
-		return get('/api/transactions', **param)
-
-	@staticmethod
-	def getTransaction(transactionId):
-		return get('/api/transactions/get', id=transactionId)
-
-	@staticmethod
-	def getUnconfirmedTransaction(transactionId):
-		return get('/api/transactions/unconfirmed/get', id=transactionId)
-
-	@staticmethod
-	def getUnconfirmedTransactions():
-		return get('/api/transactions/unconfirmed')
-
-
-class Peer:
-
-	@staticmethod
-	def getPeersList():
-		return get('/api/peers')
-
-	@staticmethod
-	def getPeer(ip, port):
-		return get('/api/peers', ip=ip, port=port)
-
-	@staticmethod
-	def getPeerVersion():
-		return get('/api/peers/version')
-
-
-class Multisignature:
-
-	@staticmethod
-	def getPendingMultiSignatureTransactions(publicKey):
-		return get('/api/multisignatures/pending', publicKey=publicKey)
-
-	@staticmethod
-	def getAccountsOfMultisignature(publicKey):
-		return post('/api/multisignatures/accounts', publicKey=publicKey)
-
+	result = ArkyDict(action="broadcast", response={})
+	for peer in PEERS:
+		result.response[peer] = send_tx(tx, peer, secret, secondSecret)
+	return result
 
 def use(network="testnet", broadcast=5):
 	"""
+Select ARK network.
+
+Keyword argument:
+network   (str) -- network name you want to connetc with
+broadcast (int) -- max valid peer number to use for broadcasting
+
+Returns None
 """
 	global PEERS
 
@@ -202,10 +141,10 @@ def use(network="testnet", broadcast=5):
 
 	seedlist = SEEDLIST.get(cfg.__NET__, [])
 	if not len(seedlist):
-		raise NetworkError("No seed defined for %s network" % network)
+		raise SeedError("No seed defined for %s network" % network)
 	peerlist = ["http://%(ip)s:%(port)s"%p for p in json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=2).text).get("peers", []) if p["status"] == "OK"]
 	if not len(peerlist):
-		raise NetworkError("No peer available on %s network" % network)
+		raise PeerError("No peer available on %s network" % network)
 
 	n = min(broadcast, len(peerlist))
 	PEERS = peerlist if len(peerlist) == n else []
@@ -225,6 +164,138 @@ def use(network="testnet", broadcast=5):
 	sys.ps1 = "@%s>>> " % network
 	sys.ps2 = "@%s... " % network
 
+
+#################
+## API wrapper ##
+#################
+
+class Loader:
+
+	@staticmethod
+	def getLoadingStatus(**param):
+		return get('/api/loader/status', **param)
+
+	@staticmethod
+	def getSynchronisationStatus(**param):
+		return get('/api/loader/status/sync', **param)
+
+
+class Block:
+
+	@staticmethod
+	def getBlocks(**param):
+		return get('/api/blocks', **param)
+
+	@staticmethod
+	def getBlock(blockId, **param):
+		return get('/api/blocks/get', id=blockId, **param)
+
+	@staticmethod
+	def getNethash(**param):
+		return get('/api/blocks/getNethash', **param)
+
+	@staticmethod
+	def getBlockchainFee(**param):
+		return get('/api/blocks/getFee', **param)
+
+	@staticmethod
+	def getBlockchainHeight(**param):
+		return get('/api/blocks/getHeight', **param)
+
+	@staticmethod
+	def getForgedByAccount(publicKey, **param):
+		return get('/api/delegates/forging/getForgedByAccount', generatorPublicKey=publicKey, **param)
+
+
+class Account:
+
+	@staticmethod
+	def getBalance(address, **param):
+		return get('/api/accounts/getBalance', address=address, **param)
+
+	@staticmethod
+	def getPublicKey(address, **param):
+		return get('/api/accounts/getPublicKey', address=address, **param)
+
+	@staticmethod
+	def getAccount(address, **param):
+		return get('/api/accounts', address=address, **param)
+
+	@staticmethod
+	def getVotes(address, **param):
+		return get('/api/accounts/delegates', address=address, **param)
+
+
+class Delegate:
+
+	@staticmethod
+	def getDelegates(**param):
+		return get('/api/delegates', **param)
+
+	@staticmethod
+	def getDelegate(username, **param):
+		return get('/api/delegates/get', username=username, **param)
+
+	@staticmethod
+	def getVoters(publicKey, **param):
+		return get('/api/delegates/voters', publicKey=publicKey, **param)
+
+	@staticmethod
+	def getCandidates(**param):
+		delegates = []
+		while 1:
+			found = Delegate.getDelegates(offset=len(delegates), limit=51, **param).get("delegates", [])
+			delegates += found
+			if len(found) < 51:
+				break
+		return delegates
+
+
+class Transaction(object):
+
+	@staticmethod
+	def getTransactionsList(**param):
+		return get('/api/transactions', **param)
+
+	@staticmethod
+	def getUnconfirmedTransactions(**param):
+		return get('/api/transactions/unconfirmed', **param)
+
+	@staticmethod
+	def getTransaction(transactionId, **param):
+		return get('/api/transactions/get', id=transactionId, **param)
+
+	@staticmethod
+	def getUnconfirmedTransaction(transactionId, **param):
+		return get('/api/transactions/unconfirmed/get', id=transactionId, **param)
+
+
+class Peer:
+
+	@staticmethod
+	def getPeersList(**param):
+		return get('/api/peers', **param)
+
+	@staticmethod
+	def getPeer(ip, port, **param):
+		return get('/api/peers', ip=ip, port=port, **param)
+
+	@staticmethod
+	def getPeerVersion(**param):
+		return get('/api/peers/version', **param)
+
+
+class Multisignature:
+
+	@staticmethod
+	def getPendingMultiSignatureTransactions(publicKey, **param):
+		return get('/api/multisignatures/pending', publicKey=publicKey, **param)
+
+	@staticmethod
+	def getAccountsOfMultisignature(publicKey, **param):
+		return post('/api/multisignatures/accounts', publicKey=publicKey, **param)
+
 # initailize testnet by default
+# does nothing if error occur
 try: use()
 except: pass

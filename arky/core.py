@@ -244,7 +244,7 @@ def signSerial(serial, keyring):
 			value = arkydify(value)
 		elif value != None:
 			setattr(obj, attr, value)
-	return checkStrictDER(keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize))
+	return keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
 
 
 def checkStrictDER(sig):
@@ -255,7 +255,7 @@ Check strict DER signature compliance.
 Argument:
 sig (bytes) -- signature sequence bytes
 
-Raises StrictDerSignatureError exception or return sig
+Raises StrictDerSignatureError exception or returns sig
 
 >>> sig = checkStrictDER(binascii.unhexlify('3044022003e6f032a119ad552804792822d84bbd34b5\
 8fe710bca59f6ca4bb332404957402207d761b265ce8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c\
@@ -437,14 +437,14 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 		elif not hasattr(self, "key_one"): raise NoSecretDefinedError("No secret defined for %r" % self)
 		# store signature under signature attribute
 		stamp1 = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-		object.__setattr__(self, "signature", checkStrictDER(stamp1))
+		object.__setattr__(self, "signature", stamp1)
 		# if secret is given, set a new secondSecret (setting a new key_two), only if account had registered a second signature
 		if secondSecret != None: self.secondSecret = secondSecret
 		# if key_two attribute is set
 		if hasattr(self, "key_two"):
 			# store second signature under signSignature attribute
 			stamp2 = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-			object.__setattr__(self, "signSignature", checkStrictDER(stamp2))
+			object.__setattr__(self, "signSignature", stamp2)
 		# generate id
 		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
 		return self

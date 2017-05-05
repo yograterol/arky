@@ -19,11 +19,11 @@ If you work with ``python3``
 
 From development version
 
-``sudo -H pip install git+https://github.com/Moustikitos/arky.git``
+``sudo -H pip install git+https://github.com/ArkEcosystem/arky.git``
 
 If you work with ``python3``
 
-``sudo -H pip3 install git+https://github.com/Moustikitos/arky.git``
+``sudo -H pip3 install git+https://github.com/ArkEcosystem/arky.git``
 
 Windows 
 ^^^^^^^
@@ -34,7 +34,7 @@ Run a command as Administrator and type :
 
 For development version
 
-``pip install git+https://github.com/Moustikitos/arky.git``
+``pip install git+https://github.com/ArkEcosystem/arky.git``
 
 Using ``arky``
 ==============
@@ -139,7 +139,7 @@ Toons <moustikitos@gmail.com>
 Support this project
 ====================
 
-.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
+.. image:: https://github.com/ArkEcosystem/arky/raw/master/ark-logo.png
    :height: 30
 
 Toons Ark address: ``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
@@ -159,6 +159,17 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
 Version
 =======
+
+**0.1.7**
+
++ ``api`` pkg :
+   * documentation (docstring)
+   * added ``api.send_tx`` and ``api.broadcast``
+   * ``api.get`` code improvement
+
++ ``core`` mod :
+   * removed ``sendTransaction`` (use ``api.send_tx`` instead)
+   * removed ``checkStrictDER`` calls in ``core.Transaction.sign``
 
 **0.1.6**
 
