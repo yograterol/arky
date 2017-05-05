@@ -19,7 +19,7 @@ Attributes that can be set using object interface :
 secret       (str) -- a valid utf-8 encoded string
 secondSecret (str) -- a valid utf-8 encoded string
 
->>> from arkyimport wallet
+>>> from arky import wallet
 >>> w = wallet.Wallet("secret")
 >>> w.address
 'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'

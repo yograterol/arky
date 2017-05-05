@@ -157,6 +157,7 @@ Returns None
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
 		'os'           : 'arky',
+		'port'         : '1',
 		'version'      : __version__,
 		'nethash'      : Block.getNethash().get("nethash", "")
 	})
