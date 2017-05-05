@@ -166,6 +166,7 @@ Version
    * documentation (docstring)
    * added ``api.send_tx`` and ``api.broadcast``
    * ``api.get`` code improvement
+   * bugfix on requests header ``port`` field value 
 
 + ``core`` mod :
    * removed ``sendTransaction`` (use ``api.send_tx`` instead)
