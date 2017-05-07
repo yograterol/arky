@@ -5,7 +5,10 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import api, cfg, slots, __PY3__, StringIO, ArkyDict, choose, arkydify
+from . import __PY3__, StringIO, ArkyDict, choose, arkydify
+if not __PY3__: import api, cfg, slots
+else: from . import api, cfg, slots
+
 import base58, struct, hashlib, binascii, requests, json
 
 # byte as int conversion

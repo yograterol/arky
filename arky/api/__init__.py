@@ -49,6 +49,7 @@ Returns ArkyDict
 	# API response contains several fields and wanted one can be extracted using
 	# a returnKey that match the field name
 	returnKey = args.pop("returnKey", False)
+	args = dict([k.replace("and_", "AND:") if k.startswith("and_") else k, v] for k,v in args.items())
 
 	try:
 		text = requests.get(cfg.__URL_BASE__+api, params=args, headers=cfg.__HEADERS__, timeout=2).text
@@ -57,7 +58,7 @@ Returns ArkyDict
 		log_exception(error)
 	else:
 		if data.success:
-			return ArkyDict(data[returnKey]) if returnKey in data else data
+			return data[returnKey] if returnKey in data else data
 	return ArkyDict()
 
 def send_tx(tx, url_base=None, secret=None, secondSecret=None):
@@ -115,7 +116,7 @@ Returns ArkyDict
 		result.response[peer] = send_tx(tx, peer, secret, secondSecret)
 	return result
 
-def use(network="testnet", broadcast=5):
+def use(network="devnet", broadcast=5, custom_peer=None):
 	"""
 Select ARK network.
 
@@ -139,21 +140,26 @@ Returns None
 		cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "mainnet"
 
-	seedlist = SEEDLIST.get(cfg.__NET__, [])
-	if not len(seedlist):
-		raise SeedError("No seed defined for %s network" % network)
-	peerlist = ["http://%(ip)s:%(port)s"%p for p in json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=2).text).get("peers", []) if p["status"] == "OK"]
-	if not len(peerlist):
-		raise PeerError("No peer available on %s network" % network)
+	if custom_peer:
+		cfg.__URL_BASE__ = custom_peer
 
-	n = min(broadcast, len(peerlist))
-	PEERS = peerlist if len(peerlist) == n else []
-	while len(PEERS) < broadcast:
-		peer = choose(peerlist)
-		if peer not in PEERS:
-			PEERS.append(peer)
+	else:
+		seedlist = SEEDLIST.get(cfg.__NET__, [])
+		if not len(seedlist):
+			raise SeedError("No seed defined for %s network" % network)
+		peerlist = ["http://%(ip)s:%(port)s"%p for p in json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=2).text).get("peers", []) if p["status"] == "OK"]
+		if not len(peerlist):
+			raise PeerError("No peer available on %s network" % network)
 
-	cfg.__URL_BASE__ = choose(peerlist)
+		n = min(broadcast, len(peerlist))
+		PEERS = peerlist if len(peerlist) == n else []
+		while len(PEERS) < broadcast:
+			peer = choose(peerlist)
+			if peer not in PEERS:
+				PEERS.append(peer)
+
+		cfg.__URL_BASE__ = choose(peerlist)
+
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
 		'os'           : 'arky',

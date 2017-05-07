@@ -1,9 +1,14 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg, api, mgmt, core, slots, ArkyDict, StringIO, setInterval, HOME, __PY3__
+from . import __PY3__, ArkyDict, StringIO, setInterval, HOME
+if not __PY3__:
+	import cfg, api, mgmt, core, slots
+else:
+	from . import cfg, api, mgmt, core, slots
+	raw_input = input
+
 import io, json, socket, hashlib, binascii, logging, threading
-if __PY3__: raw_input = input
 
 # define wallet exceptions 
 class ReadOnlyAttributes(Exception): pass

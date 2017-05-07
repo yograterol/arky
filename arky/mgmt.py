@@ -1,7 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg, core, ArkyDict, HOME
+from . import __PY3__, ArkyDict, HOME
+if not __PY3__: import cfg, core
+else: from . import cfg, core
+
 import os, sys, json, time, atexit, logging, requests, threading, binascii, traceback, requests
 
 logging.basicConfig(

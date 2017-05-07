@@ -1,7 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg
+from . import __PY3__
+if not __PY3__: import cfg
+else: from . import cfg
+
 import datetime, pytz
 UTC = pytz.UTC
 

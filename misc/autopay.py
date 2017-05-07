@@ -164,8 +164,12 @@ for addr,ratio in contributors.items():
 	if amount > 0.:
 		wlt.sendArk(amount, addr, vendorField="Arky weekly interests. Thanks for your contribution !")
 		log.write("%s [fidelity:%f]: A%.8f\n" % (addr, fidelity[addr], amount))
-	header.append(addr)
-	content.append(amount)
+		header.append(addr)
+		content.append(amount)
+	else:
+		log.write("%s [fidelity:%f]: not enough ark to share\n" % (addr, fidelity[addr]))
+		header.append(addr)
+		content.append("-")
 
 out = open("accounting.csv", "a")
 out.write(";".join(["%s"%e for e in header])  + "\n")
