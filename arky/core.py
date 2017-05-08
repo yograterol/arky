@@ -478,7 +478,6 @@ pe', 0)]
 			setattr(data, attr, value)
 		return data
 
-
 def sendTransaction(transaction, secret=None, secondSecret=None):
 	transaction.sign(secret, secondSecret)
 

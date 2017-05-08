@@ -169,6 +169,7 @@ Version
 + ``api`` pkg:
    * ``api.get`` improvement
    * ``api.use`` can now connect to a custom peer
+   * ``api.broadcast`` improvement
 
 **0.1.7**
 
@@ -195,7 +196,6 @@ Version
 **0.1.4**
 
 + first mainnet release
-
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api

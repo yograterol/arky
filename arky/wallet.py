@@ -85,7 +85,8 @@ y': '0211fe5bf889735fb982bb04ffeed0e7a46f781201d8bba5bc2daed6411a6b8348', 'produ
 				object.__setattr__(self, "K2", keys)
 			else:
 				raise SecondSignatureError("Second signature is registered to this wallet")
-		object.__setattr__(self, attr, value)
+		else:
+			object.__setattr__(self, attr, value)
 
 	def __del__(self):
 		self._stop_check_daemon.set()
@@ -252,11 +253,11 @@ secondSecret (str) -- a valid utf-8 encoded string
 			cfg.__LOG__.put({"API info": "second signature already registered to %s" % self.publicKey})
 
 
-def getVoterContribution(wlt):
-	if wlt.delegate:
-		voters = wlt.voters
-		k = 1.0/sum([int(v["balance"]) for v in voters])
-		return dict((v["address"],int(v["balance"])*k) for v in voters)
+# def getVoterContribution(wlt):
+# 	if wlt.delegate:
+# 		voters = wlt.voters
+# 		k = 1.0/sum([int(v["balance"]) for v in voters])
+# 		return dict((v["address"],int(v["balance"])*k) for v in voters)
 
 # used by Wallet.sendMultisignArk
 def askRemoteSignature(conn, data, q):

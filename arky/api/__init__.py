@@ -94,7 +94,7 @@ Returns ArkyDict
 				data.asset = tx.asset
 			else:
 				data.transaction = "%r" % tx
-			return data
+		return data
 	return ArkyDict()
 
 def broadcast(tx, secret=None, secondSecret=None):
@@ -142,12 +142,15 @@ Returns None
 
 	if custom_peer:
 		cfg.__URL_BASE__ = custom_peer
-
 	else:
 		seedlist = SEEDLIST.get(cfg.__NET__, [])
 		if not len(seedlist):
 			raise SeedError("No seed defined for %s network" % network)
-		peerlist = ["http://%(ip)s:%(port)s"%p for p in json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=2).text).get("peers", []) if p["status"] == "OK"]
+		api_peers = []
+		while not len(api_peers):
+			try: api_peers = json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=1).text).get("peers", [])
+			except: pass
+		peerlist = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]
 		if not len(peerlist):
 			raise PeerError("No peer available on %s network" % network)
 
@@ -156,7 +159,7 @@ Returns None
 		while len(PEERS) < broadcast:
 			peer = choose(peerlist)
 			if peer not in PEERS:
-				PEERS.append(peer)
+				PEERS.append(str(peer))
 
 		cfg.__URL_BASE__ = choose(peerlist)
 

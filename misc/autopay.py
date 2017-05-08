@@ -40,7 +40,7 @@ else:
 
 print(wlt.address)
 
-logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d"))
+logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d %Z%H:%M"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
 log = open(logfile, "w")

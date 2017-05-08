@@ -69,7 +69,7 @@ NETWORKS = ArkyDict(
 		"pubKeyHash"    : b"\x52",
 		"wif"           : b"\xef",
 	}, devnet={
-		"messagePrefix" : b"\x18Ark Testnet Signed Message:\n",
+		"messagePrefix" : b"\x18Ark Devnet Signed Message:\n",
 		"bip32"         : ArkyDict(public=0x043587cf, private=0x04358394),
 		"pubKeyHash"    : b"\x1e",
 		"wif"           : b"\xef",
