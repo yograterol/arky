@@ -1,7 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from . import cfg, core, ArkyDict, HOME
+from . import __PY3__, ArkyDict, HOME
+if not __PY3__: import cfg, core
+else: from . import cfg, api, core
+
 import os, sys, json, time, atexit, logging, requests, threading, binascii, traceback, requests
 
 logging.basicConfig(
@@ -52,7 +55,7 @@ class TxMGMT(threading.Thread):
 						url, data = args
 						cfg.__LOG__.put({"API send":requests.post(url, data=data, headers=cfg.__HEADERS__).text})
 					else:
-						core.sendTransaction(*args)
+						cfg.__LOG__.put(api.broadcast(*args))
 				except Exception as error:
 					if hasattr(error, "__traceback__"):
 						cfg.__LOG__.put({
