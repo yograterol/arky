@@ -160,27 +160,31 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
+**TODO**
+
++ cold wallet implementation
++ multisignature email protocol
+
 **0.1.8**
 
-+ relative import fix for ``python v2.x``
-
++ relative import fix for ``python 2.x``
 + updated testnet and devnet seeds
-
 + ``api`` pkg:
    * ``api.get`` improvement
-   * ``api.use`` can now connect to a custom peer
+   * ``api.use`` improvement, can now connect to a custom seed
    * ``api.broadcast`` improvement
+   * multiple transaction requests enabled
++ ``core`` mod:
+   * removed ``sendTransaction`` (use ``api.sendTx`` instead)
 
 **0.1.7**
 
-+ ``api`` pkg :
++ ``api`` pkg:
    * documentation (docstring)
    * added ``api.send_tx`` and ``api.broadcast``
    * ``api.get`` code improvement
    * bugfix on requests header ``port`` field value 
-
-+ ``core`` mod :
-   * removed ``sendTransaction`` (use ``api.send_tx`` instead)
++ ``core`` mod:
    * removed ``checkStrictDER`` calls in ``core.Transaction.sign``
 
 **0.1.6**

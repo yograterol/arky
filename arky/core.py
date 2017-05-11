@@ -164,7 +164,7 @@ def getBytes(transaction):
 Computes transaction object as bytes data.
 
 Argument:
-transaction (arky.core.Transaction) -- transaction object
+transaction (core.Transaction) -- transaction object
 
 Returns sequence bytes
 >>> binascii.hexlify(getBytes(Transaction(amount=100000000, secret="secret", timestamp=22\
@@ -477,24 +477,3 @@ pe', 0)]
 				value = arkydify(value)
 			setattr(data, attr, value)
 		return data
-
-def sendTransaction(transaction, secret=None, secondSecret=None):
-	transaction.sign(secret, secondSecret)
-
-	result = ArkyDict(json.loads(requests.post(
-		cfg.__URL_BASE__+"/peer/transactions",
-		data=json.dumps({"transactions": [transaction.serialize()]}),
-		headers=cfg.__HEADERS__
-	).text))
-
-	if len(transaction.asset):
-		result.asset = transaction.asset
-	else:
-		result.transaction = "%r" % transaction
-	cfg.__LOG__.put(result)
-	return result
-
-def sendMultiple(*transactions, **kw):
-	result = ArkyDict()
-	for transaction in transactions:
-		sendTransaction(transaction, secret=kw.get('secret', None), secondSecret=kw.get('secondSecret', None))

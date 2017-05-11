@@ -38,14 +38,12 @@ def setInterval(interval):
 		return wrapper
 	return decorator
 
-
 def arkydify(dic):
 	result = ArkyDict()
 	for k,v in dic.items():
 		if isinstance(v, dict): setattr(result, k, arkydify(v))
 		else: setattr(result, k, v)
 	return result
-
 
 class ArkyDict(dict):
 	"""
@@ -59,7 +57,6 @@ Python dict with javascript behaviour.
 	def __setattr__(self, attr, value): return dict.__setitem__(self, attr, value)
 	def __getattr__(self, attr, default=False): return dict.get(self, attr, default)
 	def __delattr__(self, attr): return dict.__delitem__(self, attr)
-
 
 # network parameters
 NETWORKS = ArkyDict(

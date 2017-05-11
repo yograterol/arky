@@ -7,6 +7,7 @@ import os, sys, json, requests, traceback, datetime, pytz
 UTC = pytz.UTC
 
 # define api exceptions 
+class TransactionError(Exception): pass
 class NetworkError(Exception): pass
 class SeedError(Exception): pass
 class PeerError(Exception): pass
@@ -50,9 +51,8 @@ Returns ArkyDict
 	# a returnKey that match the field name
 	returnKey = args.pop("returnKey", False)
 	args = dict([k.replace("and_", "AND:") if k.startswith("and_") else k, v] for k,v in args.items())
-
 	try:
-		text = requests.get(cfg.__URL_BASE__+api, params=args, headers=cfg.__HEADERS__, timeout=2).text
+		text = requests.get(cfg.__URL_BASE__+api, params=args, headers=cfg.__HEADERS__, timeout=3).text
 		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		log_exception(error)
@@ -61,14 +61,21 @@ Returns ArkyDict
 			return data[returnKey] if returnKey in data else data
 	return ArkyDict()
 
-def send_tx(tx, url_base=None, secret=None, secondSecret=None):
+def _signTx(tx, secret=None, secondSecret=None):
+	if not secret:
+		try: return tx.sign()
+		except core.NoSecretDefinedError: return False
+	else:
+		return tx.sign(secret, secondSecret)
+
+def sendTx(tx, secret=None, secondSecret=None, url_base=None):
 	"""
 Send backed transaction using optional url_base and eventualy secrets. It
 returns server response as ArkyDict object. If secrets are given, transaction is
 signed and then broadcasted with signatures and id. It does not send secrets.
 
 Argument:
-tx (core.Trnasaction) -- transaction object to be send
+tx (core.Transaction | list | tuple) -- transaction object(s) to be send
 
 Keyword argument:
 url_base     (str) -- the base api url to use
@@ -77,25 +84,27 @@ secondSecret (str) -- second secret of account sending the transaction
 
 Returns ArkyDict
 """
-	# sign transaction using secret
-	if secret != None: tx.sign(secret, secondSecret)
 	# use registered peer if no url_base is given
 	if url_base == None: url_base = cfg.__URL_BASE__
 
-	transactions = json.dumps({"transactions": [tx.serialize()]})
+	if isinstance(tx, (list, tuple)):
+		tx = [_signTx(t, secret, secondSecret) for t in tx]
+	elif isinstance(tx, core.Transaction):
+		tx = [_signTx(tx, secret, secondSecret)]
+	else:
+		raise TransactionError("Can not send %r into blockchain" % tx)
+	transactions = json.dumps({"transactions": [t.serialize() for t in tx if t]})
+
 	try:
-		text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=2).text
+		text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=3).text
 		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		log_exception(error)
 	else:
 		if data.success:
-			if len(tx.asset):
-				data.asset = tx.asset
-			else:
-				data.transaction = "%r" % tx
+			data.transaction = "%r" % tx
 		return data
-	return ArkyDict()
+	return ArkyDict({success:False})
 
 def broadcast(tx, secret=None, secondSecret=None):
 	"""
@@ -103,7 +112,7 @@ Send transaction using multiple peers. It avoid broadcasting errors when large
 amount of peers are unresponsive or not up to date.
 
 Argument:
-tx (core.Trnasaction) -- transaction object to be send
+tx (core.Transaction | list | tuple) -- transaction object(s) to be send
 
 Keyword argument:
 secret       (str) -- secret of the account sending the transaction
@@ -111,12 +120,20 @@ secondSecret (str) -- second secret of account sending the transaction
 
 Returns ArkyDict
 """
-	result = ArkyDict(action="broadcast", response={})
-	for peer in PEERS:
-		result.response[peer] = send_tx(tx, peer, secret, secondSecret)
+	result = sendTx(tx, secret, secondSecret)
+	ratio = 0.
+	if result.success:
+		for peer in PEERS:
+			if sendTx(tx, secret, secondSecret, peer).success: ratio += 1
+	result.broadcast = "%.1f%%" % (ratio/len(PEERS)*100)
 	return result
 
-def use(network="devnet", broadcast=5, custom_peer=None):
+def checkPeerLatency(peer, timeout=3):
+	try: r = requests.get(peer + '/api/blocks/getNethash', timeout=timeout)
+	except: return False
+	else: return r.elapsed.total_seconds()
+
+def use(network="devnet", broadcast=7, custom_seed=None, latency=1):
 	"""
 Select ARK network.
 
@@ -130,39 +147,34 @@ Returns None
 
 	try: cfg.__NETWORK__.update(NETWORKS.get(network))
 	except: raise NetworkError("Unknown %s network properties" % network)	
+	# in js month value start from 0, in python month value start from 1
+	cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
 
 	if network in ["testnet", "devnet"]:
-		# in js month value start from 0, in python month value start from 1
-		cfg.__BEGIN_TIME__ = datetime.datetime(2016, 5, 24, 17, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = network
 	else:
-		# in js month value start from 0, in python month value start from 1
-		cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
 		cfg.__NET__ = "mainnet"
 
-	if custom_peer:
-		cfg.__URL_BASE__ = custom_peer
+	if custom_seed:
+		seedlist = [custom_peer]
 	else:
 		seedlist = SEEDLIST.get(cfg.__NET__, [])
-		if not len(seedlist):
-			raise SeedError("No seed defined for %s network" % network)
-		api_peers = []
-		while not len(api_peers):
-			try: api_peers = json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=1).text).get("peers", [])
-			except: pass
-		peerlist = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]
-		if not len(peerlist):
-			raise PeerError("No peer available on %s network" % network)
+	if not len(seedlist):
+		raise SeedError("No seed defined for %s network" % network)
 
-		n = min(broadcast, len(peerlist))
-		PEERS = peerlist if len(peerlist) == n else []
-		while len(PEERS) < broadcast:
-			peer = choose(peerlist)
-			if peer not in PEERS:
-				PEERS.append(str(peer))
+	api_peers = []
+	while not len(api_peers):
+		try: api_peers = json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=3).text).get("peers", [])
+		except: pass
+	peerlist = []
+	for peer in ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]:
+		if checkPeerLatency(peer, timeout=latency): peerlist.append(peer)
+		if len(peerlist) == broadcast: break
+	if not len(peerlist):
+		raise PeerError("No peer available on %s network" % network)
+	PEERS = peerlist
 
-		cfg.__URL_BASE__ = choose(peerlist)
-
+	cfg.__URL_BASE__ = choose(peerlist) if not custom_seed else custom_seed
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
 		'os'           : 'arky',
