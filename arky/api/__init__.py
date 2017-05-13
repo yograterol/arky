@@ -148,6 +148,7 @@ Returns None
 	if not len(seedlist):
 		sys.ps1 = "@offline>>> "
 		sys.ps2 = "@offline... "
+		cfg.__NET__ = "offline"
 		return
 
 	api_peers = []
@@ -157,6 +158,7 @@ Returns None
 		except requests.exceptions.ConnectionError:
 			sys.ps1 = "@offline>>> "
 			sys.ps2 = "@offline... "
+			cfg.__NET__ = "offline"
 			return
 	peerlist = []
 	for peer in ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]:
@@ -165,6 +167,7 @@ Returns None
 	if not len(peerlist):
 		sys.ps1 = "@offline>>> "
 		sys.ps2 = "@offline... "
+		cfg.__NET__ = "offline"
 		return
 	PEERS = peerlist
 

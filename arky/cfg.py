@@ -7,7 +7,7 @@ else: import Queue as queue
 import socket
 
 __BEGIN_TIME__ = 0
-__NET__ = ""
+__NET__ = "offline"
 __NB_THREAD__ = 2
 __LOG__ = queue.Queue()
 
