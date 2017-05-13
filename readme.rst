@@ -162,8 +162,14 @@ Version
 
 **TODO**
 
-+ cold wallet implementation
++ offline data implementation
 + multisignature email protocol
+
+**0.1.9**
+
++ ``api`` pkg:
+   * minor bugfixes
+   * offline mode added
 
 **0.1.8**
 

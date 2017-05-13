@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 # © Toons
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 import os, imp, sys, threading, logging, requests, random
 logging.getLogger('requests').setLevel(logging.CRITICAL)

@@ -8,7 +8,7 @@ print(sys.version)
 
 api.use("ark")
 
-__daily_fees__ = 5./30 # daily server cost
+__daily_fees__ =  5./30 # daily server cost
 __pythoners__ =   "AGvTiwbXykX6zpDMYUEBd9E5J818YmPZ4H"
 __investments__ = "AUahWfkfr5J4tYakugRbfow7RWVTK35GPW"
 __exchange__ =    "APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ"
@@ -40,7 +40,7 @@ else:
 
 print(wlt.address)
 
-logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d %Z%H:%M"))
+logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d %H%M"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
 log = open(logfile, "w")
@@ -56,35 +56,10 @@ elif wlt.balance < 200:
 	log.close()
 	raise Exception("%s does not have more than 200 Arks !" % wlt.delegate["username"])
 
-#
-def _blacklistContributors(contributors, lst):
-	if not(len(contributors)):
-		return {}
-	else:
-		k = 1./sum([r for a,r in contributors.items() if a not in lst])
-		return dict((a,r*k) for a,r in contributors.items() if a not in lst)
-
-def _floorContributors(contributors, min_ratio):
-	return _blacklistContributors(contributors, [a for a,r in contributors.items() if r < min_ratio])
-
 def _ceilContributors(contributors, max_ratio):
-	nb_cont = len(contributors)
-	test = 1./nb_cont
-	if test >= max_ratio:
-		return dict([(a,test) for a in contributors])
-	else:
-		share = 0
-		nb_cuts = 0
-		for addr,ratio in contributors.items():
-			diff = ratio - max_ratio
-			if diff > 0:
-				share += diff
-				nb_cuts += 1
-				contributors[addr] = max_ratio
-		share /= (nb_cont - nb_cuts)
-		for addr in [a for a in contributors if contributors[a] <= (max_ratio-share)]:
-			contributors[addr] += share
-		return contributors
+	total_vote = sum(contributors.values())
+	cut_vote = max_ratio*total_vote
+	return dict([a,cut_vote if v/total_vote > max_ratio else v] for a,v in contributors.items())
 
 def _getVoteFidelity(*contributors, delay=30):
 	now = datetime.datetime.now(slots.UTC)
@@ -119,11 +94,11 @@ def _getVoteFidelity(*contributors, delay=30):
 	return fidelity
 
 contributors = dict((v["address"],int(v["balance"])) for v in wlt.voters)
+contributors = _ceilContributors(contributors, 70./100)
 fidelity = _getVoteFidelity(*contributors.keys(), delay=7)
 contributors = dict([addr,vote*fidelity[addr]] for addr,vote in contributors.items())
 k = 1.0/max(1.0, sum(contributors.values()))
 contributors = dict([addr,vote*k] for addr,vote in contributors.items())
-contributors = _ceilContributors(contributors, 70./100)
 
 amount = wlt.balance
 log.write("delegate amount : A%.8f\n" % amount)
