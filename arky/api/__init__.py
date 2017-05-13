@@ -183,8 +183,6 @@ Returns None
 	sys.ps1 = "@%s>>> " % network
 	sys.ps2 = "@%s... " % network
 
-use(broadcast=10)
-
 #################
 ## API wrapper ##
 #################
@@ -314,3 +312,5 @@ class Multisignature:
 	@staticmethod
 	def getAccountsOfMultisignature(publicKey, **param):
 		return post('/api/multisignatures/accounts', publicKey=publicKey, **param)
+
+use(broadcast=10)
