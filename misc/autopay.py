@@ -6,7 +6,8 @@ import os, json, math, datetime
 import sys
 print(sys.version)
 
-api.use("ark")
+while cfg.__NET__ != "mainnet":
+	api.use("ark")
 
 __daily_fees__ =  5./30 # daily server cost
 __pythoners__ =   "AGvTiwbXykX6zpDMYUEBd9E5J818YmPZ4H"
@@ -40,7 +41,7 @@ else:
 
 print(wlt.address)
 
-logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d %H%M"))
+logfile = os.path.join(HOME, "Payment", "%s.pay" % datetime.datetime.now().strftime("%y-%m-%d %Hh%M"))
 try: os.makedirs(os.path.dirname(logfile))
 except: pass
 log = open(logfile, "w")
@@ -61,7 +62,7 @@ def _ceilContributors(contributors, max_ratio):
 	cut_vote = max_ratio*total_vote
 	return dict([a,cut_vote if v/total_vote > max_ratio else v] for a,v in contributors.items())
 
-def _getVoteFidelity(*contributors, delay=30):
+def _getVoteFidelity(contributors, delay=30):
 	now = datetime.datetime.now(slots.UTC)
 	delta = datetime.timedelta(days=delay)
 	total_second = delta.total_seconds()
@@ -95,7 +96,7 @@ def _getVoteFidelity(*contributors, delay=30):
 
 contributors = dict((v["address"],int(v["balance"])) for v in wlt.voters)
 contributors = _ceilContributors(contributors, 70./100)
-fidelity = _getVoteFidelity(*contributors.keys(), delay=7)
+fidelity = _getVoteFidelity(contributors.keys(), delay=7)
 contributors = dict([addr,vote*fidelity[addr]] for addr,vote in contributors.items())
 k = 1.0/max(1.0, sum(contributors.values()))
 contributors = dict([addr,vote*k] for addr,vote in contributors.items())

@@ -171,6 +171,7 @@ Version
 + ``api`` pkg:
    * minor bugfixes
    * offline mode added
+   * better connection protocol
 
 **0.1.8**
 

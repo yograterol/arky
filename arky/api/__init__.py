@@ -3,7 +3,7 @@
 
 # only GET method is implemented, no POST or PUT for security reasons
 from .. import cfg, core, ArkyDict, choose, setInterval, NETWORKS, SEEDLIST, __version__
-import os, sys, json, requests, traceback, datetime, pytz
+import os, sys, json, requests, traceback, datetime, random, pytz
 UTC = pytz.UTC
 
 # define api exceptions 
@@ -132,15 +132,13 @@ Returns None
 	global PEERS
 
 	try: cfg.__NETWORK__.update(NETWORKS.get(network))
-	except: raise NetworkError("Unknown %s network properties" % network)	
+	except: raise NetworkError("Unknown %s network properties" % network)
+
 	# in js month value start from 0, in python month value start from 1
 	cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
+	cfg.__NET__ = network if network in ["testnet", "devnet"] else "mainnet"
 
-	if network in ["testnet", "devnet"]:
-		cfg.__NET__ = network
-	else:
-		cfg.__NET__ = "mainnet"
-
+	# find seeds
 	if custom_seed:
 		seedlist = [custom_seed]
 	else:
@@ -151,17 +149,35 @@ Returns None
 		cfg.__NET__ = "offline"
 		return
 
+	# select a valid seed
+	seed, nb_try = None, 0
+	while not seed and nb_try < 10:
+		temp = choose(seedlist)
+		if checkPeerLatency(temp, timeout=latency):
+			seed = temp
+		nb_try += 1
+	if not seed:
+		sys.ps1 = "@offline>>> "
+		sys.ps2 = "@offline... "
+		cfg.__NET__ = "offline"
+		return
+
+	# get all valid peers
 	api_peers = []
 	while not len(api_peers):
 		try: 
-			api_peers = json.loads(requests.get(choose(seedlist)+"/api/peers", timeout=3).text).get("peers", [])
+			api_peers = json.loads(requests.get(seed+"/api/peers", timeout=3).text).get("peers", [])
 		except requests.exceptions.ConnectionError:
 			sys.ps1 = "@offline>>> "
 			sys.ps2 = "@offline... "
 			cfg.__NET__ = "offline"
 			return
 	peerlist = []
-	for peer in ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]:
+	goodpeers = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]
+	random.shuffle(goodpeers)
+
+	# select a set of peers for transaction broadcasting
+	for peer in goodpeers:
 		if checkPeerLatency(peer, timeout=latency): peerlist.append(peer)
 		if len(peerlist) == broadcast: break
 	if not len(peerlist):
@@ -171,6 +187,7 @@ Returns None
 		return
 	PEERS = peerlist
 
+	# finish network conf
 	cfg.__URL_BASE__ = choose(peerlist) if not custom_seed else custom_seed
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
