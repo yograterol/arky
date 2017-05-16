@@ -49,12 +49,13 @@ to `ARK API`_. For security reason only ``GET`` methods are implemented in
 ``api`` package.
 
 >>> from arky import api
->>> api.use("ark")
->>> api.Account.getAccount('AR1LhtKphHSAPdef8vksHWaXYFxLPjDQNU')
-{'success': True, 'account': {'secondSignature': 0, 'unconfirmedBalance': '10085162955069', 'balanc
-e': '9668858747506', 'secondPublicKey': None, 'publicKey': '0326f7374132b18b31b3b9e99769e323ce1a4ac
-5c26a43111472614bcf6c65a377', 'u_multisignatures': [], 'unconfirmedSignature': 0, 'address': 'AR1Lh
-tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': []}}
+>>> api.use("devnet")
+>>> api.Account.getAccount("DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX")
+{'success': True, 'account': {'address': 'DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX', 'unconfirmedBalance':
+ '994880000000', 'balance': '994880000000', 'publicKey': '030cf398655cc01d0425a615aceb6b6d2acad40eb7
+b42039826dbce98b20fd578f', 'unconfirmedSignature': 0, 'secondSignature': 0, 'secondPublicKey': None,
+ 'multisignatures': [], 'u_multisignatures': []}}tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': 
+[]}}
 
 More on ``arky.api`` ?
 
@@ -111,12 +112,12 @@ rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmir
 >>> w2 = wallet.open("secret.wlt")
 >>> w2.balance
 1076464600000
->>> w2.voteDelegate(up=["arky", "ravelou"])
+>>> w2.voteDelegate(up=["arky"])
 >>> w2.votes
-['ravelou', 'arky']
+['arky']
 >>> w2.voteDelegate(down=["arky"])
 >>> w2.votes
-['ravelou']
+[]
 
 More on ``arky.wallet`` ?
 
@@ -162,8 +163,15 @@ Version
 
 **TODO**
 
-+ cold wallet implementation
++ offline data implementation
 + multisignature email protocol
+
+**0.1.9**
+
++ ``api`` pkg:
+   * minor bugfixes
+   * offline mode added
+   * better connection protocol
 
 **0.1.8**
 
