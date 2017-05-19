@@ -7,18 +7,6 @@ else: from . import cfg, api, core
 
 import os, sys, json, time, atexit, logging, requests, threading, binascii, traceback, requests
 
-logging.basicConfig(
-	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
-	format    = '[%(asctime)s] %(message)s',
-	level     = logging.INFO,
-)
-
-def log_console():
-	console = logging.StreamHandler()
-	console.setFormatter(logging.Formatter('%(message)s'))
-	console.setLevel(logging.INFO)
-	logging.getLogger('').addHandler(console)
-
 LOG_LOCK = threading.Event()
 MGMT_LOCK = threading.Event()
 FIFO = cfg.queue.Queue()

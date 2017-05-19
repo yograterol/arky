@@ -2,7 +2,7 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import cfg, core, ArkyDict, choose, setInterval, NETWORKS, SEEDLIST, __version__
+from .. import cfg, core, ArkyDict, setInterval, NETWORKS, SEEDLIST, __version__
 import os, sys, json, requests, traceback, datetime, random, pytz
 UTC = pytz.UTC
 
@@ -119,13 +119,15 @@ def checkPeerLatency(peer, timeout=3):
 	except: return False
 	else: return r.elapsed.total_seconds()
 
-def use(network="devnet", broadcast=7, custom_seed=None, latency=1):
+def use(network="devnet", custom_seed=None, broadcast=10, latency=1):
 	"""
 Select ARK network.
 
 Keyword argument:
-network   (str) -- network name you want to connetc with
-broadcast (int) -- max valid peer number to use for broadcasting
+network     (str) -- network name you want to connetc with
+custom_seed (str) -- a custom peer you want to choose
+broadcast   (int) -- max valid peer number to use for broadcasting
+latency     (int) -- max latency you want in second
 
 Returns None
 """
@@ -142,7 +144,7 @@ Returns None
 	if custom_seed:
 		seedlist = [custom_seed]
 	else:
-		seedlist = SEEDLIST.get(cfg.__NET__, [])
+		seedlist = SEEDLIST.get(cfg.__NET__, [])[:]
 	if not len(seedlist):
 		sys.ps1 = "@offline>>> "
 		sys.ps2 = "@offline... "
@@ -150,27 +152,30 @@ Returns None
 		return
 
 	# select a valid seed
-	seed, nb_try = None, 0
-	while not seed and nb_try < 10:
-		temp = choose(seedlist)
+	seed = None
+	while not seed and len(seedlist) >= 1:
+		temp = random.choice(seedlist)
 		if checkPeerLatency(temp, timeout=latency):
 			seed = temp
-		nb_try += 1
+		else:
+			seedlist.pop(seedlist.index(temp))
 	if not seed:
 		sys.ps1 = "@offline>>> "
 		sys.ps2 = "@offline... "
 		cfg.__NET__ = "offline"
+		PEERS = []
 		return
 
 	# get all valid peers
 	api_peers = []
 	while not len(api_peers):
 		try: 
-			api_peers = json.loads(requests.get(seed+"/api/peers", timeout=3).text).get("peers", [])
+			api_peers = json.loads(requests.get(seed+"/api/peers", timeout=latency).text).get("peers", [])
 		except requests.exceptions.ConnectionError:
 			sys.ps1 = "@offline>>> "
 			sys.ps2 = "@offline... "
 			cfg.__NET__ = "offline"
+			PEERS = []
 			return
 	peerlist = []
 	goodpeers = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]
@@ -184,11 +189,12 @@ Returns None
 		sys.ps1 = "@offline>>> "
 		sys.ps2 = "@offline... "
 		cfg.__NET__ = "offline"
+		PEERS = []
 		return
 	PEERS = peerlist
 
 	# finish network conf
-	cfg.__URL_BASE__ = choose(peerlist) if not custom_seed else custom_seed
+	cfg.__URL_BASE__ = random.choice(peerlist) if not custom_seed else custom_seed
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
 		'os'           : 'arky',
@@ -330,4 +336,4 @@ class Multisignature:
 	def getAccountsOfMultisignature(publicKey, **param):
 		return post('/api/multisignatures/accounts', publicKey=publicKey, **param)
 
-use(broadcast=10)
+use()

@@ -1,4 +1,6 @@
-# -*- encoding: utf-8 -*-
+# -*- encoding: utf8 -*-
+# © Toons
+
 from arky.util import getArkPrice
 from arky import cfg, api, slots, wallet, HOME
 import os, json, math, datetime
@@ -10,7 +12,7 @@ while cfg.__NET__ != "mainnet":
 	api.use("ark")
 
 __daily_fees__ =  5./30 # daily server cost
-__pythoners__ =   "AGvTiwbXykX6zpDMYUEBd9E5J818YmPZ4H"
+# __pythoners__ =   "AGvTiwbXykX6zpDMYUEBd9E5J818YmPZ4H"
 __investments__ = "AUahWfkfr5J4tYakugRbfow7RWVTK35GPW"
 __exchange__ =    "APREAB1cyRLGRrTBs97BEXNv1AwAPpSQkJ"
 __tx_fee__ = cfg.__FEES__["send"]/100000000.
@@ -117,19 +119,19 @@ wlt.sendArk(node_invest, __exchange__)
 share = amount - node_invest
 log.write("Share           : A%.8f\n" % share)
 
-pythoners = 0.10*share - __tx_fee__
-log.write("For pythoners   : A%.8f\n" % pythoners)
-header.append("Pythoners")
-content.append(pythoners)
-wlt.sendArk(pythoners, __pythoners__)
+# pythoners = 0.10*share - __tx_fee__
+# log.write("For pythoners   : A%.8f\n" % pythoners)
+# header.append("Pythoners")
+# content.append(pythoners)
+# wlt.sendArk(pythoners, __pythoners__)
 
-investments = 0.65*share - __tx_fee__
+investments = 0.40*share - __tx_fee__
 log.write("For investments : A%.8f\n" % investments)
 header.append("Investments")
 content.append(investments)
 wlt.sendArk(investments, __investments__)
 
-voters = 0.25*share
+voters = 0.60*share
 log.write("For voters      : A%.8f [checksum:%f]\n" % (voters, sum(contributors.values())))
 
 log.write("\nArky contributors :\n")

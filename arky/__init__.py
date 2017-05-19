@@ -3,18 +3,41 @@
 __version__ = "0.1.9"
 
 import os, imp, sys, threading, logging, requests, random
-logging.getLogger('requests').setLevel(logging.CRITICAL)
 
+logging.getLogger('requests').setLevel(logging.CRITICAL)
 __PY3__ = True if sys.version_info[0] >= 3 else False
 if __PY3__: from io import BytesIO as StringIO
 else: from StringIO import StringIO
 
-choose = lambda obj: obj[int(random.random()*len(obj))%len(obj)]
 main_is_frozen = lambda: (hasattr(sys, "frozen") or hasattr(sys, "importers") or imp.is_frozen("__main__"))
 
 # deal with home directory
+ROOT = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable if main_is_frozen() else __file__)))
 HOME = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"]) if "win" in sys.platform else \
        os.environ.get("HOME", ".")
+
+logging.basicConfig(
+	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
+	format    = '[%(asctime)s] %(message)s',
+	level     = logging.INFO,
+)
+
+# def redirectLog(folder=None, console=False):
+# 	logger = logging.getLogger()
+# 	if folder:
+# 		formatter = logging.Formatter('[%(asctime)s] %(message)s')
+# 		file_handler = logging.FileHandler(os.path.normpath(os.path.join(folder, "tx.log")), 'a')
+# 		file_handler.setLevel(logging.INFO)
+# 		file_handler.setFormatter(formatter)
+# 		for handler in logger.handlers[:]:
+# 			logger.removeHandler(handler)
+# 		logger.addHandler(file_handler)
+# 	if console:
+# 		console = logging.StreamHandler()
+# 		console.setFormatter(logging.Formatter('%(message)s'))
+# 		console.setLevel(logging.INFO)
+# 		logger.addHandler(console)
+# redirectLog(HOME)
 
 def setInterval(interval):
 	""" threaded decorator

@@ -166,6 +166,11 @@ Version
 + offline data implementation
 + multisignature email protocol
 
+**0.2.0**
+
++ ``api`` pkg:
+   * improved connection protocol
+
 **0.1.9**
 
 + ``api`` pkg:
