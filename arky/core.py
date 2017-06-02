@@ -237,19 +237,26 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 	return result.encode() if not isinstance(result, bytes) else result
 
 
-# def signSerial(serial, signingKey):
-# 	class O: pass
-# 	obj = O()
-# 	for attr, value in serial.items():
-# 		if attr in ["senderPublicKey", "requesterPublicKey", "signature", "signSignature"]:
-# 			value = binascii.unhexlify(value)
-# 		elif attr == "asset":
-# 			value = arkydify(value)
-# 		if value != None:
-# 			setattr(obj, attr, value)
-# 	# print(obj.__dict__)
-# 	obj.signature = signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
-# 	return obj
+def signSerial(serial, signingKey):
+	class O: pass
+	obj = O()
+	for attr, value in serial.items():
+		if attr in ["senderPublicKey", "requesterPublicKey", "signature", "signSignature"]:
+			value = binascii.unhexlify(value)
+		elif attr == "asset":
+			value = arkydify(value)
+		if value != None:
+			setattr(obj, attr, value)
+	signature = signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
+	setattr(obj, "signSignature" if hasattr(obj, "signature") else "signature", signature)
+	id_ = hashlib.sha256(getBytes(obj)).digest()
+
+	signature = binascii.hexlify(signature)
+	id_ = binascii.hexlify(id_)
+	return {
+		"signature": signature.decode() if isinstance(signature, bytes) else signature, 
+		"id": id_.decode() if isinstance(id_, bytes) else id_
+	}
 
 
 def checkStrictDER(sig):

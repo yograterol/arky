@@ -150,7 +150,6 @@ Toons Ark address: ``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
 
 Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
-
 **Show gratitude on Gratipay:**
 
 .. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
@@ -168,8 +167,11 @@ Version
 
 **0.2.0**
 
++ added ``cli`` pkg
 + ``api`` pkg:
    * improved connection protocol
++ ``util`` pkg:
+   * added ``stats`` modules
 
 **0.1.9**
 

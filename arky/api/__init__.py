@@ -146,9 +146,11 @@ Returns None
 	else:
 		seedlist = SEEDLIST.get(cfg.__NET__, [])[:]
 	if not len(seedlist):
-		sys.ps1 = "@offline>>> "
-		sys.ps2 = "@offline... "
-		cfg.__NET__ = "offline"
+		sys.ps1 = "cold@%s>>> " % network
+		sys.ps2 = "cold@%s... " % network
+		cfg.__NET__ = network
+		cfg.__HOT_MODE__ = False
+		PEERS = []
 		return
 
 	# select a valid seed
@@ -160,9 +162,10 @@ Returns None
 		else:
 			seedlist.pop(seedlist.index(temp))
 	if not seed:
-		sys.ps1 = "@offline>>> "
-		sys.ps2 = "@offline... "
-		cfg.__NET__ = "offline"
+		sys.ps1 = "cold@%s>>> " % network
+		sys.ps2 = "cold@%s... " % network
+		cfg.__NET__ = network
+		cfg.__HOT_MODE__ = False
 		PEERS = []
 		return
 
@@ -172,9 +175,10 @@ Returns None
 		try: 
 			api_peers = json.loads(requests.get(seed+"/api/peers", timeout=latency).text).get("peers", [])
 		except requests.exceptions.ConnectionError:
-			sys.ps1 = "@offline>>> "
-			sys.ps2 = "@offline... "
-			cfg.__NET__ = "offline"
+			sys.ps1 = "cold@%s>>> " % network
+			sys.ps2 = "cold@%s... " % network
+			cfg.__NET__ = network
+			cfg.__HOT_MODE__ = False
 			PEERS = []
 			return
 	peerlist = []
@@ -186,9 +190,10 @@ Returns None
 		if checkPeerLatency(peer, timeout=latency): peerlist.append(peer)
 		if len(peerlist) == broadcast: break
 	if not len(peerlist):
-		sys.ps1 = "@offline>>> "
-		sys.ps2 = "@offline... "
-		cfg.__NET__ = "offline"
+		sys.ps1 = "cold@%s>>> " % network
+		sys.ps2 = "cold@%s... " % network
+		cfg.__NET__ = network
+		cfg.__HOT_MODE__ = False
 		PEERS = []
 		return
 	PEERS = peerlist
@@ -205,6 +210,7 @@ Returns None
 
 	sys.ps1 = "@%s>>> " % network
 	sys.ps2 = "@%s... " % network
+	cfg.__HOT_MODE__ = True
 
 #################
 ## API wrapper ##

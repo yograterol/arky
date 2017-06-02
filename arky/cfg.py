@@ -6,8 +6,9 @@ if __PY3__: import queue
 else: import Queue as queue
 import socket
 
+__HOT_MODE__ = False
 __BEGIN_TIME__ = 0
-__NET__ = "offline"
+__NET__ = "..."
 __NB_THREAD__ = 2
 __LOG__ = queue.Queue()
 
