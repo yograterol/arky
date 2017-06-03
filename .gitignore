@@ -17,6 +17,8 @@ develop-eggs/
 dist/
 eggs/
 .eggs/
+.coldtx/
+.token/
 wrk/
 .js*/
 arky/arkjs/
@@ -161,3 +163,6 @@ misc/cont.py
 misc/okinawa.py
 misc/cryptolanka.py
 *.7z
+misc/autopay--.py
+misc/escrow.py
+misc/autopay.py

@@ -5,7 +5,7 @@ from ecdsa.keys import SigningKey
 from arky import ArkyDict
 from arky import core, slots
 
-import binascii, logging, hashlib, random, base58, sys, imp, os
+import binascii, logging, hashlib, random, base58, sys, imp, os, io
 
 def _prettyDic(dic, tab="    "):
 	result = ""
@@ -28,11 +28,34 @@ def _prettyLog(dic, tab="    "):
 	if len(dic): logging.info(_prettyDic(dic, tab))
 	else: logging.info("Nothing to log here")
 
+def writeColdToken(filename, senderPublicKey, signingKey):
+	out = io.open(filename, "wb")
+	out.write("%s%s" % (spk, sk))
+	out.close()
+
+def readColdToken(filename):
+	in_ = io.open(filename, "rb")
+	data = in_.read()
+	in_.close()
+	return {"spk": data[:66], "sk": data[66:]}
+
+def dropCert(filename, sigingKey):
+	out = io.open(filename, "w")
+	out.write(sigingKey.to_pem())
+	out.close()
+
+def loadCert(filename, sigingKey):
+	in_ = io.open(filename, "r")
+	data = in_.read()
+	in_.close()
+	return SigningKey.from_pem(data)
+
+
 def getAccountKeyValues(secret):
-	keys = core.getKeys(secret)
-	spk = binascii.hexlify(keys.public)
-	sk = binascii.hexlify(keys.signingKey.to_pem())
-	ck = binascii.hexlify(keys.checkingKey.to_pem())
+	k1 = core.getKeys(secret)
+	spk = binascii.hexlify(k1.public)
+	sk = binascii.hexlify(k1.signingKey.to_pem())
+	ck = binascii.hexlify(k1.checkingKey.to_pem())
 	return {
 		"spk": spk.decode() if isinstance(spk, bytes) else spk,
 		"sk": sk.decode() if isinstance(sk, bytes) else sk,
@@ -41,7 +64,8 @@ def getAccountKeyValues(secret):
 
 def registerSecondSignature(secondSecret, senderPublicKey, signingKey):
 	#new publicKey for second signature
-	npk = binascii.hexlify(core.getKeys(secondSecret).public)
+	k2 = core.getKeys(secondSecret)
+	npk = binascii.hexlify(k2.public)
 	npk = npk.decode() if isinstance(npk, bytes) else npk
 
 	# preparing key_oneobject needed for tx signature
@@ -55,9 +79,12 @@ def registerSecondSignature(secondSecret, senderPublicKey, signingKey):
 	# create tx
 	tx = core.Transaction(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=npk)))
 	object.__setattr__(tx, "key_one", key_one)
-	result = core.api.broadcast([tx])
+	result = _prettyPrint(core.api.broadcast([tx]))
 
 	_prettyPrint(result)
+	_prettyLog(result)
+
+
 
 # def scrambleData(senderPublicKey, signingKey):
 # 	nb_elem = random.randint(3, 7)
