@@ -1,8 +1,8 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from .. import __PY3__
-import os, sys, logging
+from .. import __PY3__, core, cfg
+import os, sys, json, logging
 
 input = raw_input if not __PY3__ else input
 
@@ -65,3 +65,23 @@ def chooseItem(msg, *elem):
 	else:
 		sys.stdout.write("Nothing to choose...\n")
 		return False
+
+def postData(url_base, data):
+	return json.loads(
+		core.api.requests.post(
+			url_base + "/peer/transactions",
+			data=data,
+			headers=cfg.__HEADERS__,
+			timeout=3
+		).text
+	)
+
+def broadcastSerial(serial):
+	data = json.dumps({"transactions": [serial]})
+	result = postData(cfg.__URL_BASE__, data)
+	ratio = 0.
+	if result["success"]:
+		for peer in core.api.PEERS:
+			if postData(peer, data)["success"]: ratio += 1
+	result["broadcast"] = "%.1f%%" % (ratio/len(core.api.PEERS)*100)
+	return result

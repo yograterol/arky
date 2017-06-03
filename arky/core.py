@@ -6,8 +6,8 @@ from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
 from . import __PY3__, StringIO, ArkyDict, arkydify
-if not __PY3__: import api, cfg, slots
-else: from . import api, cfg, slots
+if not __PY3__: import cfg, slots
+else: from . import cfg, slots
 
 import base58, struct, hashlib, binascii, requests, json
 

@@ -30,7 +30,7 @@ Subcommands:
 
 from ecdsa.keys import SigningKey
 from .. import ArkyDict, ROOT, core, cfg
-from .common import floatAmount, prettyPrint, chooseItem
+from .common import floatAmount, prettyPrint, chooseItem, broadcastSerial
 
 import binascii, hashlib, base58, shlex, json, sys, io, os
 
@@ -57,7 +57,7 @@ def register(param):
 		tx = _generateColdTx(type=1, asset=ArkyDict(signature=ArkyDict(publicKey=param["<2ndPublicKey>"])))
 		if tx:
 			tx.sign()
-			prettyPrint(_broadcastSerial(tx.serialize()), log=True)
+			prettyPrint(broadcastSerial(tx.serialize()), log=True)
 
 def unlink(param):
 	global KEY1, KEY2, PUBLICKEY, ADDRESS
@@ -124,7 +124,7 @@ def validate(param):
 		if tx:
 			tmp = core.signSerial(tx, KEY2)
 			tx.update({"id":tmp["id"], "signSignature":tmp["signature"]}) #core.signSerial(tx, KEY2))
-			prettyPrint(_broadcastSerial(tx), log=True)
+			prettyPrint(broadcastSerial(tx), log=True)
 		else:
 			sys.stdout.write("%s Cold transaction not found\n" % tx.id)
 
@@ -216,6 +216,12 @@ def _generateColdTx(**kw):
 		sys.stdout.write("Can not create cold transaction\n")
 		return False
 
+def _coldTxPath(filename):
+	global COLDTXS
+	filename = filename.decode() if isinstance(filename, bytes) else filename
+	if not filename.endswith(".ctx"): filename += ".ctx"
+	return os.path.join(COLDTXS, cfg.__NET__, filename)
+
 def _dropColdTx(tx):
 	global COLDTXS, ADDRESS
 	filename = os.path.join(COLDTXS, cfg.__NET__, "%s.ctx" % tx.id)
@@ -235,22 +241,22 @@ def _loadColdTx(filename):
 	else:
 		return False
 	
-def _postData(url_base, data):
-	return json.loads(
-		core.api.requests.post(
-			url_base + "/peer/transactions",
-			data=data,
-			headers=cfg.__HEADERS__,
-			timeout=3
-		).text
-	)
+# def _postData(url_base, data):
+# 	return json.loads(
+# 		core.api.requests.post(
+# 			url_base + "/peer/transactions",
+# 			data=data,
+# 			headers=cfg.__HEADERS__,
+# 			timeout=3
+# 		).text
+# 	)
 
-def _broadcastSerial(serial):
-	data = json.dumps({"transactions": [serial]})
-	result = _postData(cfg.__URL_BASE__, data)
-	ratio = 0.
-	if result["success"]:
-		for peer in core.api.PEERS:
-			if _postData(peer, data)["success"]: ratio += 1
-	result["broadcast"] = "%.1f%%" % (ratio/len(core.api.PEERS)*100)
-	return result
+# def _broadcastSerial(serial):
+# 	data = json.dumps({"transactions": [serial]})
+# 	result = _postData(cfg.__URL_BASE__, data)
+# 	ratio = 0.
+# 	if result["success"]:
+# 		for peer in core.api.PEERS:
+# 			if _postData(peer, data)["success"]: ratio += 1
+# 	result["broadcast"] = "%.1f%%" % (ratio/len(core.api.PEERS)*100)
+# 	return result
