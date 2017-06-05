@@ -3,11 +3,9 @@
 In `ark`, there are no multisignature account, only multisignature transactions.
 So how can we set-up an escrow-managed account?
 
-Account owner that whants to send ARK need an escrower to validate and broadcast it
-
 ## Basic idea
 
-Ark secure account with second passphrase, so if there is a way that owner only holds
+Ark secures account with second passphrase, so if there is a way that owner only holds
 first one and escrower only holds second one it could do the job.
 
 Fortunatly, it is possible. Owner only needs escrower public key to set up the second
@@ -15,10 +13,10 @@ passphrase. This process is entirely secure.
 
 ## How to do it with `arky`?
 
-Since version `0.2.0` command line interface is merged with `arky`. So let say an owner
-whants to setup an escrow account and ask someone to be its escrower:
+Since version `0.2.0` command line interface is merged within `arky`. So let say an owner
+wants to setup an escrow account and ask someone to be its escrower:
 
- - owner passphrase: `twelve-word passphrase escrow does not know`
+ - owner passphrase: `twelve-word passphrase escrower does not know`
  - escrower passphrase: `twelve-word passphrase owner does not know`
 
 ### 1. owner asks escrower public key
@@ -43,7 +41,7 @@ Owner runs:
 ```
 >>> from arky import cli
 >>> cli.start()
-hot-dark@> escrow link "twelve-word passphrase escrow does not know"
+hot-dark@> escrow link "twelve-word passphrase escrower does not know"
 hot-dark@escrow[DQuT4...5qDha]> register 02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
     broadcast     : 100.0%
     transactionIds: ['181ac925edb6b52ec1c6da435ad6181562b2eac4aeda0450145183556b7c5b29']
@@ -51,14 +49,14 @@ hot-dark@escrow[DQuT4...5qDha]> register 02f566e6afa0f4c87e0b605f75bb76f40f08123
 hot-dark@escrow[DQuT4...5qDha]>
 ```
 
-### 3. Owner whants to send ARK:
+### 3. Owner wants to send ARK:
 
 Owner runs:
 
 ```
 >>> from arky import cli
 >>> cli.start()
-hot-dark@> escrow link "twelve-word passphrase escrow does not know"
+hot-dark@> escrow link "twelve-word passphrase escrower does not know"
 hot-dark@escrow[DQuT4...5qDha]> send 3.123456 DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX "My first escrowed transaction"
 You can now give d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx file to your escrow
 hot-dark@escrow[DQuT4...5qDha]>
