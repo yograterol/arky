@@ -18,7 +18,7 @@ HOME = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"]) if "win" in
 
 logging.basicConfig(
 	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
-	format    = '[%(asctime)s] %(message)s',
+	format    = '[...][%(asctime)s] %(message)s',
 	level     = logging.INFO,
 )
 
