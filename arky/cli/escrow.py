@@ -88,8 +88,6 @@ def send(param):
 		else:
 			tx = False
 		if tx:
-			# tx.sign()
-			# tx = tx.serialize()
 			tx.address = ADDRESS
 			sys.stdout.write("You can now give %s file to your escrow\n" % common.dropColdTx(tx))
 

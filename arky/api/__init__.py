@@ -2,7 +2,7 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import cfg, core, arkydify, ArkyDict, setInterval, NETWORKS, SEEDLIST, ROOT, __version__
+from .. import cfg, core, arkydify, ArkyDict, setInterval, ROOT, __version__
 import os, sys, json, requests, binascii, traceback, datetime, random, pytz
 UTC = pytz.UTC
 
