@@ -21,7 +21,7 @@ whants to setup an escrow account and ask someone to be its escrower:
  - owner passphrase: `twelve-word passphrase escrow does not know`
  - escrower passphrase: `twelve-word passphrase owner does not know`
 
-1. owner asks escrower public key
+### 1. owner asks escrower public key
  
 Escrower runs:
 
@@ -36,7 +36,7 @@ hot-dark@escrow>
 
 and sends `02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d` to owner
 
-2. Owner register escrower signature
+### 2. Owner register escrower signature
 
 Owner runs:
 
@@ -51,7 +51,7 @@ hot-dark@escrow[DQuT4...5qDha]> register 02f566e6afa0f4c87e0b605f75bb76f40f08123
 hot-dark@escrow[DQuT4...5qDha]>
 ```
 
-3. Owner whants to send ARK:
+### 3. Owner whants to send ARK:
 
 Owner runs:
 
@@ -68,7 +68,7 @@ in `.coldtx/dark` folder is saved a cold transaction (ie it does not touched the
 `d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx`. This file have to be sent to the
 escrower (email, ftp, slack etc...). 
 
-4. Escrower validate and bradcast the transaction
+### 4. Escrower validate and bradcast the transaction
 
 Once escrower saved `d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx` in its
 `.coldtx/dark` folder, he runs:
@@ -99,5 +99,4 @@ Broadcast <type-0 transaction(A3.12345600) from DQuT4...5qDha to DTywx...YEatX>?
 hot-dark@escrow[b5a3d...9b17a]>
 ```
 
-[here is the transaction](http://dexplorer.ark.io/tx/09563bc9f9fe387d1b130a8358454b20f4b6b90d75086c3b132a3230324822d4)
-
+[here is the transaction](https://dexplorer.arkcoin.net/tx/09563bc9f9fe387d1b130a8358454b20f4b6b90d75086c3b132a3230324822d4)
