@@ -89,40 +89,6 @@ More on ``arky.core`` ?
 
 >>> help(core)
 
-**wallet module**
-
->>> from arky import wallet
->>> wallet.api.use("ark") # api is loaded by wallet
-
-``Wallet`` class allows developpers to send ARK, register address as delegate
-and vote for delegates.
-
->>> w = wallet.Wallet("secret")
->>> w.delegate
-False
->>> w.registered
-False
->>> w.balance
-10764.646
->>> w.candidates # valid username that can be up/down voted
-['techbytes', '4miners.net', 'kostik', 'boldninja', 'sonobit', 'marco229', 'dotnet70', 'arkfuturesma
-rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmirnov', 'ark_faucet', 
-'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
->>> w.save("secret.wlt")
->>> w2 = wallet.open("secret.wlt")
->>> w2.balance
-1076464600000
->>> w2.voteDelegate(up=["arky"])
->>> w2.votes
-['arky']
->>> w2.voteDelegate(down=["arky"])
->>> w2.votes
-[]
-
-More on ``arky.wallet`` ?
-
->>> help(wallet)
-
 Easy way to use ``arky``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -160,18 +126,19 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
-**TODO**
-
-+ offline data implementation
-+ multisignature email protocol
-
 **0.2.0**
 
-+ added ``cli`` pkg
-+ ``api`` pkg:
-   * improved connection protocol
-+ ``util`` pkg:
-   * added ``stats`` modules
++ custom network configuration file added (``ark.net`` and ``dark.net`` available)
++ cli merged within arky (only ``escrow`` interface added)
+
+>>> from arky import api
+@devnet>>> from arky import cli
+@devnet>>> api.use("ark")
+@ark>>> cli.start()
+hot-mainnet@>
+
++ added escrowing account creation with ``cli``
++ added ``stats`` module to ``util`` package
 
 **0.1.9**
 

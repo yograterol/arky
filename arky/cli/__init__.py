@@ -1,7 +1,6 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-# put cli module name here
 __all__ = ["escrow"]
 
 from .. import cfg
@@ -10,7 +9,7 @@ import os, sys, shlex, docopt, traceback
 
 
 def _whereami():
-	return "root"
+	return ""
 
 class _Prompt(object):
 
@@ -69,21 +68,6 @@ def start():
 					if hasattr(error, "__traceback__"):
 						sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
 					sys.stdout.write("%s\n" % error)
-			# else:
-			# 	sys.stdout.write("\n".join(getattr(sys.modules[__name__], name).__doc__ for name in __all__))
 
 def execute(*lines):
 	pass
-
-# def _blacklistContributors(contributors, lst):
-# 	return dict([a,v] for a,v in contributors.items() if a not in lst)
-
-# def _floorContributors(contributors, min_ratio):
-# 	total_vote = sum(contributors.values())
-# 	cut_vote = min_ratio*total_vote
-# 	return _blacklistContributors(contributors, [a for a,v in contributors.items() if v < cut_vote])
-
-# def _ceilContributors(contributors, max_ratio):
-# 	total_vote = sum(contributors.values())
-# 	cut_vote = max_ratio*total_vote
-# 	return dict([a,cut_vote if v/total_vote > max_ratio else v] for a,v in contributors.items())

@@ -1,10 +1,30 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-from .. import __PY3__, core, cfg
-import os, sys, json, logging
+from .. import __PY3__, ROOT, ArkyDict, api, core, cfg, util
+import io, os, sys, json, logging, binascii
 
 input = raw_input if not __PY3__ else input
+
+COLDTXS = os.path.normpath(os.path.join(ROOT, ".coldtx"))
+try: os.makedirs(COLDTXS)
+except: pass
+
+def checkFolderExists(filename):
+	folder = os.path.dirname(filename)
+	if not os.path.exists(folder):
+		os.makedirs(folder)
+
+def shortAddress(addr, sep="...", n=5):
+	return addr[:n]+sep+addr[-n:]
+
+def hexlify(data):
+	result = binascii.hexlify(data)
+	return result.decode() if isinstance(result, bytes) else result
+
+def unhexlify(data):
+	result = binascii.unhexlify(data)
+	return result if isinstance(result, bytes) else result.encode()
 
 def prettyfy(dic, tab="    "):
 	result = ""
@@ -28,21 +48,15 @@ def prettyPrint(dic, tab="    ", log=True):
 		sys.stdout.write("Nothing to print here\n")
 		if log: logging.info("Nothing to log here")
 
-# return ark value according to amount
 def floatAmount(amount, address):
-	global EXCHANGE
-
 	if amount.endswith("%"):
 		return float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance"))
 	elif amount[0] in "$€£¥":
 		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
-		sys.stdout.write("%s price : ARK/%s = %f -> " % (EXCHANGE, amount[0], price))
-		answer = ""
-		while answer not in ["y", "Y", "n", "N"]:
-			answer = input("%s = ARK%f. Validate? [y-n]> " % (amount, result))
-		if answer in ["n", "N"]:
-			sys.stdout.write("Transaction aborted\n")
+		if askYesOrNo("%s=ARK%f (ARK/%s=%f); Validate?" % (amount, result, amount[0], price)):
+			return result
+		else:
 			return False
 		return result
 	else:
@@ -66,22 +80,43 @@ def chooseItem(msg, *elem):
 		sys.stdout.write("Nothing to choose...\n")
 		return False
 
-def postData(url_base, data):
-	return json.loads(
-		core.api.requests.post(
-			url_base + "/peer/transactions",
-			data=data,
-			headers=cfg.__HEADERS__,
-			timeout=3
-		).text
-	)
+def askYesOrNo(msg):
+	answer = ""
+	while answer not in ["y", "Y", "n", "N"]:
+		answer = input("%s [y-n]> " % msg)
+	return False if answer in ["n", "N"] else True
 
-def broadcastSerial(serial):
-	data = json.dumps({"transactions": [serial]})
-	result = postData(cfg.__URL_BASE__, data)
-	ratio = 0.
-	if result["success"]:
-		for peer in core.api.PEERS:
-			if postData(peer, data)["success"]: ratio += 1
-	result["broadcast"] = "%.1f%%" % (ratio/len(core.api.PEERS)*100)
-	return result
+def generateColdTx(signingKey, publicKey, **kw):
+	tx = core.Transaction(**kw)
+	object.__setattr__(tx, "key_one", ArkyDict(public=publicKey, signingKey=signingKey))
+	tx.sign()
+	return tx.serialize()
+
+def coldTxPath(name):
+	name = name.decode() if isinstance(name, bytes) else name
+	if not name.endswith(".ctx"): name += ".ctx"
+	return os.path.join(COLDTXS, cfg.__NET__, name)
+
+def dropColdTx(tx, name=None):
+	filename = coldTxPath(tx.id if name == None else name)
+	checkFolderExists(filename)
+	out = io.open(filename, "w")
+	json.dump(tx, out, indent=2)
+	out.close()
+	return os.path.basename(filename)
+
+def loadColdTx(name):
+	filename = coldTxPath(name)
+	if os.path.exists(filename):
+		in_ = io.open(filename, "r")
+		tx = json.load(in_)
+		in_.close()
+		return tx
+
+def reprColdTx(ctx):
+	return "<type-%(type)d transaction(A%(amount).8f) from %(from)s to %(to)s>" % {
+		"type": ctx["type"],
+		"amount": ctx["amount"]/100000000.,
+		"from": shortAddress(ctx["address"]),
+		"to": shortAddress(ctx["recipientId"])
+	}

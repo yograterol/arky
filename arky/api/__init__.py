@@ -2,8 +2,8 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import cfg, core, ArkyDict, setInterval, NETWORKS, SEEDLIST, __version__
-import os, sys, json, requests, traceback, datetime, random, pytz
+from .. import cfg, core, arkydify, ArkyDict, setInterval, NETWORKS, SEEDLIST, ROOT, __version__
+import os, sys, json, requests, binascii, traceback, datetime, random, pytz
 UTC = pytz.UTC
 
 # define api exceptions 
@@ -114,12 +114,32 @@ Returns ArkyDict
 	result.broadcast = "%.1f%%" % (ratio/len(PEERS)*100)
 	return result
 
+def postData(url_base, data):
+	return json.loads(
+		requests.post(
+			url_base + "/peer/transactions",
+			data=data,
+			headers=cfg.__HEADERS__,
+			timeout=3
+		).text
+	)
+
+def broadcastSerial(serial):
+	data = json.dumps({"transactions": [serial]})
+	result = postData(cfg.__URL_BASE__, data)
+	ratio = 0.
+	if result["success"]:
+		for peer in PEERS:
+			if postData(peer, data)["success"]: ratio += 1
+	result["broadcast"] = "%.1f%%" % (ratio/len(PEERS)*100)
+	return result
+
 def checkPeerLatency(peer, timeout=3):
 	try: r = requests.get(peer + '/api/blocks/getNethash', timeout=timeout)
 	except: return False
 	else: return r.elapsed.total_seconds()
 
-def use(network="devnet", custom_seed=None, broadcast=10, latency=1):
+def use(network="dark", custom_seed=None, broadcast=10, latency=1):
 	"""
 Select ARK network.
 
@@ -131,24 +151,32 @@ latency     (int) -- max latency you want in second
 
 Returns None
 """
-	global PEERS
+	global PEERS, ROOT
 
-	try: cfg.__NETWORK__.update(NETWORKS.get(network))
-	except: raise NetworkError("Unknown %s network properties" % network)
+	networks = [os.path.splitext(name)[0] for name in os.listdir(ROOT) if name.endswith(".net")]
+	if len(networks) and network in networks:
+		in_ = open(os.path.join(ROOT, network+".net"), "r")
+		data = json.load(in_)
+		in_.close()
+		for key, value in ([k,v] for k,v in data.items() if k in ["wif","pubKeyHash","messagePrefix"]):
+			data[key] = binascii.unhexlify(value)
+		cfg.__NETWORK__.update(arkydify(data))
+	else:
+		raise NetworkError("Unknown %s network properties" % network)
 
 	# in js month value start from 0, in python month value start from 1
 	cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
-	cfg.__NET__ = network if network in ["testnet", "devnet"] else "mainnet"
+	cfg.__NET__ = network # if network in ["testnet", "devnet"] else "mainnet"
 
 	# find seeds
 	if custom_seed:
 		seedlist = [custom_seed]
 	else:
-		seedlist = SEEDLIST.get(cfg.__NET__, [])[:]
+		port = cfg.__NETWORK__.port
+		seedlist = ["http://%s:%s"%(ip,port) for ip in cfg.__NETWORK__.seeds]
 	if not len(seedlist):
 		sys.ps1 = "cold@%s>>> " % network
 		sys.ps2 = "cold@%s... " % network
-		cfg.__NET__ = network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
 		return
@@ -164,7 +192,6 @@ Returns None
 	if not seed:
 		sys.ps1 = "cold@%s>>> " % network
 		sys.ps2 = "cold@%s... " % network
-		cfg.__NET__ = network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
 		return
@@ -177,7 +204,6 @@ Returns None
 		except requests.exceptions.ConnectionError:
 			sys.ps1 = "cold@%s>>> " % network
 			sys.ps2 = "cold@%s... " % network
-			cfg.__NET__ = network
 			cfg.__HOT_MODE__ = False
 			PEERS = []
 			return
