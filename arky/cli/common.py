@@ -43,7 +43,7 @@ def prettyPrint(dic, tab="    ", log=True):
 	pretty = prettyfy(dic, tab)
 	if len(dic):
 		sys.stdout.write(pretty)
-		if log: logging.info(pretty.strip())
+		if log: logging.info("\n"+pretty.rstrip())
 	else:
 		sys.stdout.write("Nothing to print here\n")
 		if log: logging.info("Nothing to log here")
