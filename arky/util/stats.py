@@ -37,12 +37,12 @@ def getVoteForce(address, delay=30):
 
 	# if no transaction over periode integrate balance over delay and return it
 	if not history:
-		return balance*max(1.0, delta.total_seconds())
+		return balance*max(1.0, delta.total_seconds()/3600)
 
 	end = slots.getTime(now)
 	sum_ = 0.
 	for tx in history:
-		delta_t =  end - tx["timestamp"]
+		delta_t = (end - tx["timestamp"])/3600
 		sum_ += balance * delta_t
 		balance += ((tx["fee"]+tx["amount"]) if tx["senderId"] == address else -tx["amount"])/100000000.
 		end = tx["timestamp"]
@@ -50,6 +50,6 @@ def getVoteForce(address, delay=30):
 			break
 
 	if tx["type"] != 3:
-		sum_ += balance * (tx["timestamp"]-timestamp_limit)
+		sum_ += balance * (tx["timestamp"]-timestamp_limit)/3600
 
 	return sum_

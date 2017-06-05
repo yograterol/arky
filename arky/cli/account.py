@@ -35,26 +35,18 @@ Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
        account unlink
        account status
        account balance
-       account contributors
-       account fidelity <days>
        account register <username>
        account register 2ndSecret <secret>
        account vote [-u <delegate>... | -d <delegate>...]
        account send <amount> <address> [<message>]
        account split <amount> <recipient>... [-m <message>]
-       account share <amount> [-b <blacklist> -f <floor> -c <ceil> -s <delay> <message>]
-       account support <amount> [<message>]
 
 Options:
 -u --up                                up vote all delegates name folowing
 -d --down                              down vote all delegates name folowing
--b <blacklist> --blacklist <blacklist> comma-separated ark addresse list (no space)
 -a <address> --address <address>       already linked ark address
 -m <message> --message <message>       64-char message
 -k <keyring> --keyring <keyring>       a valid *.akr pathfile
--s <delay> --strict <delay>            strict number of fidelity-day [default: 30]
--f <floor> --floor <floor>             minimum treshold ratio to benefit from share
--c <ceil> --ceil <ceil>                maximum share ratio benefit
 
 Subcommands:
     link         : link to account using secret passphrases, Ark address or
@@ -67,8 +59,6 @@ Subcommands:
     unlink       : unlink account and delete its associated *.akr file.
     status       : show information about linked account.
     balance      : show account balance in ARK.
-    contributors : show voters contributions ([address - vote weight] pairs).
-    fidelity     : show fidelity of voters for a certain day history.
     register     : register linked account as delegate (cost 25 ARK);
                    or
                    register second signature to linked account (cost 5 ARK).
@@ -76,8 +66,4 @@ Subcommands:
     send         : send ARK amount to address. You can set a 64-char message.
     split        : equal-split ARK amount to different recipient. You can set a
                    64-char message.
-    share        : share ARK amount with voters (if any) according to their
-                   weight. You can set a 64-char message.
-    support      : share ARK amount to relay nodes according to their vote rate.
-                   You can set a 64-char message.
 '''

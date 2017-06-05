@@ -8,7 +8,7 @@ import os, json, math, datetime
 import sys
 print(sys.version)
 
-while cfg.__NET__ != "mainnet":
+while cfg.__NET__ != "ark":
 	api.use("ark")
 
 __daily_fees__ =  5./30 # daily server cost
@@ -59,7 +59,7 @@ elif wlt.balance < 200:
 	raise Exception("%s does not have more than 200 Arks !" % wlt.delegate["username"])
 
 sys.stdout.write("Checking %s-day-true-vote-weight on transaction history...\n" % 7)
-contributors = dict([address, stats.getTrueVoteWeight(address, 7)] for address in [v["address"] for v in wlt.voters if v["address"] != __investments__])
+contributors = dict([address, stats.getVoteForce(address, 7)] for address in [v["address"] for v in wlt.voters if v["address"] not in [__investments__, "ARfDVWZ7Zwkox3ZXtMQQY1HYSANMB88vWE"]])
 k = 1.0/max(1, sum(contributors.values()))
 contributors = dict((a, s*k) for a,s in contributors.items())
 
@@ -74,19 +74,19 @@ node_invest = 2*math.ceil(USD2ARK(__daily_fees__*7)) - __tx_fee__
 log.write("node fees       : A%.8f\n" % node_invest)
 header.append("Node fees")
 content.append(node_invest)
-# wlt.sendArk(node_invest, __exchange__)
+wlt.sendArk(node_invest, __exchange__)
 
 # part to be distributed
 share = amount - node_invest
 log.write("Share           : A%.8f\n" % share)
 
-investments = 0.40*share - __tx_fee__
+investments = 0.20*share - __tx_fee__
 log.write("For investments : A%.8f\n" % investments)
 header.append("Investments")
 content.append(investments)
-# wlt.sendArk(investments, __investments__)
+wlt.sendArk(investments, __investments__)
 
-voters = 0.60*share
+voters = 0.80*share
 log.write("For voters      : A%.8f\n" % voters)
 
 log.write("\nArky contributors : [checksum:%f]\n" % sum(contributors.values()))
@@ -95,7 +95,7 @@ content.append("")
 for addr,ratio in sorted(contributors.items(), key=lambda i:i[1]):
 	amount = voters*ratio - __tx_fee__
 	if amount > 0.:
-		# wlt.sendArk(amount, addr, vendorField="Arky weekly interests. Thanks for your contribution !")
+		wlt.sendArk(amount, addr, vendorField="Arky weekly interests. Thanks for your contribution !")
 		log.write("%s [true weight:%f]: A%.8f\n" % (addr, contributors[addr], amount))
 		header.append(addr)
 		content.append(amount)

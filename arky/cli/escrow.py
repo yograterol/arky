@@ -2,6 +2,12 @@
 # © Toons
 
 '''
+    This command allows escrow account creation and management. Account is
+    shared between owner, who initiates transactions, and escrower, who
+    validates and broadcast transactions.
+
+    Owner holds secret passphrase, escrower holds second secret one.
+
 Usage: escrow register <2ndPublicKey>
        escrow publickey <secret>
        escrow link [<secret> -e]
