@@ -64,7 +64,8 @@ More on ``arky.api`` ?
 **core module**
 
 >>> from arky import core
->>> core.api.use("ark") # api is loaded by core
+>>> from arky import api
+>>> api.use("ark")
 
 ``core`` module allows developpers to access core functions.
 

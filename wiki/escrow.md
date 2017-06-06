@@ -1,20 +1,20 @@
 # Escrowing account with `arky`
 
-In `ark`, there are no multisignature account, only multisignature transactions.
-So how can we set-up an escrow-managed account?
+In `ark`, there are no multisignature accounts, only multisignature transactions.
+So how can we set-up an escrowed account?
 
 ## Basic idea
 
-Ark secures account with second passphrase, so if there is a way that owner only holds
-first one and escrower only holds second one it could do the job.
+Ark secures account with second passphrase, so if there is a way that owner
+holds first one and escrower holds second one it could do the job.
 
-Fortunatly, it is possible. Owner only needs escrower public key to set up the second
-passphrase. This process is entirely secure.
+Fortunatly, it is possible. Owner only needs escrower public key to set up the
+second passphrase. This process is entirely secure.
 
 ## How to do it with `arky`?
 
-Since version `0.2.0` command line interface is merged within `arky`. So let say an owner
-wants to setup an escrow account and ask someone to be its escrower:
+Since version `0.2.0` command line interface is merged within `arky`. So let say
+an owner wants to setup an escrow account and ask someone to be his escrower:
 
  - owner passphrase: `twelve-word passphrase escrower does not know`
  - escrower passphrase: `twelve-word passphrase owner does not know`
@@ -32,7 +32,8 @@ Send this bublic key as is to the account owner
 hot-dark@escrow>
 ```
 
-and sends `02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d` to owner
+and sends `02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d`
+to owner.
 
 ### 2. Owner register escrower signature
 
@@ -49,6 +50,8 @@ hot-dark@escrow[DQuT4...5qDha]> register 02f566e6afa0f4c87e0b605f75bb76f40f08123
 hot-dark@escrow[DQuT4...5qDha]>
 ```
 
+That's it!
+
 ### 3. Owner wants to send ARK:
 
 Owner runs:
@@ -62,14 +65,31 @@ You can now give d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66
 hot-dark@escrow[DQuT4...5qDha]>
 ```
 
-in `.coldtx/dark` folder is saved a cold transaction (ie it does not touched the network ever) named
-`d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx`. This file have to be sent to the
-escrower (email, ftp, slack etc...). 
+In `.coldtx/dark` folder is saved a cold transaction (ie it did not touch the
+network ever) named `d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx`:
 
-### 4. Escrower validate and bradcast the transaction
+```
+{
+  "asset": {},
+  "address": "DQuT4VSx6RywrGsf6brXmFc9QDU5s5qDha",
+  "signature": "3045022100e27a9a712f0e84114592fc6e27aba17564cddab9044271481e0d12cc28f562be0220042ed130535b61e91a0a75eaaf3b2dbc86a4f49898e766a3a8713beeb6214f4b",
+  "type": 0,
+  "id": "d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d",
+  "senderPublicKey": "03838af819c50be82ede4fe6d77d190b67f26abbd37d53fb382d6d4c132d68be21",
+  "timestamp": 6582423,
+  "amount": 312345600,
+  "fee": 10000000,
+  "vendorField": "My first escrowed transaction",
+  "recipientId": "DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX"
+}
+```
 
-Once escrower saved `d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx` in its
-`.coldtx/dark` folder, he runs:
+This file have to be sent to the escrower (email, ftp, slack etc...). 
+
+### 4. Escrower validates and broadcasts the transaction
+
+Once escrower saved `d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx`
+in its `.coldtx/dark` folder, he runs:
 
 ```
 >>> from arky import cli

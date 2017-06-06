@@ -2,7 +2,7 @@
 # © Toons
 
 '''
-Usage: account link [<secret>]
+Usage: account link [<secret> <secondSecret>]
        account save <name>
        account unlink
        account status
@@ -33,3 +33,9 @@ Subcommands:
     support      : share ARK amount to relay nodes according to their vote rate.
                    You can set a 64-char message.
 '''
+
+ADDRESS = None
+PUBLICKEY = None
+KEY1 = None
+KEY2 = None
+
