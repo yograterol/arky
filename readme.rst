@@ -93,11 +93,9 @@ More on ``arky.core`` ?
 Easy way to use ``arky``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-``arky-cli`` is command line interface that simplify interaction with ARK
-blockchain. Once script is executed, it loads all needed environment to execute
-simple commands. Type ``exit`` to close the interface.
-
-`Arky Command Line Interface`_
+>>> from arky import cli
+@ark>>> cli.start()
+hot-devnet@>
 
 Authors
 =======
@@ -127,18 +125,18 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
+**0.2.1**
+
++ ``cli`` pkg:
+   * added network command set
+   * added delegate command set
++ ``api`` pkg:
+   * only up-to-date peers selected for broadcasting
+
 **0.2.0**
 
 + custom network configuration file added (``ark.net`` and ``dark.net`` available)
 + cli merged within arky (only ``escrow`` interface added)
-
->>> from arky import api
-@devnet>>> from arky import cli
-@devnet>>> api.use("ark")
-@ark>>> cli.start()
-hot-mainnet@>
-
-+ added escrowing account creation with ``cli``
 + added ``stats`` module to ``util`` package
 
 **0.1.9**
@@ -186,4 +184,3 @@ hot-mainnet@>
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
-.. _Arky Command Line Interface: https://github.com/Moustikitos/arky-cli

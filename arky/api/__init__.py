@@ -210,13 +210,15 @@ Returns None
 			cfg.__HOT_MODE__ = False
 			PEERS = []
 			return
-	peerlist = []
-	goodpeers = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK"]
-	random.shuffle(goodpeers)
 
+	peerlist = []
+	version = json.loads(requests.get(seed+'/api/peers/version', timeout=latency).text).get("version", '0.0.0')
+	goodpeers = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK" and p["version"] == version]
+	random.shuffle(goodpeers)
 	# select a set of peers for transaction broadcasting
 	for peer in goodpeers:
-		if checkPeerLatency(peer, timeout=latency): peerlist.append(peer)
+		if checkPeerLatency(peer, timeout=latency):
+			peerlist.append(peer)
 		if len(peerlist) == broadcast: break
 	if not len(peerlist):
 		sys.ps1 = "cold@%s>>> " % network

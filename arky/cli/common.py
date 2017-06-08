@@ -50,7 +50,7 @@ def prettyPrint(dic, tab="    ", log=True):
 
 def floatAmount(amount, address):
 	if amount.endswith("%"):
-		return float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance"))
+		return float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance"))/100000000.
 	elif amount[0] in "$€£¥":
 		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
@@ -86,9 +86,11 @@ def askYesOrNo(msg):
 		answer = input("%s [y-n]> " % msg)
 	return False if answer in ["n", "N"] else True
 
-def generateColdTx(signingKey, publicKey, **kw):
+def generateColdTx(signingKey, publicKey, secondSigningKey=None, **kw):
 	tx = core.Transaction(**kw)
 	object.__setattr__(tx, "key_one", ArkyDict(public=publicKey, signingKey=signingKey))
+	if secondSigningKey:
+		object.__setattr__(tx, "key_two", ArkyDict(signingKey=secondSigningKey))
 	tx.sign()
 	return tx.serialize()
 

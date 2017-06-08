@@ -1,10 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__all__ = ["escrow", "network"]
+__all__ = ["escrow", "network", "delegate"]
 
 from .. import cfg
-from . import escrow, network
+from . import escrow, network, delegate
 import os, sys, shlex, docopt, traceback
 
 

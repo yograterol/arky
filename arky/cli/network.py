@@ -38,7 +38,7 @@ def ping(param):
 	common.prettyPrint(dict([peer,api.checkPeerLatency(peer)] for peer in api.PEERS))
 
 def address(param):
-	common.prettyPrint({param["<secret>"]:core.getAddress(core.getKeys(param["<secret>"]))})
+	sys.stdout.write("    %s: %s\n" % (param["<secret>"], core.getAddress(core.getKeys(param["<secret>"]))))
 
 def delegates(param):
 	delegates = api.Delegate.getDelegates(limit=51, returnKey='delegates')
