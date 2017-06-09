@@ -1,12 +1,6 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-#        delegate support <amount> [<message>]
-#        delegate fidelity <days>
-#     fidelity : show fidelity of voters for a certain day history.
-#     support  : share ARK amount to relay nodes according to their vote rate.
-#                You can set a 64-char message.
-
 '''
 Usage: delegate link [<secret>]
        delegate save <name>
@@ -17,22 +11,20 @@ Usage: delegate link [<secret>]
 
 Options:
 -b <blacklist> --blacklist <blacklist> comma-separated ark addresse list
--a <address> --address <address>       already linked ark address
--k <keyring> --keyring <keyring>       a valid *.akr pathfile
 -d <delay> --delay <delay>             number of fidelity-day            [default: 30]
 
 Subcommands:
-    link     : link to account using secret passphrases, Ark address or
-               *.tokd file. If secret passphrases contains spaces, it must be
-               enclosed within double quotes ("secret with spaces"). Note
-               that you can use address only for *.tokd files registered
-               locally.
-    save     : save linked delegate to an *.tokd file.
-    unlink   : unlink account.
-    status   : show information about linked account.
-    voters   : show voters contributions ([address - vote] pairs).
-    share    : share ARK amount with voters (if any) according to their
-               weight. You can set a 64-char message.
+    link   : link to account using secret passphrases, Ark address or
+             *.tokd file. If secret passphrases contains spaces, it must be
+             enclosed within double quotes ("secret with spaces"). Note
+             that you can use address only for *.tokd files registered
+             locally.
+    save   : save linked delegate to an *.tokd file.
+    unlink : unlink account.
+    status : show information about linked account.
+    voters : show voters contributions ([address - vote] pairs).
+    share  : share ARK amount with voters (if any) according to their
+             weight. You can set a 64-char message.
 '''
 
 from ecdsa.keys import SigningKey

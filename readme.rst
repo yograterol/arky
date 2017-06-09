@@ -39,8 +39,8 @@ For development version
 Using ``arky``
 ==============
 
-``arky`` relies on three major elements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``arky`` relies on two major elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **api package**
 
@@ -49,13 +49,12 @@ to `ARK API`_. For security reason only ``GET`` methods are implemented in
 ``api`` package.
 
 >>> from arky import api
->>> api.use("devnet")
->>> api.Account.getAccount("DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX")
-{'success': True, 'account': {'address': 'DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX', 'unconfirmedBalance':
- '994880000000', 'balance': '994880000000', 'publicKey': '030cf398655cc01d0425a615aceb6b6d2acad40eb7
-b42039826dbce98b20fd578f', 'unconfirmedSignature': 0, 'secondSignature': 0, 'secondPublicKey': None,
- 'multisignatures': [], 'u_multisignatures': []}}tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': 
-[]}}
+>>> api.use("ark")
+>>> api.Account.getAccount("AUahWfkfr5J4tYakugRbfow7RWVTK35GPW")
+{'account': {'balance': '2111396549423', 'secondSignature': 0, 'u_multisignatures': [], 'multisignat
+ures': [], 'unconfirmedSignature': 0, 'address': 'AUahWfkfr5J4tYakugRbfow7RWVTK35GPW', 'publicKey': 
+'02c232b067bf2eda5163c2e187c1b206a9f876d8767a0f1a3f6c1718541af3bd4d', 'unconfirmedBalance': '2111396
+549423', 'secondPublicKey': None}, 'success': True}
 
 More on ``arky.api`` ?
 
