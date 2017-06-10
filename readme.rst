@@ -83,7 +83,6 @@ sset': {}, 'senderPublicKey': '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
 'fee': 10000000, 'signature': '304402201dbf20a62d3411c6d000b691edf3ed50c34baa96b94dedf70e2d512b9f917
 8250220475869560dd9740e2c324972be3cb2690e5fdd27b1cccf6dcd8fb325f52f8f25', 'type': 0, 'id': '16683123
 258705133772'}
->>> core.sendTransaction(tx)
 
 More on ``arky.core`` ?
 
@@ -94,7 +93,17 @@ Easy way to use ``arky``
 
 >>> from arky import cli
 @ark>>> cli.start()
-hot-devnet@>
+### arky-cli v2.0 - [arky 0.2.1 embeded]
+Available commands: escrow, network, delegate, account
+hot@dark/ >
+
+`escrow command set`_
+
+`network command set`_
+
+`delegate command set`_
+
+`account command set`_
 
 Authors
 =======
@@ -129,14 +138,17 @@ Version
 + ``cli`` pkg:
    * added network command set
    * added delegate command set
+   * added account command set
 + ``api`` pkg:
    * only up-to-date peers selected for broadcasting
 
 **0.2.0**
 
 + custom network configuration file added (``ark.net`` and ``dark.net`` available)
-+ cli merged within arky (only ``escrow`` interface added)
-+ added ``stats`` module to ``util`` package
++ added ``cli`` pkg:
+   * ``escrow`` module availabel
++ ``util`` pkg:
+   * added ``stats`` module
 
 **0.1.9**
 
@@ -183,3 +195,7 @@ Version
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
+.. _escrow command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/escrow.md
+.. _network command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/network.md
+.. _delegate command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/delegate.md
+.. _account command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/account.md

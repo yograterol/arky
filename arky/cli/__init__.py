@@ -1,15 +1,19 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
-__all__ = ["escrow", "network", "delegate"]
+__all__ = ["escrow", "network", "delegate", "account"]
 
-from .. import cfg
-from . import escrow, network, delegate
-import os, sys, shlex, docopt, traceback
+from .. import cfg, __PY3__, __version__
+from . import escrow, network, delegate, account
+import os, sys, shlex, docopt, logging, traceback
 
+__doc__ = """### arky-cli v2.0 - [arky %(version)s embeded]
+Available commands: %(sets)s""" % {"version":__version__, "sets": ", ".join(__all__)}
+
+input = raw_input if not __PY3__ else input
 
 def _whereami():
-	return ""
+	return " "
 
 class _Prompt(object):
 
@@ -17,7 +21,7 @@ class _Prompt(object):
 		object.__setattr__(self, attr, value)
 
 	def __repr__(self):
-		return "%(hoc)s-%(net)s@%(wai)s> " % {
+		return "%(hoc)s@%(net)s/%(wai)s> " % {
 			"hoc": "hot" if cfg.__HOT_MODE__ else "cold",
 			"net": cfg.__NET__,
 			"wai": self.module._whereami()
@@ -35,11 +39,13 @@ def parse(argv):
 				return parse(argv[1:])
 		else:
 			PROMPT.module = sys.modules[__name__]
-	elif argv[0] == "exit":
+	elif argv[0] in ["exit", ".."]:
 		if PROMPT.module == sys.modules[__name__]:
 			return False, False
 		else:
 			PROMPT.module = sys.modules[__name__]
+	elif argv[0] in ["help", "?"]:
+		sys.stdout.write("%s\n" % PROMPT.module.__doc__.strip())
 	elif hasattr(PROMPT.module, argv[0]):
 		try:
 			arguments = docopt.docopt(PROMPT.module.__doc__, argv=argv)
@@ -54,9 +60,12 @@ def parse(argv):
 	return True, False
 
 def start():
+	sys.stdout.write(__doc__+"\n")
 	exit = False
 	while not exit:
-		argv = shlex.split(input(PROMPT))
+		command = input(PROMPT)
+		logging.info(command)
+		argv = shlex.split(command)
 		if len(argv):
 			cmd, arg = parse(argv)
 			if not cmd:

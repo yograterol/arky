@@ -1,6 +1,6 @@
 # -*- encoding: utf8 -*-
 # © Toons
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 import os, imp, sys, threading, logging, requests, random
 
@@ -17,7 +17,7 @@ HOME = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"]) if "win" in
        os.environ.get("HOME", ".")
 
 logging.basicConfig(
-	filename  = os.path.normpath(os.path.join(HOME, "."+__name__)),
+	filename  = os.path.normpath(os.path.join(ROOT, __name__+".log")) if main_is_frozen() else os.path.normpath(os.path.join(HOME, "."+__name__)),
 	format    = '[...][%(asctime)s] %(message)s',
 	level     = logging.INFO,
 )

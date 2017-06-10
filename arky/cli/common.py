@@ -1,8 +1,10 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
+from ecdsa.keys import SigningKey
 from .. import __PY3__, ROOT, ArkyDict, api, core, cfg, util
-import io, os, sys, json, logging, binascii
+
+import io, os, sys, json, getpass, logging, binascii
 
 input = raw_input if not __PY3__ else input
 
@@ -10,10 +12,26 @@ COLDTXS = os.path.normpath(os.path.join(ROOT, ".coldtx"))
 try: os.makedirs(COLDTXS)
 except: pass
 
+TOKENS = os.path.normpath(os.path.join(ROOT, ".token"))
+try: os.makedirs(TOKENS)
+except: pass
+
 def checkFolderExists(filename):
 	folder = os.path.dirname(filename)
 	if not os.path.exists(folder):
 		os.makedirs(folder)
+
+def askSecondSignature(address):
+	secondPublicKey = api.Account.getAccount(address, returnKey="account").get('secondPublicKey', None)
+	if secondPublicKey:
+		keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+		spk = hexlify(keys.public)
+		if spk == secondPublicKey:
+			return keys.signingKey
+		else:	
+			sys.stdout.write("Incorrect second passphrase !\n")
+			return False
+	return None
 
 def shortAddress(addr, sep="...", n=5):
 	return addr[:n]+sep+addr[-n:]
@@ -25,6 +43,12 @@ def hexlify(data):
 def unhexlify(data):
 	result = binascii.unhexlify(data)
 	return result if isinstance(result, bytes) else result.encode()
+
+def signingKey2Hex(signingKey):
+	return hexlify(signingKey.to_pem())
+
+def hex2SigningKey(hexa):
+	return SigningKey.from_pem(unhexlify(hexa))
 
 def prettyfy(dic, tab="    "):
 	result = ""
@@ -39,7 +63,7 @@ def prettyfy(dic, tab="    "):
 			result += "\n"
 		return result
 
-def prettyPrint(dic, tab="    ", log=True):
+def prettyPrint(dic, tab="    ", log=False):
 	pretty = prettyfy(dic, tab)
 	if len(dic):
 		sys.stdout.write(pretty)
@@ -54,13 +78,25 @@ def floatAmount(amount, address):
 	elif amount[0] in "$€£¥":
 		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
-		if askYesOrNo("%s=ARK%f (ARK/%s=%f); Validate?" % (amount, result, amount[0], price)):
+		if askYesOrNo("%s=A%f (A/%s=%f) - Validate ?" % (amount, result, amount[0], price)):
 			return result
 		else:
 			return False
 		return result
 	else:
 		return float(amount)
+
+def findTokens(ext="tok"):
+	try:
+		return [os.path.splitext(name)[0] for name in os.listdir(os.path.join(TOKENS, cfg.__NET__)) if name.endswith("."+ext)]
+	except:
+		return []
+
+def findColdTx(ext="ctx"):
+	try:
+		return [os.path.splitext(name)[0] for name in os.listdir(os.path.join(COLDTXS, cfg.__NET__)) if name.endswith("."+ext)]
+	except:
+		return []
 
 def chooseItem(msg, *elem):
 	n = len(elem)
@@ -86,6 +122,11 @@ def askYesOrNo(msg):
 		answer = input("%s [y-n]> " % msg)
 	return False if answer in ["n", "N"] else True
 
+def coldTxPath(name):
+	name = name.decode() if isinstance(name, bytes) else name
+	if not name.endswith(".ctx"): name += ".ctx"
+	return os.path.join(COLDTXS, cfg.__NET__, name)
+
 def generateColdTx(signingKey, publicKey, secondSigningKey=None, **kw):
 	tx = core.Transaction(**kw)
 	object.__setattr__(tx, "key_one", ArkyDict(public=publicKey, signingKey=signingKey))
@@ -94,15 +135,10 @@ def generateColdTx(signingKey, publicKey, secondSigningKey=None, **kw):
 	tx.sign()
 	return tx.serialize()
 
-def coldTxPath(name):
-	name = name.decode() if isinstance(name, bytes) else name
-	if not name.endswith(".ctx"): name += ".ctx"
-	return os.path.join(COLDTXS, cfg.__NET__, name)
-
 def dropColdTx(tx, name=None):
 	filename = coldTxPath(tx.id if name == None else name)
 	checkFolderExists(filename)
-	out = io.open(filename, "w")
+	out = io.open(filename, "w" if __PY3__ else "wb")
 	json.dump(tx, out, indent=2)
 	out.close()
 	return os.path.basename(filename)
@@ -110,7 +146,7 @@ def dropColdTx(tx, name=None):
 def loadColdTx(name):
 	filename = coldTxPath(name)
 	if os.path.exists(filename):
-		in_ = io.open(filename, "r")
+		in_ = io.open(filename, "r" if __PY3__ else "rb")
 		tx = json.load(in_)
 		in_.close()
 		return tx
@@ -122,3 +158,21 @@ def reprColdTx(ctx):
 		"from": shortAddress(ctx["address"]),
 		"to": shortAddress(ctx["recipientId"])
 	}
+
+def tokenPath(name, token="tok"):
+	ext = "."+token
+	name = name.decode() if isinstance(name, bytes) else name
+	if not name.endswith(ext): name += ext
+	return os.path.join(TOKENS, cfg.__NET__, name)
+
+def dropToken(filename, address, publicKey, signingKey):
+	checkFolderExists(filename)
+	out = io.open(filename, "w")
+	out.write("%s%s%s" % (address, hexlify(publicKey), signingKey2Hex(signingKey)))
+	out.close()
+
+def loadToken(filename):
+	in_ = io.open(filename, "r")
+	data = in_.read()
+	in_.close()
+	return (data[:34], unhexlify(data[34:34+66]), hex2SigningKey(data[34+66:]))

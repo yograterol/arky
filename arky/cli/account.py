@@ -1,69 +1,167 @@
 # -*- encoding: utf8 -*-
 # © Toons
 
+# -p <pkeys> --public-keys <pkeys> 64-char message
+#        account send <amount> <address> [-p <pkeys> <message>]
+
 '''
-    This command allows you to perform all kinds of transactions available
-    within the ARK blockchain (except for multisignature) and to check some
-    information.
-
-    The very first step is to link to an ARK account using link subcommand
-    below.
-
-    Example:
-    @ mainnet> account link secret
-    AJWRd23HNEhPLkK1ymMnwnDBX2a7QBZqff @ mainnet>
-
-    When account is linked, keys are registered locally in .keyring directory as
-    an *.akr file according to PEM format. This way secret passphrases are only
-    typed once and can not be read from disk.
-
-    You can remove thoses files manually or via unlink or clear subcommand. No
-    ARK are stored in *.akr files. Please note that *.akr files gives total
-    access to associated an account within arky API.
-
-    With send, split, share and support subcommands, there are three ways to
-    define amount:
-    1. ARK value (not in SATOSHI) using sinple float
-    2. a percentage of the account balance using % symbol (63% will take 63
-       percent of wallet balance)
-    3. a currency value using \u0024, \u00a3 or \u00a5 symbol (\u002445.6 will be converted in
-       ARK using coinmarketcap API)
-
-Usage: account link [[<secret> [<2ndSecret>]] | [-a <address>] | [-k <keyring>]]
-       account save <keyring>
-       account clear
+Usage: account link [<secret>]
+       account save <name>
        account unlink
        account status
-       account balance
        account register <username>
        account register 2ndSecret <secret>
-       account vote [-u <delegate>... | -d <delegate>...]
+       account vote [-u <delegate> | -d <delegate>]
        account send <amount> <address> [<message>]
-       account split <amount> <recipient>... [-m <message>]
 
 Options:
--u --up                                up vote all delegates name folowing
--d --down                              down vote all delegates name folowing
--a <address> --address <address>       already linked ark address
--m <message> --message <message>       64-char message
--k <keyring> --keyring <keyring>       a valid *.akr pathfile
+-u --up   up vote all delegate name folowing
+-d --down down vote all delegate name folowing
 
 Subcommands:
-    link         : link to account using secret passphrases, Ark address or
-                   *.akr file. If secret passphrases contains spaces, it must be
-                   enclosed within double quotes ("secret with spaces"). Note
-                   that you can use address only for *.akr files registered
-                   locally.
-    save         : save linked account to an *.akr file.
-    clear        : unlink account and delete all *.akr files registered locally.
-    unlink       : unlink account and delete its associated *.akr file.
-    status       : show information about linked account.
-    balance      : show account balance in ARK.
-    register     : register linked account as delegate (cost 25 ARK);
-                   or
-                   register second signature to linked account (cost 5 ARK).
-    vote         : up or/and down vote delegates from linked account.
-    send         : send ARK amount to address. You can set a 64-char message.
-    split        : equal-split ARK amount to different recipient. You can set a
-                   64-char message.
+    link     : link to account using secret passphrases. If secret passphrases
+               contains spaces, it must be enclosed within double quotes
+               ("secret with spaces"). If no secret given, it tries to link
+               with saved account(s).
+    save     : save linked account to a *.tok file.
+    unlink   : unlink account.
+    status   : show information about linked account.
+    register : register linked account as delegate (cost 25 ARK);
+               or
+               register second signature to linked account (cost 5 ARK).
+    vote     : up or down vote delegate.
+    send     : send ARK amount to address. You can set a 64-char message.
 '''
+
+from .. import cfg, api, core, ROOT, ArkyDict
+from . import common
+
+try:
+	from . import _share
+	SHARE = True
+except: 
+	SHARE = False
+
+import io, os, sys
+
+ADDRESS = None
+PUBLICKEY = None
+KEY1 = None
+KEY2 = None
+
+def link(param):
+	global ADDRESS, PUBLICKEY, KEY1, KEY2
+	
+	if param["<secret>"]:
+		keys = core.getKeys(param["<secret>"].encode("ascii"))
+		KEY1 = keys.signingKey
+		PUBLICKEY = keys.public
+		ADDRESS = core.getAddress(keys)
+
+	else:
+		choices = common.findTokens("tok")
+		if choices:
+			ADDRESS, PUBLICKEY, KEY1 = common.loadToken(common.tokenPath(common.chooseItem("Delegate account(s) found:", *choices), "tok"))
+		else:
+			sys.stdout.write("No token found\n")
+
+def save(param):
+	if KEY1 and PUBLICKEY and ADDRESS:
+		common.dropToken(common.tokenPath(param["<name>"], "tok"), ADDRESS, PUBLICKEY, KEY1)
+
+def unlink(param):
+	global ADDRESS, PUBLICKEY, KEY1, KEY2
+	ADDRESS, PUBLICKEY, KEY1, KEY2 = None, None, None, None
+
+def status(param):
+	if ADDRESS:
+		common.prettyPrint(api.Account.getAccount(ADDRESS, returnKey="account"))
+
+def register(param):
+	if _checkKey1():
+		KEY2 = common.askSecondSignature(ADDRESS)
+		if KEY2 != False:
+			if param["2ndSecret"]:
+				newPublicKey = common.hexlify(core.getKeys(param["<secret>"].encode("ascii")).public)
+				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+					type=1,
+					recipientId = ADDRESS,
+					asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))
+				)
+			else:
+				username = param["<username>"].encode("ascii").decode()
+				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+					type=2,
+					recipientId = ADDRESS,
+					asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=common.hexlify(PUBLICKEY)))
+				)
+			tx.address = ADDRESS
+			if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+				common.prettyPrint(api.broadcastSerial(tx), log=True)
+			else:
+				sys.stdout.write("Broadcast canceled\n")
+
+def vote(param):
+	if _checkKey1():
+		candidates = api.Delegate.getCandidates() if param["--up"] else api.Account.getVotes(ADDRESS, returnKey="delegates")
+		if param["<delegate>"]:
+			delegate = param["<delegate>"].encode("ascii").decode()
+			delegates = [("+" if param["--up"] else "-")+d1['publicKey'] for d1 in [d0 for d0 in candidates if d0['username'] == param["<delegate>"].encode("ascii").decode()]]
+			if len(delegates):
+				KEY2 = common.askSecondSignature(ADDRESS)
+				if KEY2 != False:
+					tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+						type=3,
+						recipientId = ADDRESS,
+						asset=ArkyDict(votes=delegates)
+					)
+					tx.address = ADDRESS
+					if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+						common.prettyPrint(api.broadcastSerial(tx), log=True)
+					else:
+						sys.stdout.write("Broadcast canceled\n")
+			else:
+				sys.stdout.write("Nothing to vote\n")
+		elif len(candidates):
+			common.prettyPrint(candidates[0])
+
+def send(param):
+	if _checkKey1():
+		KEY2 = common.askSecondSignature(ADDRESS)
+		if KEY2 != False:
+			amount = common.floatAmount(param["<amount>"], ADDRESS)*100000000
+			tx = False
+			if amount:
+				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
+			if tx:
+				tx.address = ADDRESS
+				if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+					common.prettyPrint(api.broadcastSerial(tx), log=True)
+				else:
+					sys.stdout.write("Broadcast canceled\n")
+			else:
+				sys.stdout.write("No transaction defined\n")
+
+# --------------
+def _whereami():
+	if ADDRESS:
+		return "account[%s]" % common.shortAddress(ADDRESS)
+	else:
+		return "account"
+
+def _checkKey1():
+	if not KEY1:
+		sys.stdout.write("No account linked\n")
+		return False
+	return True
+
+def _checkKeys():
+	global KEY2
+
+	if not KEY1:
+		sys.stdout.write("No account linked\n")
+	else:
+		KEY2 = common.askSecondSignature(ADDRESS)
+		if KEY2 != False:
+			return True
+	return False
