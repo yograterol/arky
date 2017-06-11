@@ -2,28 +2,28 @@
 
 ## `hot@dark/escrow> ?`
 
-::
+```
+Usage: escrow register <2ndPublicKey>
+       escrow link [<secret> -e]
+       escrow send <amount> <address> [<message>]
+       escrow validate [<id>]
+       escrow save <name>
+       escrow unlink
 
-  Usage: escrow register <2ndPublicKey>
-         escrow link [<secret> -e]
-         escrow send <amount> <address> [<message>]
-         escrow validate [<id>]
-         escrow save <name>
-         escrow unlink
+Options:
+-e --escrow  tag to link account as escrower
 
-  Options:
-  -e --escrow  tag to link account as escrower
-
-  Subcommands:
-      register  : set second signature using escrow public key.
-      link      : link to delegate using secret passphrases. If secret passphrases
-                  contains spaces, it must be enclosed within double quotes
-                  ("secret with spaces"). If no secret given, it tries to link
-                  with saved escrow(s).
-      send      : create cold transaction to send ARK if validated.
-      validate  : broadcast cold transactions.
-      save      : save linked escrow to a *.tok1 or *.tok2 file.
-      unlink    : unlink from escrow.
+Subcommands:
+    register  : set second signature using escrow public key.
+    link      : link to delegate using secret passphrases. If secret passphrases
+                contains spaces, it must be enclosed within double quotes
+                ("secret with spaces"). If no secret given, it tries to link
+                with saved escrow(s).
+    send      : create cold transaction to send ARK if validated.
+    validate  : broadcast cold transactions.
+    save      : save linked escrow to a *.tok1 or *.tok2 file.
+    unlink    : unlink from escrow.
+```
 
 ## Basic idea
 
