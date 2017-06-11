@@ -3,9 +3,13 @@
 
 __all__ = ["escrow", "network", "delegate", "account"]
 
-from .. import cfg, __PY3__, __version__
-from . import escrow, network, delegate, account
+from .. import cfg, __PY3__, __version__, main_is_frozen
 import os, sys, shlex, docopt, logging, traceback
+
+rootfolder = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable) if main_is_frozen() else __path__[0]))
+__path__.append(os.path.normpath(os.path.normpath(os.path.join(rootfolder, "private"))))
+
+from . import escrow, network, delegate, account
 
 __doc__ = """### arky-cli v2.0 - [arky %(version)s embeded]
 Available commands: %(sets)s""" % {"version":__version__, "sets": ", ".join(__all__)}

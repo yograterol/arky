@@ -23,7 +23,7 @@ kw.update(**{
 	"data_files": [(".", ["arky/ark.net", "arky/dark.net"])],
 	"description": "Pythonic way to work with Ark.io EcoSystem.",
 	"long_description": long_description.read(),
-	"packages": ["arky", "arky.api", "arky.util"],
+	"packages": ["arky", "arky.api", "arky.util", "arky.cli"],
 	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt"],
 	"license": "Copyright 2016-2017 Toons, Copyright 2017 ARK, MIT licence",
 	"classifiers": [

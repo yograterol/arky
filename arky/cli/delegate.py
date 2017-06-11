@@ -31,20 +31,22 @@ from .. import cfg, api, core, ROOT
 from .. util import stats
 from . import common
 
-try:
-	from . import _share
-	SHARE = True
-except: 
-	SHARE = False
 
 import io, os, sys
 
+SHARE = False
 ADDRESS = None
 PUBLICKEY = None
 KEY1 = None
 KEY2 = None
 USERNAME = None
 DELEGATE = None
+
+try:
+	from . import pshare
+	SHARE = True
+except ImportError:
+	SHARE = False
 
 def link(param):
 	global ADDRESS, PUBLICKEY, KEY1, KEY2, USERNAME, DELEGATE
@@ -90,30 +92,34 @@ def voters(param):
 		sys.stdout.write("    %s: %.3f\n" % (("%d voters"%len(accounts)).rjust(len(addr)), sum_))
 
 def share(param):
-	if _checkKey1() and SHARE:
-		if param["--blacklist"]:
-			if os.path.exists(param["--blacklist"]):
-				with io.open(param["--blacklist"], "r") as in_:
-					blacklist = in_.read().split()
+	if _checkKey1():
+		if SHARE:
+			if param["--blacklist"]:
+				if os.path.exists(param["--blacklist"]):
+					with io.open(param["--blacklist"], "r") as in_:
+						blacklist = in_.read().split()
+				else:
+					blacklist = param["--blacklist"].split(",")
 			else:
-				blacklist = param["--blacklist"].split(",")
+				blacklist = []
+
+			amount = common.floatAmount(param["<amount>"], ADDRESS)
+			if param["--complement"]:
+				amount = float(api.Account.getBalance(ADDRESS, returnKey="balance"))/100000000. - amount
+
+			KEY2 = common.askSecondSignature(ADDRESS)
+			if KEY2 != False and amount > 1:
+				delay = int(param["--delay"])
+				sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
+				accounts = api.Delegate.getVoters(common.hexlify(PUBLICKEY), returnKey="accounts")
+				contributions = dict([address, stats.getVoteForce(address, delay)] for address in [a["address"] for a in accounts if a["address"] not in blacklist])
+				k = 1.0/max(1, sum(contributions.values()))
+				contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
+				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
+				pshare.applyContribution(amount, param["<message>"], txgen, **contributions)
+
 		else:
-			blacklist = []
-
-		amount = common.floatAmount(param["<amount>"], ADDRESS)
-		if param["--complement"]:
-			amount = float(api.Account.getBalance(ADDRESS, returnKey="balance"))/100000000. - amount
-
-		KEY2 = common.askSecondSignature(ADDRESS)
-		if KEY2 != False and amount > 1:
-			delay = int(param["--delay"])
-			sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
-			accounts = api.Delegate.getVoters(common.hexlify(PUBLICKEY), returnKey="accounts")
-			contributions = dict([address, stats.getVoteForce(address, delay)] for address in [a["address"] for a in accounts if a["address"] not in blacklist])
-			k = 1.0/max(1, sum(contributions.values()))
-			contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
-			txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
-			_share.applyContribution(amount, param["<message>"], txgen, **contributions)
+			sys.stdout.write("Share feature not available\n")
 
 # --------------
 def _whereami():

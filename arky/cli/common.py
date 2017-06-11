@@ -59,7 +59,7 @@ def prettyfy(dic, tab="    "):
 				result += tab + "%s:" % k.ljust(maxlen)
 				result += prettyfy(v, tab*2)
 			else:
-				result += tab + "%s: %s" % (k.ljust(maxlen),v)
+				result += tab + "%s: %s" % (k.rjust(maxlen),v)
 			result += "\n"
 		return result
 
