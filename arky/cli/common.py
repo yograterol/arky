@@ -86,6 +86,12 @@ def floatAmount(amount, address):
 	else:
 		return float(amount)
 
+def findNetworks():
+	try:
+		return [os.path.splitext(name)[0] for name in os.listdir(ROOT) if name.endswith(".net")]
+	except:
+		return []
+
 def findTokens(ext="tok"):
 	try:
 		return [os.path.splitext(name)[0] for name in os.listdir(os.path.join(TOKENS, cfg.__NET__)) if name.endswith("."+ext)]

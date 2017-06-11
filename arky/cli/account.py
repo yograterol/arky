@@ -125,15 +125,16 @@ def vote(param):
 		elif len(candidates):
 			common.prettyPrint(candidates[0])
 
+# # asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
+# 	if param["<pkeys>"]:
+# 		asset = {}
 def send(param):
 	if _checkKey1():
 		KEY2 = common.askSecondSignature(ADDRESS)
 		if KEY2 != False:
 			amount = common.floatAmount(param["<amount>"], ADDRESS)*100000000
-			tx = False
 			if amount:
 				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
-			if tx:
 				tx.address = ADDRESS
 				if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
 					common.prettyPrint(api.broadcastSerial(tx), log=True)

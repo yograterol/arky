@@ -17,7 +17,7 @@ Available commands: %(sets)s""" % {"version":__version__, "sets": ", ".join(__al
 input = raw_input if not __PY3__ else input
 
 def _whereami():
-	return " "
+	return ""
 
 class _Prompt(object):
 

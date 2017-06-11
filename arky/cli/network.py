@@ -2,7 +2,7 @@
 # © Toons
 
 '''
-Usage: network use <name> [-b <number> -s <seed> -l <ms>]
+Usage: network use [<name> -b <number> -s <seed> -l <ms>]
        network publickey <secret>
        network address <secret>
        network delegates
@@ -30,6 +30,13 @@ def _whereami():
 	return "network"
 
 def use(param):
+	if not param["<name>"]:
+		choices = common.findNetworks()
+		if choices:
+			param["<name>"] = common.chooseItem("Network(s) found:", *choices)
+		else:
+			sys.stdout.write("No Network found\n")
+			return False
 	api.use(
 		param.get("<name>"),
 		custom_seed=param.get("--custom-seed"),
@@ -39,7 +46,7 @@ def use(param):
 
 def ping(param):
 	common.prettyPrint(dict(
-		[["[x] "+cfg.__URL_BASE__,api.checkPeerLatency(cfg.__URL_BASE__)]]+\
+		[[">>> "+cfg.__URL_BASE__,api.checkPeerLatency(cfg.__URL_BASE__)]]+\
 		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
 	))
 
