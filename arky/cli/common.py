@@ -74,7 +74,7 @@ def prettyPrint(dic, tab="    ", log=False):
 
 def floatAmount(amount, address):
 	if amount.endswith("%"):
-		return float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance"))/100000000.
+		return (float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance")) - cfg.__FEES__["send"])/100000000.
 	elif amount[0] in "$€£¥":
 		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
