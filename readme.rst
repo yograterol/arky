@@ -39,8 +39,8 @@ For development version
 Using ``arky``
 ==============
 
-``arky`` relies on three major elements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``arky`` relies on two major elements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **api package**
 
@@ -49,13 +49,12 @@ to `ARK API`_. For security reason only ``GET`` methods are implemented in
 ``api`` package.
 
 >>> from arky import api
->>> api.use("devnet")
->>> api.Account.getAccount("DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX")
-{'success': True, 'account': {'address': 'DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX', 'unconfirmedBalance':
- '994880000000', 'balance': '994880000000', 'publicKey': '030cf398655cc01d0425a615aceb6b6d2acad40eb7
-b42039826dbce98b20fd578f', 'unconfirmedSignature': 0, 'secondSignature': 0, 'secondPublicKey': None,
- 'multisignatures': [], 'u_multisignatures': []}}tKphHSAPdef8vksHWaXYFxLPjDQNU', 'multisignatures': 
-[]}}
+>>> api.use("ark")
+>>> api.Account.getAccount("AUahWfkfr5J4tYakugRbfow7RWVTK35GPW")
+{'account': {'balance': '2111396549423', 'secondSignature': 0, 'u_multisignatures': [], 'multisignat
+ures': [], 'unconfirmedSignature': 0, 'address': 'AUahWfkfr5J4tYakugRbfow7RWVTK35GPW', 'publicKey': 
+'02c232b067bf2eda5163c2e187c1b206a9f876d8767a0f1a3f6c1718541af3bd4d', 'unconfirmedBalance': '2111396
+549423', 'secondPublicKey': None}, 'success': True}
 
 More on ``arky.api`` ?
 
@@ -64,7 +63,8 @@ More on ``arky.api`` ?
 **core module**
 
 >>> from arky import core
->>> core.api.use("ark") # api is loaded by core
+>>> from arky import api
+>>> api.use("ark")
 
 ``core`` module allows developpers to access core functions.
 
@@ -83,54 +83,27 @@ sset': {}, 'senderPublicKey': '03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a4
 'fee': 10000000, 'signature': '304402201dbf20a62d3411c6d000b691edf3ed50c34baa96b94dedf70e2d512b9f917
 8250220475869560dd9740e2c324972be3cb2690e5fdd27b1cccf6dcd8fb325f52f8f25', 'type': 0, 'id': '16683123
 258705133772'}
->>> core.sendTransaction(tx)
 
 More on ``arky.core`` ?
 
 >>> help(core)
 
-**wallet module**
-
->>> from arky import wallet
->>> wallet.api.use("ark") # api is loaded by wallet
-
-``Wallet`` class allows developpers to send ARK, register address as delegate
-and vote for delegates.
-
->>> w = wallet.Wallet("secret")
->>> w.delegate
-False
->>> w.registered
-False
->>> w.balance
-10764.646
->>> w.candidates # valid username that can be up/down voted
-['techbytes', '4miners.net', 'kostik', 'boldninja', 'sonobit', 'marco229', 'dotnet70', 'arkfuturesma
-rtnode', 'dafty', 'tibonos', 'jamiec79', 'sidzero', 'ghostfaceuk', ..., 'densmirnov', 'ark_faucet', 
-'wes2', 'deskbobtwo', 'wes4', 'genesis_13']
->>> w.save("secret.wlt")
->>> w2 = wallet.open("secret.wlt")
->>> w2.balance
-1076464600000
->>> w2.voteDelegate(up=["arky"])
->>> w2.votes
-['arky']
->>> w2.voteDelegate(down=["arky"])
->>> w2.votes
-[]
-
-More on ``arky.wallet`` ?
-
->>> help(wallet)
-
 Easy way to use ``arky``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-``arky-cli`` is command line interface that simplify interaction with ARK
-blockchain. Once script is executed, it loads all needed environment to execute
-simple commands. Type ``exit`` to close the interface.
+>>> from arky import cli
+@ark>>> cli.start()
+### arky-cli v2.0 - [arky 0.2.1 embeded]
+Available commands: escrow, network, delegate, account
+hot@dark/ >
 
-`Arky Command Line Interface`_
+`escrow command set`_
+
+`network command set`_
+
+`delegate command set`_
+
+`account command set`_
 
 Authors
 =======
@@ -150,7 +123,6 @@ Toons Ark address: ``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
 
 Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
-
 **Show gratitude on Gratipay:**
 
 .. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
@@ -161,10 +133,22 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
-**TODO**
+**0.2.1**
 
-+ offline data implementation
-+ multisignature email protocol
++ ``cli`` pkg:
+   * added network command set
+   * added delegate command set
+   * added account command set
++ ``api`` pkg:
+   * only up-to-date peers selected for broadcasting
+
+**0.2.0**
+
++ custom network configuration file added (``ark.net`` and ``dark.net`` available)
++ added ``cli`` pkg:
+   * ``escrow`` module availabel
++ ``util`` pkg:
+   * added ``stats`` module
 
 **0.1.9**
 
@@ -211,45 +195,7 @@ Version
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
-.. _Arky Command Line Interface: https://github.com/Moustikitos/arky-cli
-
-Authors
-=======
-Toons <moustikitos@gmail.com>
-
-Support this project
-====================
-
-.. image:: https://github.com/Moustikitos/arky/raw/master/ark-logo.png
-   :height: 30
-
-Toons Ark address:``AUahWfkfr5J4tYakugRbfow7RWVTK35GPW``
-
-.. image:: http://bruno.thoorens.free.fr/img/bitcoin.png
-   :width: 100
-
-Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
-
-
-**Show gratitude on Gratipay:**
-
-.. image:: http://img.shields.io/gratipay/user/b_py.svg?style=flat-square
-   :target: https://gratipay.com/~b_py
-
-**Vote for Toons' delegate arky**
-
-
-Version
-=======
-
-**0.1.5**
-
-+ ``wallet`` mod : code improvement
-+ ``util`` pkg : https bug fix in frozen mode
-+ ``api`` pkg : update
-
-**0.1.4**
-
-+ first mainnet release
-
-
+.. _escrow command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/escrow.md
+.. _network command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/network.md
+.. _delegate command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/delegate.md
+.. _account command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/account.md

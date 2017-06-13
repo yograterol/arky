@@ -5,9 +5,9 @@ from ecdsa.keys import SigningKey
 from ecdsa.util import sigencode_der_canonize
 from ecdsa.curves import SECP256k1
 
-from . import __PY3__, StringIO, ArkyDict, choose, arkydify
-if not __PY3__: import api, cfg, slots
-else: from . import api, cfg, slots
+from . import __PY3__, StringIO, ArkyDict, arkydify
+if not __PY3__: import cfg, slots
+else: from . import cfg, slots
 
 import base58, struct, hashlib, binascii, requests, json
 
@@ -237,7 +237,7 @@ b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352
 	return result.encode() if not isinstance(result, bytes) else result
 
 
-def signSerial(serial, keyring):
+def signSerial(serial, signingKey):
 	class O: pass
 	obj = O()
 	for attr, value in serial.items():
@@ -245,9 +245,18 @@ def signSerial(serial, keyring):
 			value = binascii.unhexlify(value)
 		elif attr == "asset":
 			value = arkydify(value)
-		elif value != None:
+		if value != None:
 			setattr(obj, attr, value)
-	return keyring.signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
+	signature = signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
+	setattr(obj, "signSignature" if hasattr(obj, "signature") else "signature", signature)
+	id_ = hashlib.sha256(getBytes(obj)).digest()
+
+	signature = binascii.hexlify(signature)
+	id_ = binascii.hexlify(id_)
+	return {
+		"signature": signature.decode() if isinstance(signature, bytes) else signature, 
+		"id": id_.decode() if isinstance(id_, bytes) else id_
+	}
 
 
 def checkStrictDER(sig):
