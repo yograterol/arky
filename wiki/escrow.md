@@ -52,8 +52,7 @@ Escrower runs:
 >>> from arky import cli
 >>> cli.start()
 hot@dark/> network publickey "twelve-word passphrase owner does not know"
-Here is the public key: 02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
-Send this bublic key as is to the account owner
+    02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
 hot@dark/network>
 ```
 

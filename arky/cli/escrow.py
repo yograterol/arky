@@ -36,7 +36,8 @@ KEY2 = None
 
 def register(param):
 	if _checkKey1():
-		tx = common.generateColdTx(KEY1, PUBLICKEY, type=1, asset=ArkyDict(signature=ArkyDict(publicKey=param["<2ndPublicKey>"])))
+		tx = common.generateColdTx(KEY1, PUBLICKEY, type=1, recipientId=ADDRESS, asset=ArkyDict(signature=ArkyDict(publicKey=param["<2ndPublicKey>"])))
+		tx.address = ADDRESS
 		if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
 			common.prettyPrint(api.broadcastSerial(tx), log=True)
 		else:
