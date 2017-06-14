@@ -11,12 +11,12 @@ Usage: account link [<secret>]
        account status
        account register <username>
        account register 2ndSecret <secret>
-       account vote [-u <delegate> | -d <delegate>]
+       account vote [-ud] [<delegate>]
        account send <amount> <address> [<message>]
 
 Options:
--u --up   up vote all delegate name folowing
--d --down down vote all delegate name folowing
+-u --up    up vote delegate name folowing
+-d --down  down vote delegate name folowing
 
 Subcommands:
     link     : link to account using secret passphrases. If secret passphrases
@@ -106,7 +106,7 @@ def vote(param):
 		candidates = api.Delegate.getCandidates() if param["--up"] else api.Account.getVotes(ADDRESS, returnKey="delegates")
 		if param["<delegate>"]:
 			delegate = param["<delegate>"].encode("ascii").decode()
-			delegates = [("+" if param["--up"] else "-")+d1['publicKey'] for d1 in [d0 for d0 in candidates if d0['username'] == param["<delegate>"].encode("ascii").decode()]]
+			delegates = [("+" if param["--up"] else "-")+d['publicKey'] for d in candidates if d['username'] == delegate]
 			if len(delegates):
 				KEY2 = common.askSecondSignature(ADDRESS)
 				if KEY2 != False:
@@ -128,6 +128,7 @@ def vote(param):
 # # asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
 # 	if param["<pkeys>"]:
 # 		asset = {}
+
 def send(param):
 	if _checkKey1():
 		KEY2 = common.askSecondSignature(ADDRESS)

@@ -101,7 +101,7 @@ hot@dark/ >
 
 `network command set`_
 
-`delegate command set`_
+`delegate command set`_ : **1% mandatory fees on share command**
 
 `account command set`_
 

@@ -7,10 +7,12 @@ Usage: delegate link [<secret>]
        delegate unlink
        delegate status
        delegate voters
-       delegate share <amount> [-c -b <blacklist> -d <delay> <message>]
+       delegate share <amount> [-c -b <blacklist> -d <delay> -l <lowest> -h <highest> <message>]
 
 Options:
 -b <blacklist> --blacklist <blacklist> comma-separated ark addresses to exclude
+-h <highest> --highest <hihgest>       maximum payout in ARK
+-l <lowest> --lowest <lowest>          minimum payout in ARK
 -d <delay> --delay <delay>             number of fidelity-day [default: 30]
 -c --complement                        share the amount complement
 
@@ -24,7 +26,7 @@ Subcommands:
     status : show information about linked delegate.
     voters : show voters contributions ([address - vote] pairs).
     share  : share ARK amount with voters (if any) according to their
-             weight. You can set a 64-char message.
+             weight. You can set a 64-char message. (1% mandatory fees)
 '''
 
 from .. import cfg, api, core, ROOT
@@ -116,7 +118,12 @@ def share(param):
 				k = 1.0/max(1, sum(contributions.values()))
 				contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
 				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
-				pshare.applyContribution(amount, param["<message>"], txgen, **contributions)
+				
+				if param["--lowest"] : minimum = float(param["--lowest"])
+				else: minimum = 0.
+				if param["--highest"] : maximum = float(param["--highest"])
+				else: maximum = amount
+				pshare.applyContribution(USERNAME, amount, minimum, maximum, param["<message>"], txgen, **contributions)
 
 		else:
 			sys.stdout.write("Share feature not available\n")
