@@ -195,7 +195,7 @@ Version
 
 .. _MIT licence: http://htmlpreview.github.com/?https://github.com/Moustikitos/arky/blob/master/arky.html
 .. _ARK API: https://github.com/ArkEcosystem/ark-api
-.. _escrow command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/escrow.md
-.. _network command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/network.md
-.. _delegate command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/delegate.md
-.. _account command set: https://github.com/ArcEcosystem/arky/blob/master/wiki/account.md
+.. _escrow command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/escrow.md
+.. _network command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/network.md
+.. _delegate command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/delegate.md
+.. _account command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/account.md
