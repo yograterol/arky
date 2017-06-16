@@ -4,6 +4,27 @@
 from .. import api, slots
 import datetime
 
+try:
+	from matplotlib import pyplot as plt
+	__MATPLOTLIB__ = True
+except:
+	__MATPLOTLIB__ = False
+
+
+def plot2D(*points, **kw):
+	if __MATPLOTLIB__:
+		xlabel = kw.pop("xlabel", None)
+		ylabel = kw.pop("ylabel", None)
+		title = kw.pop("title", None)
+
+		plt.plot([p[0] for p in points], [p[1] for p in points], **kw)
+		for x, y, label in [p for p in points if len(p) == 3]: plt.annotate(label, (x, y))
+
+		if xlabel: plt.xlabel(xlabel)
+		if ylabel: plt.ylabel(ylabel)
+		if title: plt.title(title)
+		plt.show()
+
 def getHistory(address, timestamp=0):
 	# get all inputs
 	tx_in = api.Transaction.getTransactionsList(recipientId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
@@ -22,8 +43,9 @@ def getHistory(address, timestamp=0):
 			tx_out.extend(search)
 			if len(search) < 50:
 				break
-			
-	return sorted([t for t in tx_in+tx_out if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
+	
+	tx_in += [t for t in tx_out if t not in tx_in]
+	return sorted([t for t in tx_in if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
 
 def getBalanceHistory(address, timestamp=0):
 	balance = float(api.Account.getBalance(address, returnKey="balance"))/100000000.
@@ -38,6 +60,21 @@ def getBalanceHistory(address, timestamp=0):
 			result.insert(0, (slots.getRealTime(tx["timestamp"]), balance))
 			balance += ((tx["fee"]+tx["amount"]) if tx["senderId"] == address else -tx["amount"])/100000000.
 		result.insert(0, (slots.getRealTime(timestamp), balance))
+		return result
+
+def getVoteHistory(address, timestamp=0):
+	history = [tx for tx in getHistory(address, timestamp) if tx["type"] == 3]
+	candidates = dict([d["publicKey"], d["username"]] for d in api.Delegate.getCandidates())
+
+	if not history:
+		return []
+
+	else:
+		result = []
+		for tx in history:
+			pkey = tx["asset"]["votes"][0][1:]
+			way = 0 if tx["asset"]["votes"][0][0] == "-" else 1
+			result.insert(0, (slots.getRealTime(tx["timestamp"]), way, candidates[pkey]))
 		return result
 
 def getVoteForce(address, delay=30):
