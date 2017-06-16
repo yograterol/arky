@@ -51,6 +51,15 @@ def ping(param):
 		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
 	))
 
+#       network details <secret>
+# def details(param):
+# 	secret = param["<secret>"].encode("ascii")
+# 	common.prettyPrint({
+# 		"address": core.getAddress(core.getKeys(secret)),
+# 		"public key": common.hexlify(core.getKeys(secret).public),
+# 		"wif": core.getWIF(hashlib.sha256(secret).digest(), cfg.__NETWORK__)
+# 	})
+
 def address(param):
 	sys.stdout.write("    %s\n" % core.getAddress(core.getKeys(param["<secret>"].encode("ascii"))))
 

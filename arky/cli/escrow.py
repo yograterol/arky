@@ -108,7 +108,7 @@ def validate(param):
 			else:
 				sys.stdout.write("Broadcast canceled\n")
 		else:
-			sys.stdout.write("%s Cold transaction not found\n" % tx.id)
+			sys.stdout.write("Cold transaction not found\n")
 
 def save(param):
 	if KEY1 and PUBLICKEY and ADDRESS: common.dropToken(common.tokenPath(param["<name>"], "tok1"), ADDRESS, PUBLICKEY, KEY1)
