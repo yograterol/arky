@@ -34,6 +34,8 @@ def getHistory(address, timestamp=0):
 			tx_in.extend(search)
 			if len(search) < 50:
 				break
+	elif not len(tx_in):
+		raise Exception("Address has null transactions.")
 	else:
 		raise Exception(tx_in.get("error", "Api error"))
 
@@ -45,8 +47,10 @@ def getHistory(address, timestamp=0):
 			tx_out.extend(search)
 			if len(search) < 50:
 				break
+	elif not len(tx_in):
+		raise Exception("Address has null transactions.")
 	else:
-		raise Exception(tx_in.get("error", "Api error"))
+		raise Exception(tx_out.get("error", "Api error"))
 
 	tx_in += [t for t in tx_out if t not in tx_in]
 	return sorted([t for t in tx_in if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
