@@ -26,7 +26,7 @@ Subcommands:
     status : show information about linked delegate.
     voters : show voters contributions ([address - vote] pairs).
     share  : share ARK amount with voters (if any) according to their
-             weight. You can set a 64-char message. (1% mandatory fees)
+             weight (1% mandatory fees). You can set a 64-char message. 
 '''
 
 from .. import cfg, api, core, ROOT

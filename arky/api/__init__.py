@@ -2,7 +2,7 @@
 # © Toons
 
 # only GET method is implemented, no POST or PUT for security reasons
-from .. import cfg, core, arkydify, ArkyDict, setInterval, ROOT, __version__
+from .. import cfg, core, arkydify, ArkyDict, setInterval, ROOT, __version__, __PY3__
 import os, sys, json, requests, binascii, traceback, datetime, logging, random, pytz
 UTC = pytz.UTC
 
@@ -115,14 +115,14 @@ Returns ArkyDict
 	return result
 
 def postData(url_base, data):
-	return json.loads(
-		requests.post(
-			url_base + "/peer/transactions",
-			data=data,
-			headers=cfg.__HEADERS__,
-			timeout=3
-		).text
-	)
+	try:
+		text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=3).text
+		data = ArkyDict(json.loads(text))
+	except Exception as error:
+		data = ArkyDict({"success":False, "error":error})
+		if hasattr(error, "__traceback__"):
+			data.details = "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+	return data
 
 def broadcastSerial(serial):
 	data = json.dumps({"transactions": [serial]})
@@ -130,7 +130,7 @@ def broadcastSerial(serial):
 	ratio = 0.
 	if result["success"]:
 		for peer in PEERS:
-			if postData(peer, data)["success"]: ratio += 1
+			if postData(peer, data).success: ratio += 1
 	result["broadcast"] = "%.1f%%" % (ratio/len(PEERS)*100)
 	return result
 
@@ -164,11 +164,11 @@ Returns None
 	else:
 		raise NetworkError("Unknown %s network properties" % network)
 
+	logger = logging.getLogger()
+	logger.handlers[0].setFormatter(logging.Formatter('[%s]'%network + '[%(asctime)s] %(message)s'))
 
 	# in js month value start from 0, in python month value start from 1
 	cfg.__BEGIN_TIME__ = datetime.datetime(2017, 3, 21, 13, 0, 0, 0, tzinfo=UTC)
-	logger = logging.getLogger()
-	logger.handlers[0].setFormatter(logging.Formatter('[%s]'%network + '[%(asctime)s] %(message)s'))
 	cfg.__NET__ = network
 
 	# find seeds
@@ -223,7 +223,6 @@ Returns None
 	if not len(peerlist):
 		sys.ps1 = "cold@%s>>> " % network
 		sys.ps2 = "cold@%s... " % network
-		cfg.__NET__ = network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
 		return
@@ -231,17 +230,22 @@ Returns None
 
 	# finish network conf
 	cfg.__URL_BASE__ = random.choice(peerlist) if not custom_seed else custom_seed
+	autoconf = get('/api/loader/autoconfigure', returnKey="network")
+	cfg.__EXPLORER__ = autoconf.get("explorer", False)
+	cfg.__SYMBOL__ = autoconf.get("symbol", False)
+	cfg.__TOKEN__ = autoconf.get("token", False)
 	cfg.__HEADERS__.update({
 		'Content-Type' : 'application/json; charset=utf-8',
 		'os'           : 'arky',
 		'port'         : '1',
 		'version'      : __version__,
-		'nethash'      : Block.getNethash().get("nethash", "")
+		'nethash'      : autoconf.get("nethash", "")
 	})
 
 	sys.ps1 = "@%s>>> " % network
 	sys.ps2 = "@%s... " % network
 	cfg.__HOT_MODE__ = True
+
 
 #################
 ## API wrapper ##
