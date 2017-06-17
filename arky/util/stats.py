@@ -28,22 +28,26 @@ def plot2D(*points, **kw):
 def getHistory(address, timestamp=0):
 	# get all inputs
 	tx_in = api.Transaction.getTransactionsList(recipientId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
-	if len(tx_in):
+	if isinstance(tx_in, list) and len(tx_in):
 		while tx_in[-1]["timestamp"] >= timestamp:
 			search = api.Transaction.getTransactionsList(recipientId=address, returnKey="transactions", limit=50, offset=len(tx_in), orderBy="timestamp:desc")
 			tx_in.extend(search)
 			if len(search) < 50:
 				break
+	else:
+		raise Exception(tx_in.get("error", "Api error"))
 
 	# get all outputs
 	tx_out = api.Transaction.getTransactionsList(senderId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
-	if len(tx_out):
+	if isinstance(tx_out, list) and len(tx_out):
 		while tx_out[-1]["timestamp"] >= timestamp:
 			search = api.Transaction.getTransactionsList(senderId=address, returnKey="transactions", limit=50, offset=len(tx_out), orderBy="timestamp:desc")
 			tx_out.extend(search)
 			if len(search) < 50:
 				break
-	
+	else:
+		raise Exception(tx_in.get("error", "Api error"))
+
 	tx_in += [t for t in tx_out if t not in tx_in]
 	return sorted([t for t in tx_in if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
 
