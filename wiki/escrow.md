@@ -51,9 +51,8 @@ Escrower runs:
 ```
 >>> from arky import cli
 >>> cli.start()
-hot@dark/ > network publickey "twelve-word passphrase owner does not know"
-Here is the public key: 02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
-Send this bublic key as is to the account owner
+hot@dark/> network publickey "twelve-word passphrase owner does not know"
+    02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
 hot@dark/network>
 ```
 
@@ -67,7 +66,7 @@ Owner runs:
 ```
 >>> from arky import cli
 >>> cli.start()
-hot@dark/ > escrow link "twelve-word passphrase escrower does not know"
+hot@dark/> escrow link "twelve-word passphrase escrower does not know"
 hot@dark/escrow[DQuT4...5qDha]> register 02f566e6afa0f4c87e0b605f75bb76f40f0812306bfb38a47f973edcb79f4f952d
     broadcast     : 100.0%
     transactionIds: ['181ac925edb6b52ec1c6da435ad6181562b2eac4aeda0450145183556b7c5b29']
@@ -84,7 +83,7 @@ Owner runs:
 ```
 >>> from arky import cli
 >>> cli.start()
-hot@dark/ > escrow link "twelve-word passphrase escrower does not know"
+hot@dark/> escrow link "twelve-word passphrase escrower does not know"
 hot@dark/escrow[DQuT4...5qDha]> send 3.123456 DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX "My first escrowed transaction"
 You can now give d76b9514d7b8c8b700e63118485c08c5ac78d9582b19987c7b0451b5d8bdb66d.ctx file to your escrow
 hot@dark/escrow[DQuT4...5qDha]>
@@ -119,7 +118,7 @@ in its `.coldtx/dark` folder, he runs:
 ```
 >>> from arky import cli
 >>> cli.start()
-hot@dark/ > escrow link -e "twelve-word passphrase owner does not know"
+hot@dark/> escrow link -e "twelve-word passphrase owner does not know"
 hot@dark/escrow[b5a3d...9b17a]> validate
 Cold transaction(s) found:
     1 - 037f79ce4e3d20da0350305b52b4b70583ebdb5995bf2f7f0681da7ec0e80f31

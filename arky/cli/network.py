@@ -5,6 +5,7 @@
 Usage: network use [<name> -b <number> -s <seed> -l <ms>]
        network publickey <secret>
        network address <secret>
+       network wif <secret>
        network delegates
        network ping
 
@@ -24,7 +25,7 @@ Subcommands:
 from .. import cfg, api, core
 from . import common
 
-import sys
+import sys, hashlib
 
 def _whereami():
 	return "network"
@@ -50,11 +51,23 @@ def ping(param):
 		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
 	))
 
+#       network details <secret>
+# def details(param):
+# 	secret = param["<secret>"].encode("ascii")
+# 	common.prettyPrint({
+# 		"address": core.getAddress(core.getKeys(secret)),
+# 		"public key": common.hexlify(core.getKeys(secret).public),
+# 		"wif": core.getWIF(hashlib.sha256(secret).digest(), cfg.__NETWORK__)
+# 	})
+
 def address(param):
 	sys.stdout.write("    %s\n" % core.getAddress(core.getKeys(param["<secret>"].encode("ascii"))))
 
 def publickey(param):
 	sys.stdout.write("    %s\n" % common.hexlify(core.getKeys(param["<secret>"].encode("ascii")).public))
+
+def wif(param):
+	sys.stdout.write("    %s\n" % core.getWIF(hashlib.sha256(param["<secret>"].encode("ascii")).digest(), cfg.__NETWORK__))
 
 def delegates(param):
 	delegates = api.Delegate.getDelegates(limit=51, returnKey='delegates')

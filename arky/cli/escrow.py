@@ -36,7 +36,8 @@ KEY2 = None
 
 def register(param):
 	if _checkKey1():
-		tx = common.generateColdTx(KEY1, PUBLICKEY, type=1, asset=ArkyDict(signature=ArkyDict(publicKey=param["<2ndPublicKey>"])))
+		tx = common.generateColdTx(KEY1, PUBLICKEY, type=1, recipientId=ADDRESS, asset=ArkyDict(signature=ArkyDict(publicKey=param["<2ndPublicKey>"])))
+		tx.address = ADDRESS
 		if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
 			common.prettyPrint(api.broadcastSerial(tx), log=True)
 		else:
@@ -107,7 +108,7 @@ def validate(param):
 			else:
 				sys.stdout.write("Broadcast canceled\n")
 		else:
-			sys.stdout.write("%s Cold transaction not found\n" % tx.id)
+			sys.stdout.write("Cold transaction not found\n")
 
 def save(param):
 	if KEY1 and PUBLICKEY and ADDRESS: common.dropToken(common.tokenPath(param["<name>"], "tok1"), ADDRESS, PUBLICKEY, KEY1)
