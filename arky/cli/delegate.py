@@ -65,6 +65,9 @@ def link(param):
 		if choices:
 			ADDRESS, PUBLICKEY, KEY1 = common.loadToken(common.tokenPath(common.chooseItem("Delegate account(s) found:", *choices), "tokd"))
 			USERNAME = _checkIfDelegate()
+		else:
+			sys.stdout.write("No token found\n")
+			return
 
 	if not USERNAME:
 		sys.stdout.write("Not a delegate\n")
