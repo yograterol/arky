@@ -133,6 +133,24 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
+**0.2.2**
+
++ pypi wheel universall fix
++ wiki updated
++ ``cli`` pkg:
+   * added ``network wif`` command
+   * added ``network browse`` command
+   * fixed ``vote -d <delegate>`` behaviour
+   * minor bugfixes and improvements
++ ``util.stats`` mod:
+   * ``getHistory`` fix
+   * added ``plot2D``
+   * added ``getBalanceHistory``
+   * added ``getVoteHistory``
++ ``api`` pkg:
+   * improvement for ``postData`` and ``broadcastSerial``
+   * added autoconf feature
+
 **0.2.1**
 
 + ``cli`` pkg:

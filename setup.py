@@ -20,7 +20,7 @@ kw.update(**{
 	"maintainer_email": "moustikitos@gmail.com",
 	"url": "https://github.com/ArkEcosystem/arky",
 	"download_url": "https://github.com/ArkEcosystem/arky.git",
-	"data_files": [(".", ["arky/ark.net", "arky/dark.net"])],
+	"include_package_data": True,
 	"description": "Pythonic way to work with Ark.io EcoSystem.",
 	"long_description": long_description.read(),
 	"packages": ["arky", "arky.api", "arky.util", "arky.cli"],

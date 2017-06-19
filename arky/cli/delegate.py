@@ -45,7 +45,10 @@ USERNAME = None
 DELEGATE = None
 
 try:
-	from . import pshare
+	version_info = sys.version_info[:2]
+	if version_info == (2, 7):   from . import pshare27 as pshare
+	elif version_info == (3, 5): from . import pshare35 as pshare
+	elif version_info == (3, 6): from . import pshare36 as pshare
 	SHARE = True
 except ImportError:
 	SHARE = False
