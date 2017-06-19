@@ -34,25 +34,20 @@ def getHistory(address, timestamp=0):
 			tx_in.extend(search)
 			if len(search) < 50:
 				break
-	elif not len(tx_in):
-		raise Exception("Address has null transactions.")
-	else:
-		raise Exception(tx_in.get("error", "Api error"))
 
-	# get all outputs
-	tx_out = api.Transaction.getTransactionsList(senderId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
-	if isinstance(tx_out, list) and len(tx_out):
+		# get all outputs
+		tx_out = api.Transaction.getTransactionsList(senderId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
 		while tx_out[-1]["timestamp"] >= timestamp:
 			search = api.Transaction.getTransactionsList(senderId=address, returnKey="transactions", limit=50, offset=len(tx_out), orderBy="timestamp:desc")
 			tx_out.extend(search)
 			if len(search) < 50:
 				break
+
+		tx_in += [t for t in tx_out if t not in tx_in]
 	elif not len(tx_in):
 		raise Exception("Address has null transactions.")
 	else:
-		raise Exception(tx_out.get("error", "Api error"))
-
-	tx_in += [t for t in tx_out if t not in tx_in]
+		raise Exception(tx_in.get("error", "Api error"))
 	return sorted([t for t in tx_in if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
 
 def getBalanceHistory(address, timestamp=0):
