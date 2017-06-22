@@ -8,10 +8,12 @@ Usage: delegate link [<secret>]
        delegate unlink
        delegate status
        delegate voters
-       delegate share <amount> [-c -b <blacklist> -d <delay> <message>]
+       delegate share <amount> [-c -b <blacklist> -d <delay> -l <lowest> -h <highest> <message>]
 
 Options:
 -b <blacklist> --blacklist <blacklist> comma-separated ark addresses to exclude
+-h <highest> --highest <hihgest>       maximum payout in ARK
+-l <lowest> --lowest <lowest>          minimum payout in ARK
 -d <delay> --delay <delay>             number of fidelity-day [default: 30]
 -c --complement                        share the amount complement
 
@@ -25,5 +27,5 @@ Subcommands:
     status : show information about linked delegate.
     voters : show voters contributions ([address - vote] pairs).
     share  : share ARK amount with voters (if any) according to their
-             weight. You can set a 64-char message.
+             weight (1% mandatory fees). You can set a 64-char message. 
 ```

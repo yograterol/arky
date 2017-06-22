@@ -2,21 +2,14 @@
 # © Toons
 
 from . import ArkyDict, __PY3__
-if __PY3__: import queue
-else: import Queue as queue
-import socket
 
+# Global containers available for arky package
+__EXPLORER__ = False
+__TOKEN__ = False
+__SYMBOL__ = False
 __HOT_MODE__ = False
 __BEGIN_TIME__ = 0
 __NET__ = "..."
-__NB_THREAD__ = 2
-__LOG__ = queue.Queue()
-
-# # for multisignature
-# __IP__ = socket.gethostbyname(socket.gethostname())
-# __PORT__ = 58000
-
-# Global containers available for arky package
 __NETWORK__ = ArkyDict()
 __HEADERS__ = ArkyDict()
 __URL_BASE__ = ""

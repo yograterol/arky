@@ -11,8 +11,8 @@ __path__.append(os.path.normpath(os.path.normpath(os.path.join(rootfolder, "priv
 
 from . import escrow, network, delegate, account
 
-__doc__ = """### arky-cli v2.1 - [arky %(version)s embeded]
-Available commands: %(sets)s""" % {"version":__version__, "sets": ", ".join(__all__)}
+__doc__ = """Welcome to arky-cli v2.2 [Python %(python)s / arky %(arky)s]
+Available commands: %(sets)s""" % {"python":sys.version.split()[0], "arky":__version__, "sets": ", ".join(__all__)}
 
 input = raw_input if not __PY3__ else input
 

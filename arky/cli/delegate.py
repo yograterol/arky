@@ -26,7 +26,7 @@ Subcommands:
     status : show information about linked delegate.
     voters : show voters contributions ([address - vote] pairs).
     share  : share ARK amount with voters (if any) according to their
-             weight. You can set a 64-char message. (1% mandatory fees)
+             weight (1% mandatory fees). You can set a 64-char message. 
 '''
 
 from .. import cfg, api, core, ROOT
@@ -45,7 +45,10 @@ USERNAME = None
 DELEGATE = None
 
 try:
-	from . import pshare
+	version_info = sys.version_info[:2]
+	if version_info == (2, 7):   from . import pshare27 as pshare
+	elif version_info == (3, 5): from . import pshare35 as pshare
+	elif version_info == (3, 6): from . import pshare36 as pshare
 	SHARE = True
 except ImportError:
 	SHARE = False
@@ -65,6 +68,9 @@ def link(param):
 		if choices:
 			ADDRESS, PUBLICKEY, KEY1 = common.loadToken(common.tokenPath(common.chooseItem("Delegate account(s) found:", *choices), "tokd"))
 			USERNAME = _checkIfDelegate()
+		else:
+			sys.stdout.write("No token found\n")
+			return
 
 	if not USERNAME:
 		sys.stdout.write("Not a delegate\n")

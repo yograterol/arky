@@ -3,6 +3,7 @@
 
 '''
 Usage: network use [<name> -b <number> -s <seed> -l <ms>]
+       network browse [<element>]
        network publickey <secret>
        network address <secret>
        network wif <secret>
@@ -16,6 +17,7 @@ Options:
 
 Subcommands:
     use       : select network.
+    browse    : browse network.
     publickey : returns public key from secret.
     address   : returns address from secret.
     delegates : show delegate list.
@@ -25,7 +27,7 @@ Subcommands:
 from .. import cfg, api, core
 from . import common
 
-import sys, hashlib
+import sys, hashlib, webbrowser
 
 def _whereami():
 	return "network"
@@ -51,14 +53,17 @@ def ping(param):
 		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
 	))
 
-#       network details <secret>
-# def details(param):
-# 	secret = param["<secret>"].encode("ascii")
-# 	common.prettyPrint({
-# 		"address": core.getAddress(core.getKeys(secret)),
-# 		"public key": common.hexlify(core.getKeys(secret).public),
-# 		"wif": core.getWIF(hashlib.sha256(secret).digest(), cfg.__NETWORK__)
-# 	})
+def browse(param):
+	element = param["<element>"]
+	if element:
+		if len(element) == 34:
+			webbrowser.open(cfg.__EXPLORER__ + "/address/" + element)
+		elif len(element) == 64:
+			webbrowser.open(cfg.__EXPLORER__ + "/tx/" + element)
+		elif element == "delegate":
+			webbrowser.open(cfg.__EXPLORER__ + "/delegateMonitor")
+	else:
+		webbrowser.open(cfg.__EXPLORER__)
 
 def address(param):
 	sys.stdout.write("    %s\n" % core.getAddress(core.getKeys(param["<secret>"].encode("ascii"))))
