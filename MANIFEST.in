@@ -1,2 +1,2 @@
 recursive-include arky *.net
-recursive-include arky\cli\private pshare??.pyc
+recursive-include arky\cli\private pshare??.pyo
