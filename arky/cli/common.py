@@ -16,6 +16,8 @@ TOKENS = os.path.normpath(os.path.join(ROOT, ".token"))
 try: os.makedirs(TOKENS)
 except: pass
 
+EXECUTEMODE = False
+
 def checkFolderExists(filename):
 	folder = os.path.dirname(filename)
 	if not os.path.exists(folder):

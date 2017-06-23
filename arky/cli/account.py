@@ -36,12 +36,6 @@ Subcommands:
 from .. import cfg, api, core, ROOT, ArkyDict
 from . import common
 
-try:
-	from . import _share
-	SHARE = True
-except: 
-	SHARE = False
-
 import io, os, sys
 
 ADDRESS = None

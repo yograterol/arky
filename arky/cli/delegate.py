@@ -105,7 +105,7 @@ def share(param):
 			if param["--blacklist"]:
 				if os.path.exists(param["--blacklist"]):
 					with io.open(param["--blacklist"], "r") as in_:
-						blacklist = in_.read().split()
+						blacklist = [e for e in in_.read().split() if e != ""]
 				else:
 					blacklist = param["--blacklist"].split(",")
 			else:

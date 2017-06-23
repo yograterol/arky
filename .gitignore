@@ -169,3 +169,4 @@ misc/autopay.py
 arky/cli/_share.py
 arky/cli/private/_share.py
 arky/cli/private/pshare.py
+arky.blacklist

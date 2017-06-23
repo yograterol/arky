@@ -80,6 +80,7 @@ def getVoteHistory(address, timestamp=0):
 			result.insert(0, (slots.getRealTime(tx["timestamp"]), way, candidates[pkey]))
 		return result
 
+
 def getVoteForce(address, delay=30):
 	now = datetime.datetime.now(slots.UTC)
 	delta = datetime.timedelta(days=delay)
