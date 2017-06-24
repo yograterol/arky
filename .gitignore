@@ -26,6 +26,10 @@ lib/
 lib64/
 parts/
 sdist/
+misc/
+test/
+wiki/
+arky.wiki/
 var/
 *.egg-info/
 .installed.cfg
