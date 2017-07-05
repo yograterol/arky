@@ -86,7 +86,6 @@ def register(param):
 				username = param["<username>"].encode("ascii").decode()
 				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
 					type=2,
-					recipientId = ADDRESS,
 					asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=common.hexlify(PUBLICKEY)))
 				)
 			tx.address = ADDRESS

@@ -120,7 +120,7 @@ def share(param):
 				delay = int(param["--delay"])
 				sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
 				accounts = api.Delegate.getVoters(common.hexlify(PUBLICKEY), returnKey="accounts")
-				contributions = dict([address, stats.getVoteForce(address, delay)] for address in [a["address"] for a in accounts if a["address"] not in blacklist])
+				contributions = dict([address, stats.getVoteForce(address, days=delay)] for address in [a["address"] for a in accounts if a["address"] not in blacklist])
 				k = 1.0/max(1, sum(contributions.values()))
 				contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
 				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)

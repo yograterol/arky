@@ -65,6 +65,3 @@ Checking 30-day-true-vote-weight in transaction history...
 
 
 ### --blacklist / -b
-
-
-### 

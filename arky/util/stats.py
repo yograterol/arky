@@ -10,7 +10,6 @@ try:
 except:
 	__MATPLOTLIB__ = False
 
-
 def plot2D(*points, **kw):
 	if __MATPLOTLIB__:
 		xlabel = kw.pop("xlabel", None)
@@ -80,10 +79,9 @@ def getVoteHistory(address, timestamp=0):
 			result.insert(0, (slots.getRealTime(tx["timestamp"]), way, candidates[pkey]))
 		return result
 
-
-def getVoteForce(address, delay=30):
+def getVoteForce(address, **kw):
 	now = datetime.datetime.now(slots.UTC)
-	delta = datetime.timedelta(days=delay)
+	delta = datetime.timedelta(**kw)
 	timestamp_limit = slots.getTime(now - delta)
 
 	# get actual balance and transaction history
@@ -92,7 +90,7 @@ def getVoteForce(address, delay=30):
 
 	# if no transaction over periode integrate balance over delay and return it
 	if not history:
-		return balance*max(1.0, delta.total_seconds()/3600)
+		return balance*max(1./3600, delta.total_seconds()/3600)
 
 	end = slots.getTime(now)
 	sum_ = 0.
@@ -102,9 +100,7 @@ def getVoteForce(address, delay=30):
 		balance += ((tx["fee"]+tx["amount"]) if tx["senderId"] == address else -tx["amount"])/100000000.
 		end = tx["timestamp"]
 		if tx["type"] == 3:
+			sum_ += balance * (tx["timestamp"]-timestamp_limit)/3600
 			break
-
-	if tx["type"] != 3:
-		sum_ += balance * (tx["timestamp"]-timestamp_limit)/3600
 
 	return sum_
