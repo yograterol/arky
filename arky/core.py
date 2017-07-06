@@ -19,8 +19,7 @@ unpack = lambda fmt, fileobj: struct.unpack(fmt, fileobj.read(struct.calcsize(fm
 # write value as binary data into buffer
 pack =  lambda fmt, fileobj, value: fileobj.write(struct.pack(fmt, *value))
 # read bytes from buffer
-unpack_bytes = (lambda f,n: unpack("<"+"%ss"%n, f)[0]) if __PY3__ else \
-               (lambda f,n: unpack("<"+"s"*n, f)[0])
+unpack_bytes = lambda f,n: unpack("<"+"%ss"%n, f)[0]
 # write bytes into buffer
 pack_bytes = (lambda f,v: pack("<"+"%ss"%len(v), f, (v,))) if __PY3__ else \
              (lambda f,v: pack("<"+"s"*len(v), f, v))
@@ -34,7 +33,7 @@ class StrictDerSignatureError(Exception): pass
 
 def _hexlify(data):
 	result = binascii.hexlify(data)
-	return result.decode() if isinstance(result, bytes) else result
+	return str(result.decode() if isinstance(result, bytes) else result)
 
 def _unhexlify(data):
 	result = binascii.unhexlify(data)
@@ -181,8 +180,8 @@ def fromBytes(data):
 
 	idx = []
 	for i in range(len(data)):
-		if data[i] == 0x30:
-			j = i+data[i+1]+2
+		if basint(data[i]) == 0x30:
+			j = i+basint(data[i+1])+2
 			if j <= len(data):
 				try:
 					object.__setattr__(tx, "signature" if not hasattr(tx, "signature") else "signSignature", _hexlify(checkStrictDER(data[i:j])))
@@ -197,9 +196,9 @@ def fromBytes(data):
 	if tx.type == 1:
 		object.__setattr__(tx, "asset", ArkyDict(signature=ArkyDict(publicKey=_hexlify(asset))))
 	elif tx.type == 2:
-		object.__setattr__(tx, "asset", ArkyDict(delegate=ArkyDict(username=asset.decode())))
+		object.__setattr__(tx, "asset", ArkyDict(delegate=ArkyDict(username=str(asset.decode()))))
 	elif tx.type == 3:
-		object.__setattr__(tx, "asset", ArkyDict(votes=[asset[i:i+67].decode() for i in range(0, len(asset), 67)]))
+		object.__setattr__(tx, "asset", ArkyDict(votes=[str(asset[i:i+67].decode()) for i in range(0, len(asset), 67)]))
 	elif tx.type == 4:
 		pass
 
