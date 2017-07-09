@@ -16,6 +16,8 @@ TOKENS = os.path.normpath(os.path.join(ROOT, ".token"))
 try: os.makedirs(TOKENS)
 except: pass
 
+EXECUTEMODE = False
+
 def checkFolderExists(filename):
 	folder = os.path.dirname(filename)
 	if not os.path.exists(folder):
@@ -161,8 +163,8 @@ def reprColdTx(ctx):
 	return "<type-%(type)d transaction(A%(amount).8f) from %(from)s to %(to)s>" % {
 		"type": ctx["type"],
 		"amount": ctx["amount"]/100000000.,
-		"from": shortAddress(ctx["address"]),
-		"to": shortAddress(ctx["recipientId"])
+		"from": shortAddress(ctx.get("address", "No one")),
+		"to": shortAddress(ctx.get("recipientId", "No one"))
 	}
 
 def tokenPath(name, token="tok"):

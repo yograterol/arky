@@ -36,12 +36,6 @@ Subcommands:
 from .. import cfg, api, core, ROOT, ArkyDict
 from . import common
 
-try:
-	from . import _share
-	SHARE = True
-except: 
-	SHARE = False
-
 import io, os, sys
 
 ADDRESS = None
@@ -92,8 +86,7 @@ def register(param):
 				username = param["<username>"].encode("ascii").decode()
 				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
 					type=2,
-					recipientId = ADDRESS,
-					asset=ArkyDict(delegate=ArkyDict(username=username, publicKey=common.hexlify(PUBLICKEY)))
+					asset=ArkyDict(delegate=ArkyDict(username=username))
 				)
 			tx.address = ADDRESS
 			if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):

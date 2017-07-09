@@ -14,14 +14,15 @@ import base58, struct, hashlib, binascii, requests, json
 # byte as int conversion
 basint = (lambda e:e) if __PY3__ else \
          (lambda e:ord(e))
-# read value binary data from buffer
+# read value as binary data from buffer
 unpack = lambda fmt, fileobj: struct.unpack(fmt, fileobj.read(struct.calcsize(fmt)))
-# write value binary data into buffer
+# write value as binary data into buffer
 pack =  lambda fmt, fileobj, value: fileobj.write(struct.pack(fmt, *value))
-# write bytes as binary data into buffer
+# read bytes from buffer
+unpack_bytes = lambda f,n: unpack("<"+"%ss"%n, f)[0]
+# write bytes into buffer
 pack_bytes = (lambda f,v: pack("<"+"%ss"%len(v), f, (v,))) if __PY3__ else \
              (lambda f,v: pack("<"+"s"*len(v), f, v))
-
 
 # define core exceptions 
 class NotGrantedAttribute(Exception): pass
@@ -30,6 +31,13 @@ class NoSenderDefinedError(Exception): pass
 class NotSignedTransactionError(Exception): pass
 class StrictDerSignatureError(Exception): pass
 
+def _hexlify(data):
+	result = binascii.hexlify(data)
+	return str(result.decode() if isinstance(result, bytes) else result)
+
+def _unhexlify(data):
+	result = binascii.unhexlify(data)
+	return result if isinstance(result, bytes) else result.encode()
 
 def _compressEcdsaPublicKey(pubkey):
 	first, last = pubkey[:32], pubkey[32:]
@@ -50,9 +58,6 @@ seed (byte)           -- a sha256 sequence bytes
 network (object)      -- a python object
 
 Returns ArkyDict
-
->>> binascii.hexlify(getKeys("secret").public)
-b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 """
 	network = ArkyDict(**network) if network else cfg.__NETWORK__  # use cfg.__NETWORK__ network by default
 	seed = hashlib.sha256(secret.encode("utf8") if not isinstance(secret, bytes) else secret).digest() if not seed else seed
@@ -70,58 +75,6 @@ b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
 	return keys
 
 
-def serializeKeys(keys):
-	"""
-Serialize keys.
-
-Argument:
-keys (ArkyDict) -- keyring returned by getKeys
-
-Returns ArkyDict
-
->>> serializeKeys(getKeys("secret"))['data']
-'2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143415145454943753444\
-564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314a364a626f416347425\
-375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353306630527039473750\
-7a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2b354b3938537042754\
-64a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445204b45592d2d2d2d2d\
-0a'
-"""
-	skeys = ArkyDict()
-	sk = binascii.hexlify(keys.signingKey.to_pem())
-	skeys.data = sk.decode() if isinstance(sk, bytes) else sk
-	if "wif" in keys: skeys.wif = keys.wif
-	return skeys
-
-
-def unserializeKeys(serial, network=None):
-	"""
-Unserialize `serial`.
-
-Argument:
-keys (ArkyDict) -- serialized keyring returned by serializeKeys
-
-Returns ArkyDict ready to be used as keyring
-
->>> binascii.hexlify(unserializeKeys({
-...	'wif': 'SB3BGPGRh1SRuQd52h7f5jsHUg1G9ATEvSeA7L5Bz4qySQww4k7N',
-...	'data': '2d2d2d2d2d424547494e2045432050524956415445204b45592d2d2d2d2d0a4d485143415145\
-454943753444564e374861506a69394d4459617146566f6139344f724e63574c2b39714a66365876314a364a6\
-26f416347425375424241414b0a6f555144516741456f4375645839305442384c75526c4b36564e5353306630\
-5270394737507a7045784b42656566476436544f5353714a5941476d564b7746410a3249336948445a2b354b3\
-93853704275464a6a7943726a324c6b777049513d3d0a2d2d2d2d2d454e442045432050524956415445\
-204b45592d2d2d2d2d0a'}).public)
-b'03a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'
-"""
-	keys = ArkyDict()
-	keys.network = cfg.__NETWORK__ if network == None else network # use cfg.__NETWORK__ network by default
-	keys.signingKey = SigningKey.from_pem(binascii.unhexlify(serial["data"]))
-	keys.checkingKey = keys.signingKey.get_verifying_key()
-	keys.public = _compressEcdsaPublicKey(keys.checkingKey.to_string())
-	if "wif" in serial: keys.wif = serial["wif"]
-	return keys
-
-
 def getAddress(keys):
 	"""
 Computes ARK address from keyring.
@@ -130,9 +83,6 @@ Argument:
 keys (ArkyDict) -- keyring returned by `getKeys`
 
 Returns str
-
->>> getAddress(getKeys("secret"))
-'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
 """
 	network = keys.network
 	ripemd160 = hashlib.new('ripemd160', keys.public).digest()[:20]
@@ -149,11 +99,8 @@ seed (bytes)     -- a sha256 sequence bytes
 network (object) -- a python object
 
 Returns str
-
->>> getWIF(hashlib.sha256("secret".encode("utf8")).digest(), cfg.__NETWORK__)
-'cP3giX8Vmcev97Y5BvMH1kPteesGk3AQ9vd9ifyis5r5sFiV8H26'
 """
-	network = network
+	# network = network
 	compressed = network.get("compressed", True)
 	seed = network.wif + seed[:32] + (b"\x01" if compressed else b"")
 	return base58.b58encode_check(seed)
@@ -161,102 +108,118 @@ Returns str
 
 def getBytes(transaction):
 	"""
-Computes transaction object as bytes data.
+Hash transaction object into bytes data.
 
 Argument:
 transaction (core.Transaction) -- transaction object
 
-Returns sequence bytes
->>> binascii.hexlify(getBytes(Transaction(amount=100000000, secret="secret", timestamp=22\
-030978, recipientId=getAddress(getKeys("recipient")))))
-b'00822a500103a02b9d5fdd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de93352016190701\
-176bf429e8c9e0a89d13069d072e1700000000000000000000000000000000000000000000000000000000000\
-000000000000000000000000000000000000000000000000000000000000000000000000e1f50500000000809\
-6980000000000'
+Returns bytes sequence
 """
 	buf = StringIO() # create a buffer
 
-	# write type as byte in buffer
-	pack("<b", buf, (transaction.type,))
-	# write timestamp as integer in buffer (see if uint is better)
-	pack("<i", buf, (int(transaction.timestamp),))
+	# write type and timestamp
+	pack("<bi", buf, (transaction.type, int(transaction.timestamp)))
 	# write senderPublicKey as bytes in buffer
 	try:
-		pack_bytes(buf, transaction.senderPublicKey)
+		pack_bytes(buf, _unhexlify(transaction.senderPublicKey))
 	# raise NoSenderDefinedError if no sender defined
-	except AttributeError:
+	except (AttributeError, TypeError):
 		raise NoSenderDefinedError("%r does not belong to any ARK account" % transaction)
-
-	if hasattr(transaction, "requesterPublicKey"):
-		pack_bytes(buf, transaction.requesterPublicKey)
-
-	if hasattr(transaction, "recipientId"):
-		# decode reciever address public key (bytes returned)
+	# unused
+	if getattr(transaction, "requesterPublicKey", False):
+		pack_bytes(buf, _unhexlify(transaction.requesterPublicKey))
+	# decode reciever Ark address
+	if getattr(transaction, "recipientId", False):
 		recipientId = base58.b58decode_check(transaction.recipientId)
 	else:
-		# put a blank
 		recipientId = b"\x00"*21
 	pack_bytes(buf, recipientId)
-
-	if hasattr(transaction, "vendorField"):
-		# put vendor field value (64 bytes limited)
+	# put vendor field value (64 bytes limited)
+	if getattr(transaction, "vendorField", False):
 		vendorField = transaction.vendorField[:64].encode().ljust(64, b"\x00")
 	else:
-		# put a blank
 		vendorField = b"\x00"*64
 	pack_bytes(buf, vendorField)
 
-	# write amount value
-	pack("<Q", buf, (int(transaction.amount),))
-	pack("<Q", buf, (int(transaction.fee),))
+	# write amount and fee value
+	pack("<QQ", buf, (int(transaction.amount),int(transaction.fee)))
 
-	# more test to confirm the good bytification of type 1 to 4...
-	typ  = transaction.type
+	typ = transaction.type
 	if typ == 1 and "signature" in transaction.asset:
-		data = binascii.unhexlify(transaction.asset.signature.publicKey)
-		pack_bytes(buf, data.encode() if not isinstance(data, bytes) else data)
+		pack_bytes(buf, _unhexlify(transaction.asset.signature.publicKey))
 	elif typ == 2 and "delegate" in transaction.asset:
 		pack_bytes(buf, transaction.asset.delegate.username.encode())
 	elif typ == 3 and "votes" in transaction.asset:
 		pack_bytes(buf, ("".join(transaction.asset.votes)).encode())
 	elif typ == 4 and "multisignature" in transaction.asset:
-		pack("<b", buf, (transaction.asset.multisignature.min,))
-		pack("<b", buf, (transaction.asset.multisignature.lifetime,))
-		pack_bytes(buf, ("".join(transaction.asset.multisignature.keysgroup)).encode())
+		pass
 
 	# if there is a signature
-	if hasattr(transaction, "signature"):
-		pack_bytes(buf, transaction.signature)
-	
+	if getattr(transaction, "signature", False):
+		pack_bytes(buf, _unhexlify(transaction.signature))
 	# if there is a second signature
-	if hasattr(transaction, "signSignature"):
-		pack_bytes(buf, transaction.signSignature)
+	if getattr(transaction, "signSignature", False):
+		pack_bytes(buf, _unhexlify(transaction.signSignature))
 
 	result = buf.getvalue()
 	buf.close()
 	return result.encode() if not isinstance(result, bytes) else result
 
 
-def signSerial(serial, signingKey):
-	class O: pass
-	obj = O()
-	for attr, value in serial.items():
-		if attr in ["senderPublicKey", "requesterPublicKey", "signature", "signSignature"]:
-			value = binascii.unhexlify(value)
-		elif attr == "asset":
-			value = arkydify(value)
-		if value != None:
-			setattr(obj, attr, value)
-	signature = signingKey.sign_deterministic(getBytes(obj), hashlib.sha256, sigencode=sigencode_der_canonize)
-	setattr(obj, "signSignature" if hasattr(obj, "signature") else "signature", signature)
-	id_ = hashlib.sha256(getBytes(obj)).digest()
+def fromBytes(data):
+	tx = Transaction()
+	buf = StringIO(data)
 
-	signature = binascii.hexlify(signature)
-	id_ = binascii.hexlify(id_)
-	return {
-		"signature": signature.decode() if isinstance(signature, bytes) else signature, 
-		"id": id_.decode() if isinstance(id_, bytes) else id_
-	}
+	tx.type, tx.timestamp = unpack("<bi", buf)
+	object.__setattr__(tx, "key_one", ArkyDict(public=unpack_bytes(buf, 33)))
+	rid = unpack_bytes(buf, 21).replace(b"\x00", b"")
+	if rid != "" : tx.recipientId = base58.b58encode_check(rid)
+	vf = unpack_bytes(buf, 64).replace(b"\x00", b"").decode()
+	if vf != "": tx.vendorField = vf
+	tx.amount, fee = unpack("<QQ", buf)
+
+	idx = []
+	for i in range(len(data)):
+		if basint(data[i]) == 0x30:
+			j = i+basint(data[i+1])+2
+			if j <= len(data):
+				try:
+					object.__setattr__(tx, "signature" if not hasattr(tx, "signature") else "signSignature", _hexlify(checkStrictDER(data[i:j])))
+					idx.append(i)
+				except:
+					pass
+
+	start = buf.tell()
+	stop = len(data) if not len(idx) else min(idx)
+	asset = data[start:stop]
+
+	if tx.type == 1:
+		object.__setattr__(tx, "asset", ArkyDict(signature=ArkyDict(publicKey=_hexlify(asset))))
+	elif tx.type == 2:
+		object.__setattr__(tx, "asset", ArkyDict(delegate=ArkyDict(username=str(asset.decode()))))
+	elif tx.type == 3:
+		object.__setattr__(tx, "asset", ArkyDict(votes=[str(asset[i:i+67].decode()) for i in range(0, len(asset), 67)]))
+	elif tx.type == 4:
+		pass
+
+	if hasattr(tx, "signature"):
+		object.__setattr__(tx, "id", _hexlify(hashlib.sha256(getBytes(tx)).digest()))
+	
+	return tx
+
+
+# toonsbuf here :)
+def getHex(transaction): return _hexlify(getBytes(transaction))
+def fromHex(hexa): return fromBytes(_unhexlify(hexa))
+
+
+def signSerial(serial, signingKey):
+	if not isinstance(serial, ArkyDict): serial = arkydify(serial)
+	signature = _hexlify(signingKey.sign_deterministic(getBytes(serial), hashlib.sha256, sigencode=sigencode_der_canonize))
+	setattr(serial, "signSignature" if getattr(serial, "signature", False) else "signature", signature)
+	id_ = _hexlify(hashlib.sha256(getBytes(serial)).digest())
+	setattr(serial, "id", id_)
+	return {"signature": signature, "id": id_}
 
 
 def checkStrictDER(sig):
@@ -265,22 +228,9 @@ https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki#der-encoding-refe
 Check strict DER signature compliance.
 
 Argument:
-sig (bytes) -- signature sequence bytes
+sig (bytes) -- signature bytes sequence
 
 Raises StrictDerSignatureError exception or returns sig
-
->>> sig = checkStrictDER(binascii.unhexlify('3044022003e6f032a119ad552804792822d84bbd34b5\
-8fe710bca59f6ca4bb332404957402207d761b265ce8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c\
-3e916cb'))
->>> binascii.hexlify(sig)
-b'3044022003e6f032a119ad552804792822d84bbd34b58fe710bca59f6ca4bb332404957402207d761b265ce\
-8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c3e916cb'
->>> sig = checkStrictDER(binascii.unhexlify('3044122003e6f032a119ad552804792822d84bbd34b5\
-8fe710bca59f6ca4bb332404957402207d761b265ce8405ae7f1fceac56ebae6eae010ad7524aff38eef6167c\
-3e916cb'))
-Traceback (most recent call last):
-...
-arky.core.StrictDerSignatureError: R element is not an integer
 """
 	sig_len = len(sig)
 	# Extract the length of the R element.
@@ -344,47 +294,15 @@ secret             (str)
 vendorField        (str)
 recipientId        (str)
 requesterPublicKey (str)
-
-Public address attribute can only be set by secret passphrase, there are three way to do it:
->>> import arky.core as core
->>> tx1 = core.Transaction(secret="secret") # first way
->>> tx1.address
-'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
->>> tx2 = core.Transaction()
->>> tx2.address = 'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "C:\Users\Bruno\Python\../GitHub/arky\arky\core.py", line 268, in __setattr__
-    self.amount = kwargs.pop("amount", 0)
-arky.core.NotGrantedAttribute: address attribute can not be set using object interface
->>> tx2.secret = 'secret' # second way
->>> tx2.address
-'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
->>> tx3 = core.Transaction()
->>> tx3.sign('secret') # third way
->>> tx3.address
-'a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR'
-
-Note that if secret is set, signature is done so:
->>> tx1.sign()
->>> tx2.sign()
-
-If no secret defined:
->>> bad_tx = core.Transaction()
->>> bad_tx.sign()
-Traceback (most recent call last):
-...
-arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transaction(A0.00000000) from "No one" to "No one">
 '''
 	# here are attribute that can be set through object interface
-	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "recipientId", "requesterPublicKey"]
-	senderPublicKey = property(lambda obj:obj.key_one.public, None, None, "alias for public key, read-only attribute")
+	attr = ["type", "amount", "timestamp", "asset", "vendorField", "secret", "secondSecret", "recipientId", "requesterPublicKey"]
+
+	# here are some shortcut using public key
+	senderPublicKey = property(lambda obj:_hexlify(obj.key_one.public), None, None, "alias for public key, read-only attribute")
+	address = property(lambda obj:base58.b58encode_check(cfg.__NETWORK__.pubKeyHash + hashlib.new('ripemd160', obj.key_one.public).digest()[:20]), None, None, "alias for sender address, read-only attribute")
 
 	def __init__(self, **kwargs):
-		"""
->>> Transaction(amount=100000000, secret="secret")
-<unsigned type-0 transaction(A1.00000000) from a3T1iRdHFt35bKY8RX1bZBGbenmmKZ12yR to "No one">
-"""
 		# the four minimum attributes that defines a transaction
 		self.type = kwargs.pop("type", 0)
 		self.amount = kwargs.pop("amount", 0)
@@ -396,20 +314,18 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 	def __setattr__(self, attr, value):
 		if attr not in Transaction.attr:
 			raise NotGrantedAttribute("%s attribute can not be set using object interface" % attr)
-		# if one of granted attribute is modified, it change signature in-fine
-		# so unsign transaction to delete id, signature and signSignature
-		self._unsign()
 		if attr == "secret":
 			# secret is not stored
-			# associated ecdsa object and ARK address are instead
+			self._unsign()
 			keys = getKeys(value)
 			object.__setattr__(self, "key_one", keys)
-			object.__setattr__(self, "address", getAddress(keys))
 		elif attr == "secondSecret":
 			# second secret is not stored
-			# associated ecdsa object is instead
+			if hasattr(self, "signSignature"):
+				delattr(self, "signSignature")
 			object.__setattr__(self, "key_two", getKeys(value))
 		elif attr == "type":
+			self._unsign()
 			# when doing `<object>.type = value` automaticaly set the associated fees
 			if value == 0:   object.__setattr__(self, "fee", cfg.__FEES__.send)
 			elif value == 1: object.__setattr__(self, "fee", cfg.__FEES__.secondsignature)
@@ -419,6 +335,7 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 			elif value == 5: object.__setattr__(self, "fee", cfg.__FEES__.dapp)
 			object.__setattr__(self, attr, value)
 		elif value != None:
+			self._unsign()
 			object.__setattr__(self, attr, value)
 
 	def __del__(self):
@@ -427,48 +344,49 @@ arky.core.NoSecretDefinedError: No secret defined for <unsigned type-0 transacti
 
 	def __repr__(self):
 		return "<%(signed)s type-%(type)d transaction(A%(amount).8f) from %(from)s to %(to)s>" % {
-			"signed": "signed" if hasattr(self, "signature") else \
-			          "double-signed" if hasattr(self, "signSignature") else \
+			"signed": "double-signed" if hasattr(self, "signSignature") else \
+			          "signed" if hasattr(self, "signature") else \
 			          "unsigned",
 			"type": self.type,
 			"amount": self.amount/100000000.,
-			"from": getattr(self, "address", '"No one"'),
+			"from": self.address,
 			"to": getattr(self, "recipientId", '"No one"')
 		}
 
 	def _unsign(self):
-		if hasattr(self, "signature"): delattr(self, "signature")
-		if hasattr(self, "signSignature"): delattr(self, "signSignature")
-		if hasattr(self, "id"): delattr(self, "id")
+		if hasattr(self, "signature"):
+			delattr(self, "signature")
+		if hasattr(self, "signSignature"):
+			delattr(self, "signSignature")
+		if hasattr(self, "id"):
+			delattr(self, "id")
 
 	def sign(self, secret=None, secondSecret=None):
 		self._unsign()
 		# if secret is given, set a new secret (setting a new key_one)
-		if secret != None: self.secret = secret
-		# else, if no key_one attribute is set --> no secret defined, no owner defined
-		elif not hasattr(self, "key_one"): raise NoSecretDefinedError("No secret defined for %r" % self)
+		if secret != None:
+			self.secret = secret
+		# if no key_one attribute is set --> no secret defined, no owner defined
+		elif not hasattr(self, "key_one"):
+			raise NoSecretDefinedError("No secret defined for %r" % self)
 		# store signature under signature attribute
 		stamp1 = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-		object.__setattr__(self, "signature", stamp1)
-		# if secret is given, set a new secondSecret (setting a new key_two), only if account had registered a second signature
-		if secondSecret != None: self.secondSecret = secondSecret
+		object.__setattr__(self, "signature", _hexlify(stamp1))
+		
+		# if secondSecret is given, set a new secondSecret (setting a new key_two), only if account had registered a second signature
+		if secondSecret != None:
+			self.secondSecret = secondSecret
 		# if key_two attribute is set
 		if hasattr(self, "key_two"):
 			# store second signature under signSignature attribute
 			stamp2 = getattr(self, "key_two").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
-			object.__setattr__(self, "signSignature", stamp2)
+			object.__setattr__(self, "signSignature", _hexlify(stamp2))
+		
 		# generate id
-		object.__setattr__(self, "id", hashlib.sha256(getBytes(self)).digest())
+		object.__setattr__(self, "id", _hexlify(hashlib.sha256(getBytes(self)).digest()))
 		return self
 
 	def serialize(self):
-		"""
->>> sorted(Transaction(amount=100000000, secret="secret", timestamp=22030978).serialize()\
-.items(), key=lambda e:e[0])
-[('amount', 100000000), ('asset', {}), ('fee', 10000000), ('senderPublicKey', '03a02b9d5f\
-dd1307c2ee4652ba54d492d1fd11a7d1bb3f3a44c4a05e79f19de933'), ('timestamp', 22030978), ('ty\
-pe', 0)]
-"""
 		data = ArkyDict()
 		for attr in [a for a in [
 			"id", "timestamp", "type", "fee", "amount", 
@@ -476,11 +394,7 @@ pe', 0)]
 			"asset", "signature", "signatures", "signSignature"
 		] if hasattr(self, a)]:
 			value = getattr(self, attr)
-			if isinstance(value, bytes) and attr not in ["recipientId", "vendorField"]:
-				value = binascii.hexlify(value)
-				if isinstance(value, bytes):
-					value = str(value.decode())
-			elif attr in ["amount", "timestamp", "fee"]:
+			if attr in ["amount", "timestamp", "fee"]:
 				value = int(value)
 			elif attr == "asset":
 				value = arkydify(value)
