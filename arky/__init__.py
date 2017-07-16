@@ -17,7 +17,7 @@ ROOT = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable if main_i
 if "win" in sys.platform:
 	HOME = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"])
 else:
-    HOME = os.environ.get("HOME", ".")
+	HOME = os.environ.get("HOME", ".")
 
 logging.basicConfig(
 	filename  = os.path.normpath(os.path.join(ROOT, __name__+".log")) if main_is_frozen() else os.path.normpath(os.path.join(HOME, "."+__name__)),
