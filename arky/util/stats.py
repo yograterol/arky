@@ -24,6 +24,22 @@ def plot2D(*points, **kw):
 		if title: plt.title(title)
 		plt.show()
 
+def getTransactions(timestamp=0, **param):
+	param.update(returnKey="transactions", limit=50, orderBy="timestamp:desc")
+	txs = api.Transaction.getTransactionsList(**param)
+	if isinstance(txs, list) and len(txs):
+		while txs[-1]["timestamp"] >= timestamp:
+			param.update(offset=len(txs))
+			search = api.Transaction.getTransactionsList(**param)
+			txs.extend(search)
+			if len(search) < 50:
+				break
+	elif not len(txs):
+		raise Exception("Address has null transactions.")
+	else:
+		raise Exception(txs.get("error", "Api error"))
+	return sorted([t for t in txs if t["timestamp"] >= timestamp], key=lambda e:e["timestamp"], reverse=True)
+
 def getHistory(address, timestamp=0):
 	# get all inputs
 	tx_in = api.Transaction.getTransactionsList(recipientId=address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
@@ -70,7 +86,6 @@ def getVoteHistory(address, timestamp=0):
 
 	if not history:
 		return []
-
 	else:
 		result = []
 		for tx in history:
@@ -80,6 +95,7 @@ def getVoteHistory(address, timestamp=0):
 		return result
 
 def getVoteForce(address, **kw):
+	delegate_pubk = kw.pop("delegate_pubk", "")
 	now = datetime.datetime.now(slots.UTC)
 	delta = datetime.timedelta(**kw)
 	timestamp_limit = slots.getTime(now - delta)
@@ -94,13 +110,28 @@ def getVoteForce(address, **kw):
 
 	end = slots.getTime(now)
 	sum_ = 0.
+	cumulate = True
 	for tx in history:
 		delta_t = (end - tx["timestamp"])/3600
-		sum_ += balance * delta_t
+		if cumulate:
+			sum_ += balance * delta_t
 		balance += ((tx["fee"]+tx["amount"]) if tx["senderId"] == address else -tx["amount"])/100000000.
-		end = tx["timestamp"]
 		if tx["type"] == 3:
-			sum_ += balance * (tx["timestamp"]-timestamp_limit)/3600
-			break
+			if delegate_pubk != "":
+				if tx["asset"]["votes"][0] == "-%s" % delegate_pubk:
+					if cumulate: sum_ = 0.
+					else: cumulate = True
+				elif tx["asset"]["votes"][0] == "+%s" % delegate_pubk:
+					cumulate = False 
+			else:
+				break
+		end = tx["timestamp"]
 
 	return sum_
+
+def getExVoters(delegate_pubk, **kw):
+	now = datetime.datetime.now(slots.UTC)
+	delta = datetime.timedelta(**kw)
+	timestamp_limit = slots.getTime(now - delta)
+	votes = [t for t in getTransactions(timestamp_limit, type=3) if t["type"] == 3]
+	return [t["senderId"] for t in votes if t["asset"]["votes"][0] == "-%s" % delegate_pubk]

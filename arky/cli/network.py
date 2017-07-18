@@ -9,6 +9,7 @@ Usage: network use [<name> -b <number> -s <seed> -l <ms>]
        network wif <secret>
        network delegates
        network ping
+       network update
 
 Options:
 -b <number> --broadcast <number> peer number to use for broadcast       [default: 10]
@@ -22,6 +23,7 @@ Subcommands:
     address   : returns address from secret.
     delegates : show delegate list.
     ping      : print selected peer latency.
+    update    : update balances of all linked account.
 '''
 
 from .. import cfg, api, core
@@ -49,7 +51,7 @@ def use(param):
 
 def ping(param):
 	common.prettyPrint(dict(
-		[[">>> "+cfg.__URL_BASE__,api.checkPeerLatency(cfg.__URL_BASE__)]]+\
+		[["api>"+cfg.__URL_BASE__,api.checkPeerLatency(cfg.__URL_BASE__)]]+\
 		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
 	))
 
@@ -79,3 +81,8 @@ def delegates(param):
 	maxlen = max([len(d["username"]) for d in delegates])
 	for name, vote in sorted([(d["username"],float(d["vote"])/100000000) for d in delegates], key=lambda e:e[-1], reverse=True):
 		sys.stdout.write("    %s: %.3f\n" % (name.ljust(maxlen), vote))
+
+def update(param):
+	common.BALANCES.reset()
+	common.prettyPrint(common.BALANCES)
+	

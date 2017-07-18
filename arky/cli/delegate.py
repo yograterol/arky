@@ -2,7 +2,7 @@
 # © Toons
 
 '''
-Usage: delegate link [<secret>]
+Usage: delegate link [<secret> <2ndSecret>]
        delegate save <name>
        delegate unlink
        delegate status
@@ -10,7 +10,7 @@ Usage: delegate link [<secret>]
        delegate share <amount> [-c -b <blacklist> -d <delay> -l <lowest> -h <highest> <message>]
 
 Options:
--b <blacklist> --blacklist <blacklist> comma-separated ark addresses to exclude
+-b <blacklist> --blacklist <blacklist> ark addresses to exclude (comma-separated list or pathfile)
 -h <highest> --highest <hihgest>       maximum payout in ARK
 -l <lowest> --lowest <lowest>          minimum payout in ARK
 -d <delay> --delay <delay>             number of fidelity-day [default: 30]
@@ -32,7 +32,6 @@ Subcommands:
 from .. import cfg, api, core, ROOT
 from .. util import stats
 from . import common
-
 
 import io, os, sys
 
@@ -75,6 +74,12 @@ def link(param):
 	if not USERNAME:
 		sys.stdout.write("Not a delegate\n")
 		ADDRESS, PUBLICKEY, KEY1, KEY2, USERNAME, DELEGATE = None, None, None, None, None, None
+	elif param["<2ndSecret>"]:
+		keys = core.getKeys(param["<2ndSecret>"].encode("ascii"))
+		KEY2 = keys.signingKey
+		
+	if ADDRESS:
+		common.BALANCES.register(ADDRESS)
 
 def save(param):
 	if KEY1 and PUBLICKEY and ADDRESS:
@@ -82,6 +87,7 @@ def save(param):
 
 def unlink(param):
 	global ADDRESS, PUBLICKEY, KEY1, KEY2, USERNAME, DELEGATE
+	common.BALANCES.pop(ADDRESS, None)
 	ADDRESS, PUBLICKEY, KEY1, KEY2, USERNAME, DELEGATE = None, None, None, None, None, None
 
 def status(param):
@@ -96,12 +102,16 @@ def voters(param):
 			line = "    %s: %.3f\n" % (addr, vote)
 			sys.stdout.write(line)
 			sum_ += vote
-		sys.stdout.write("    " + "-"*(len(line)-4) + "\n")
+		sys.stdout.write("    " + "-"*(len(line)-5) + "\n")
 		sys.stdout.write("    %s: %.3f\n" % (("%d voters"%len(accounts)).rjust(len(addr)), sum_))
 
 def share(param):
-	if _checkKey1():
+	global KEY1, KEY2, ADDRESS
+
+	KEY2 = common.checkKeys(KEY1, KEY2, ADDRESS)
+	if KEY2 != False:
 		if SHARE:
+			
 			if param["--blacklist"]:
 				if os.path.exists(param["--blacklist"]):
 					with io.open(param["--blacklist"], "r") as in_:
@@ -115,20 +125,25 @@ def share(param):
 			if param["--complement"]:
 				amount = float(api.Account.getBalance(ADDRESS, returnKey="balance"))/100000000. - amount
 
-			KEY2 = common.askSecondSignature(ADDRESS)
-			if KEY2 != False and amount > 1:
+			if param["--lowest"] : minimum = float(param["--lowest"])
+			else: minimum = 0.
+
+			if param["--highest"] : maximum = float(param["--highest"])
+			else: maximum = amount
+
+			if amount > 1:
+				# sys.stdout.write("Checking voters\n")
 				delay = int(param["--delay"])
+				delegate_pubk = common.hexlify(PUBLICKEY)
+				accounts = api.Delegate.getVoters(delegate_pubk, returnKey="accounts")
+				# hidden = stats.getExVoters(delegate_pubk, days=delay)
+				addresses = [a["address"] for a in accounts] # + hidden
+				# sys.stdout.write("Total voters:%d (%d voted out during payout period)\n" % (len(addresses), len(hidden)))
 				sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
-				accounts = api.Delegate.getVoters(common.hexlify(PUBLICKEY), returnKey="accounts")
-				contributions = dict([address, stats.getVoteForce(address, days=delay)] for address in [a["address"] for a in accounts if a["address"] not in blacklist])
+				contributions = dict([address, stats.getVoteForce(address, days=delay, delegate_pubk=delegate_pubk)] for address in [addr for addr in addresses if addr not in blacklist])
 				k = 1.0/max(1, sum(contributions.values()))
 				contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
 				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
-				
-				if param["--lowest"] : minimum = float(param["--lowest"])
-				else: minimum = 0.
-				if param["--highest"] : maximum = float(param["--highest"])
-				else: maximum = amount
 				pshare.applyContribution(USERNAME, amount, minimum, maximum, param["<message>"], txgen, **contributions)
 
 		else:
@@ -140,12 +155,6 @@ def _whereami():
 		return "delegate[%s]" % USERNAME
 	else:
 		return "delegate"
-
-def _checkKey1():
-	if not KEY1:
-		sys.stdout.write("No account linked\n")
-		return False
-	return True
 
 def _checkIfDelegate():
 	global DELEGATE

@@ -133,6 +133,13 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
+**0.2.3**
+
++ ``core`` mod : 
+   * `toonsbuf protocol`_ implemented
+   * osx compatibility issue fix
++ ``cli`` can now execute arky scripts
+
 **0.2.2**
 
 + pypi wheel universall fix
@@ -217,3 +224,4 @@ Version
 .. _network command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/network.md
 .. _delegate command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/delegate.md
 .. _account command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/account.md
+.. _toonsbuf protocol: https://github.com/Moustikitos/AIPs/blob/master/AIPS/aip-8.md
