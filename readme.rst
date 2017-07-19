@@ -132,8 +132,6 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
 Version
 =======
-**0.2.3**
-+ osx compatibility issue fix
 
 **0.2.3**
 

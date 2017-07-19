@@ -7,6 +7,8 @@ from .. import __PY3__, ROOT, ArkyDict, api, core, cfg, util
 import io, os, sys, json, getpass, logging, binascii
 
 input = raw_input if not __PY3__ else input
+hexlify = core._hexlify
+unhexlify = core._unhexlify
 
 EXECUTEMODE = False
 
@@ -28,7 +30,6 @@ class BalanceMGMT(dict):
 			value = api.Account.getBalance(address)
 			if value.success: self[address] = int(value["balance"])
 BALANCES = BalanceMGMT()
-
 
 def checkKeys(key1, key2, address):
 	if isinstance(key1, SigningKey):
@@ -57,13 +58,14 @@ def checkFolderExists(filename):
 def shortAddress(addr, sep="...", n=5):
 	return addr[:n]+sep+addr[-n:]
 
-def hexlify(data):
-	result = binascii.hexlify(data)
-	return result.decode() if isinstance(result, bytes) else result
 
-def unhexlify(data):
-	result = binascii.unhexlify(data)
-	return result if isinstance(result, bytes) else result.encode()
+# def hexlify(data):
+# 	result = binascii.hexlify(data)
+# 	return result.decode() if isinstance(result, bytes) else result
+
+# def unhexlify(data):
+# 	result = binascii.unhexlify(data)
+# 	return result if isinstance(result, bytes) else result.encode()
 
 def signingKey2Hex(signingKey):
 	return hexlify(signingKey.to_pem())

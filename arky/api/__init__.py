@@ -47,6 +47,16 @@ Returns ArkyDict
 	return data
 
 def _signTx(tx, secret=None, secondSecret=None):
+	"""
+Try to sign Transaction with secret and secondSecret.
+
+Argument:
+tx (core.Transaction) -- transaction
+secret (str)          -- secret passphrase
+secondSecret (str)    -- second secret passphrase
+
+Returns signed core.Transaction object
+"""
 	if not secret:
 		try: return tx.sign()
 		except core.NoSecretDefinedError: return tx
@@ -115,6 +125,15 @@ Returns ArkyDict
 	return result
 
 def postData(url_base, data):
+	"""
+Send serialized transaction using url_base node.
+
+Argument:
+url_base (str) -- node address to use as api entry point
+data (dict)    -- serialized transaction
+
+Returns ArkyDict server response
+"""
 	try:
 		text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=3).text
 		data = ArkyDict(json.loads(text))
@@ -125,6 +144,15 @@ def postData(url_base, data):
 	return data
 
 def broadcastSerial(serial):
+	"""
+Send serialized transaction using multiple peers. It avoid broadcasting errors
+when large amount of peers are unresponsive or not up to date.
+
+Argument:
+serail (dict) -- serialized transaction
+
+Returns ArkyDict server response
+"""
 	data = json.dumps({"transactions": [serial]})
 	result = postData(cfg.__URL_BASE__, data)
 	ratio = 0.
@@ -135,6 +163,9 @@ def broadcastSerial(serial):
 	return result
 
 def checkPeerLatency(peer, timeout=3):
+	"""
+Return peer latency in seconds.
+"""
 	try: r = requests.get(peer + '/api/blocks/getNethash', timeout=timeout)
 	except: return False
 	else: return r.elapsed.total_seconds()
