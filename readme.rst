@@ -6,8 +6,8 @@ Copyright 2016-2017 **Toons**, Copyright 2017 **ARK**, `MIT licence`_
 Install
 =======
 
-Ubuntu
-^^^^^^
+Ubuntu / OSX
+^^^^^^^^^^^^
 
 Open a terminal and type :
 
@@ -132,6 +132,8 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
 Version
 =======
+**0.2.3**
++ osx compatibility issue fix
 
 **0.2.3**
 
