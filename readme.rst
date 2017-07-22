@@ -99,19 +99,12 @@ Easy way to use ``arky``
 Available commands: escrow, network, delegate, account
 hot@dark/ >
 
-`escrow command set`_
-
-`network command set`_
-
-`delegate command set`_ : **1% mandatory fees on share command**
-
-`account command set`_
-
-**Launch arky script**
+**Arky script**
 
 Here is an example of arky script
 
-:
+::
+
   network use dark
   account link XxxxxxxXxxxXXxxxxXxxxxxxxXXxxxxx
   send 40% DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX
@@ -120,13 +113,22 @@ Here is an example of arky script
 
 To launch it :
 
-`python -m arky-cli /path/to/arky/script`
+``python -m arky-cli /path/to/arky/script``
 
 or
 
 >>> from arky import cli
->>> cli.start()
 >>> cli.launch("path/to/arky/script")
+
+**man pages**
+
+`escrow command set`_
+
+`network command set`_
+
+`delegate command set`_
+
+`account command set`_
 
 Authors
 =======
