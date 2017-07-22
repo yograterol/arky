@@ -107,6 +107,27 @@ hot@dark/ >
 
 `account command set`_
 
+**Launch arky script**
+
+Here is an example of arky script
+
+:
+  network use dark
+  account link XxxxxxxXxxxXXxxxxXxxxxxxxXXxxxxx
+  send 40% DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX
+  delegate link XxxxxxxXxxxXXxxxxXxxxxxxxXXxxxxx
+  share 60%  -d 7 "weekly reward from delegate d_arky"
+
+To launch it :
+
+`python -m arky-cli /path/to/arky/script`
+
+or
+
+>>> from arky import cli
+>>> cli.start()
+>>> cli.launch("path/to/arky/script")
+
 Authors
 =======
 
