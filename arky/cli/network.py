@@ -23,7 +23,7 @@ Subcommands:
     address   : returns address from secret.
     delegates : show delegate list.
     ping      : print selected peer latency.
-    update    : update balances of all linked account.
+    update    : update balance of all linked account.
 '''
 
 from .. import cfg, api, core

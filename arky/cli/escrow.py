@@ -72,6 +72,9 @@ def link(param):
 			else:
 				sys.stdout.write("No first-token found\n")
 		KEY2 = None
+		
+	if ADDRESS:
+		common.BALANCES.register(ADDRESS)
 
 def send(param):
 	if _checkKey1():
@@ -80,6 +83,7 @@ def send(param):
 			tx = common.generateColdTx(KEY1, PUBLICKEY, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
 		else:
 			tx = False
+			sys.stdout.write("No %s left\n" % cfg.__TOKEN__)
 		if tx:
 			tx.address = ADDRESS
 			sys.stdout.write("You can now give %s file to your escrow\n" % common.dropColdTx(tx))

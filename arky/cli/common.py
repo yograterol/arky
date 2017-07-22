@@ -33,20 +33,24 @@ BALANCES = BalanceMGMT()
 
 def checkKeys(key1, key2, address):
 	if isinstance(key1, SigningKey):
-		secondPublicKey = api.Account.getAccount(address, returnKey="account").get('secondPublicKey', None)
-		if secondPublicKey:
-			if EXECUTEMODE and isinstance(key2, SigningKey):
-				return key2
-			else:
-				keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
-				spk = hexlify(keys.public)
-				if spk == secondPublicKey:
-					return keys.signingKey
+		if api.Account.getAccount(address).success:
+			secondPublicKey = api.Account.getAccount(address, returnKey="account").get('secondPublicKey', None)
+			if secondPublicKey:
+				if EXECUTEMODE and isinstance(key2, SigningKey):
+					return key2
 				else:
-					sys.stdout.write("Incorrect second passphrase !\n")
-					return False
+					keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					spk = hexlify(keys.public)
+					if spk == secondPublicKey:
+						return keys.signingKey
+					else:
+						sys.stdout.write("Incorrect second passphrase !\n")
+						return False
+			else:
+				return True
 		else:
-			return True
+			sys.stdout.write("Account does not exist in blockchain\n")
+			return False
 	sys.stdout.write("No account linked\n")
 	return False
 
@@ -200,6 +204,8 @@ def tokenPath(name, token="tok"):
 	return os.path.join(TOKENS, cfg.__NET__, name)
 
 def dropToken(filename, address, publicKey, signingKey):
+	if not api.Account.getAccount(address, returnKey="account").get('secondPublicKey', False):
+		sys.stdout.write("No second passphrase defined for this account.\n")
 	checkFolderExists(filename)
 	out = io.open(filename, "w")
 	out.write("%s%s%s" % (address, hexlify(publicKey), signingKey2Hex(signingKey)))

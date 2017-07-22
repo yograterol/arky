@@ -55,7 +55,7 @@ tx (core.Transaction) -- transaction
 secret (str)          -- secret passphrase
 secondSecret (str)    -- second secret passphrase
 
-Returns signed core.Transaction object
+Returns core.Transaction object
 """
 	if not secret:
 		try: return tx.sign()
@@ -116,7 +116,7 @@ secondSecret (str) -- second secret of account sending the transaction
 
 Returns ArkyDict
 """
-	result = sendTx(tx, secret, secondSecret)
+	result = sendTx(tx, secret=None, secondSecret=None)
 	ratio = 0.
 	if result.success:
 		for peer in PEERS:

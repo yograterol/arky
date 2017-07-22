@@ -91,6 +91,8 @@ More on ``arky.core`` ?
 Easy way to use ``arky``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+``python -m arky-cli``
+
 >>> from arky import cli
 @ark>>> cli.start()
 ### arky-cli v2.0 - [arky 0.2.1 embeded]

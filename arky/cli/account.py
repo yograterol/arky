@@ -139,6 +139,7 @@ def send(param):
 			tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
 			tx.address = ADDRESS
 			if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+				sys.stdout.write("Sending A%.8f to %s...\n" % (tx["amount"]/100000000, tx["recipientId"]))
 				common.prettyPrint(api.broadcastSerial(tx), log=True)
 			else:
 				sys.stdout.write("Broadcast canceled\n")

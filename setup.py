@@ -7,9 +7,10 @@ except ImportError:
 	from distutils.core import setup
 
 
-import os
-for version in ["2.7", "3.5", "3.6"]:
-	os.system('''py -%s -c "import py_compile;py_compile.compile('arky/cli/private/pshare.py', cfile='arky/cli/private/pshare%s.pyc')"''' % (version, version.replace(".", "")))
+import os, sys
+if sys.platform.startswith("win"):
+	for version in ["2.7", "3.5", "3.6"]:
+		os.system('''py -%s -c "import py_compile;py_compile.compile('arky/cli/private/pshare.py', cfile='arky/cli/private/pshare%s.pyc')"''' % (version, version.replace(".", "")))
 
 kw = {}
 f = open("VERSION", "r")
