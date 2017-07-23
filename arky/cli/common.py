@@ -7,6 +7,10 @@ from .. import __PY3__, ROOT, ArkyDict, api, core, cfg, util
 import io, os, sys, json, getpass, logging, binascii
 
 input = raw_input if not __PY3__ else input
+hexlify = core._hexlify
+unhexlify = core._unhexlify
+
+EXECUTEMODE = False
 
 COLDTXS = os.path.normpath(os.path.join(ROOT, ".coldtx"))
 try: os.makedirs(COLDTXS)
@@ -16,35 +20,56 @@ TOKENS = os.path.normpath(os.path.join(ROOT, ".token"))
 try: os.makedirs(TOKENS)
 except: pass
 
-EXECUTEMODE = False
+class BalanceMGMT(dict):
+	def reset(self):
+		for addr in self:
+			value = api.Account.getBalance(addr)
+			if value.success: self[addr] = int(value["balance"])
+	def register(self, address):
+		if address not in self:
+			value = api.Account.getBalance(address)
+			if value.success: self[address] = int(value["balance"])
+BALANCES = BalanceMGMT()
+
+def checkKeys(key1, key2, address):
+	if isinstance(key1, SigningKey):
+		if api.Account.getAccount(address).success:
+			secondPublicKey = api.Account.getAccount(address, returnKey="account").get('secondPublicKey', None)
+			if secondPublicKey:
+				if EXECUTEMODE and isinstance(key2, SigningKey):
+					return key2
+				else:
+					keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					spk = hexlify(keys.public)
+					if spk == secondPublicKey:
+						return keys.signingKey
+					else:
+						sys.stdout.write("Incorrect second passphrase !\n")
+						return False
+			else:
+				return True
+		else:
+			sys.stdout.write("Account does not exist in blockchain\n")
+			return False
+	sys.stdout.write("No account linked\n")
+	return False
 
 def checkFolderExists(filename):
 	folder = os.path.dirname(filename)
 	if not os.path.exists(folder):
 		os.makedirs(folder)
 
-def askSecondSignature(address):
-	secondPublicKey = api.Account.getAccount(address, returnKey="account").get('secondPublicKey', None)
-	if secondPublicKey:
-		keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
-		spk = hexlify(keys.public)
-		if spk == secondPublicKey:
-			return keys.signingKey
-		else:	
-			sys.stdout.write("Incorrect second passphrase !\n")
-			return False
-	return None
-
 def shortAddress(addr, sep="...", n=5):
 	return addr[:n]+sep+addr[-n:]
 
-def hexlify(data):
-	result = binascii.hexlify(data)
-	return result.decode() if isinstance(result, bytes) else result
 
-def unhexlify(data):
-	result = binascii.unhexlify(data)
-	return result if isinstance(result, bytes) else result.encode()
+# def hexlify(data):
+# 	result = binascii.hexlify(data)
+# 	return result.decode() if isinstance(result, bytes) else result
+
+# def unhexlify(data):
+# 	result = binascii.unhexlify(data)
+# 	return result if isinstance(result, bytes) else result.encode()
 
 def signingKey2Hex(signingKey):
 	return hexlify(signingKey.to_pem())
@@ -76,15 +101,17 @@ def prettyPrint(dic, tab="    ", log=False):
 
 def floatAmount(amount, address):
 	if amount.endswith("%"):
-		return (float(amount[:-1])/100 * float(api.Account.getBalance(address, returnKey="balance")) - cfg.__FEES__["send"])/100000000.
-	elif amount[0] in "$€£¥":
-		price = util.getArkPrice({"$":"usd", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
+		if address in BALANCES:
+			return (float(amount[:-1])/100 * BALANCES[address] - cfg.__FEES__["send"])/100000000.
+		else:
+			return False
+	elif amount[0] in ["$", "EUR", "€", "£", "¥"]:
+		price = util.getArkPrice({"$":"usd", "EUR":"eur", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
 		if askYesOrNo("%s=A%f (A/%s=%f) - Validate ?" % (amount, result, amount[0], price)):
 			return result
 		else:
 			return False
-		return result
 	else:
 		return float(amount)
 
@@ -125,10 +152,13 @@ def chooseItem(msg, *elem):
 		return False
 
 def askYesOrNo(msg):
-	answer = ""
-	while answer not in ["y", "Y", "n", "N"]:
-		answer = input("%s [y-n]> " % msg)
-	return False if answer in ["n", "N"] else True
+	if not EXECUTEMODE:
+		answer = ""
+		while answer not in ["y", "Y", "n", "N"]:
+			answer = input("%s [y-n]> " % msg)
+		return False if answer in ["n", "N"] else True
+	else:
+		return True
 
 def coldTxPath(name):
 	name = name.decode() if isinstance(name, bytes) else name
@@ -138,7 +168,7 @@ def coldTxPath(name):
 def generateColdTx(signingKey, publicKey, secondSigningKey=None, **kw):
 	tx = core.Transaction(**kw)
 	object.__setattr__(tx, "key_one", ArkyDict(public=publicKey, signingKey=signingKey))
-	if secondSigningKey:
+	if isinstance(secondSigningKey, SigningKey):
 		object.__setattr__(tx, "key_two", ArkyDict(signingKey=secondSigningKey))
 	tx.sign()
 	return tx.serialize()
@@ -174,6 +204,8 @@ def tokenPath(name, token="tok"):
 	return os.path.join(TOKENS, cfg.__NET__, name)
 
 def dropToken(filename, address, publicKey, signingKey):
+	if not api.Account.getAccount(address, returnKey="account").get('secondPublicKey', False):
+		sys.stdout.write("No second passphrase defined for this account.\n")
 	checkFolderExists(filename)
 	out = io.open(filename, "w")
 	out.write("%s%s%s" % (address, hexlify(publicKey), signingKey2Hex(signingKey)))

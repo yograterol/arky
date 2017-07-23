@@ -3,7 +3,7 @@
 ## `hot@dark/delegate> ?`
 
 ```
-Usage: delegate link [<secret>]
+Usage: delegate link [<secret> <2ndSecret>]
        delegate save <name>
        delegate unlink
        delegate status
@@ -11,7 +11,7 @@ Usage: delegate link [<secret>]
        delegate share <amount> [-c -b <blacklist> -d <delay> -l <lowest> -h <highest> <message>]
 
 Options:
--b <blacklist> --blacklist <blacklist> comma-separated line or file containing ark addresses to exclude
+-b <blacklist> --blacklist <blacklist> ark addresses to exclude (comma-separated list or pathfile)
 -h <highest> --highest <hihgest>       maximum payout in ARK
 -l <lowest> --lowest <lowest>          minimum payout in ARK
 -d <delay> --delay <delay>             number of fidelity-day [default: 30]

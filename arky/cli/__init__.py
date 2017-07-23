@@ -4,14 +4,14 @@
 __all__ = ["escrow", "network", "delegate", "account"]
 
 from .. import cfg, __PY3__, __version__, main_is_frozen
-import os, sys, shlex, docopt, logging, traceback, collections
+import io, os, sys, shlex, docopt, logging, traceback, collections
 
 rootfolder = os.path.normpath(os.path.abspath(os.path.dirname(sys.executable) if main_is_frozen() else __path__[0]))
 __path__.append(os.path.normpath(os.path.normpath(os.path.join(rootfolder, "private"))))
 
 from . import escrow, network, delegate, account
 
-__doc__ = """Welcome to arky-cli v2.3 [Python %(python)s / arky %(arky)s]
+__doc__ = """Welcome to arky-cli v2.4 [Python %(python)s / arky %(arky)s]
 Available commands: %(sets)s""" % {"python":sys.version.split()[0], "arky":__version__, "sets": ", ".join(__all__)}
 
 input = raw_input if not __PY3__ else input
@@ -75,39 +75,42 @@ def start():
 			if not cmd:
 				exit = True
 			elif arg:
+				if "link" not in argv:
+					logging.info(command)
+				else:
+					logging.info(" ".join(argv[:2]+["x"*len(e) for e in ([] if len(argv) <=2 else argv[2:])]))
 				try:
 					cmd(arg)
 				except Exception as error:
 					if hasattr(error, "__traceback__"):
 						sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
 					sys.stdout.write("%s\n" % error)
+
+def execute(*lines):
+	common.EXECUTEMODE = True
+
+	for line in lines:
+		sys.stdout.write("%s%s\n" % (PROMPT, line))
+		argv = shlex.split(line)
+		if len(argv):
+			cmd, arg = parse(argv)
+			if cmd and arg:
+				if "link" not in argv:
+					logging.info(line)
 				else:
-					if "link" not in argv:
-						logging.info(command)
-					else:
-						logging.info(" ".join(argv[:2]+["x"*len(e) for e in ([] if len(argv) <=2 else argv[2:])]))
+					logging.info(" ".join(argv[:2]+["x"*len(e) for e in ([] if len(argv) <=2 else argv[2:])]))
+				try:
+					cmd(arg)
+				except Exception as error:
+					if hasattr(error, "__traceback__"):
+						sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
+					sys.stdout.write("%s\n" % error)
 
-# def execute(*lines):
-# 	common.EXECUTEMODE = True
-# 	sequence = collections.OrderedDict()
+	common.EXECUTEMODE = False
 
-# 	for line in lines:
-# 		argv = shlex.split(command)
-# 		if len(argv):
-# 			cmd, arg = parse(argv)
-# 			if cmd and arg:
-# 				try:
-# 					sequence[line] = cmd(arg)
-# 				except Exception as error:
-# 					if hasattr(error, "__traceback__"):
-# 						sys.stdout.write("".join(traceback.format_tb(error.__traceback__)).rstrip() + "\n")
-# 					sys.stdout.write("%s\n" % error)
+def launch(script):
+	if os.path.exists(script):
+		in_ = io.open(script, "r")
+		execute(*[l.strip() for l in in_.readlines()])
+		in_.close()
 
-# 	for line, what in sequences.items():
-# 		logging.info(line)
-# 		if isinstance(what, list):
-# 			delegate.pshare(what)
-# 		elif isinstance(what, dict):
-# 			account._sendTransaction(what)
-
-# 	common.EXECUTEMODE = False

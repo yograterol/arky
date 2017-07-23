@@ -3,18 +3,18 @@
 ## `hot@dark/account> ?`
 
 ```
-Usage: account link [<secret>]
+Usage: account link [<secret> <2ndSecret>]
        account save <name>
        account unlink
        account status
        account register <username>
        account register 2ndSecret <secret>
-       account vote [-u <delegate> | -d <delegate>]
+       account vote [-ud] [<delegate>]
        account send <amount> <address> [<message>]
 
 Options:
--u --up   up vote all delegate name folowing
--d --down down vote all delegate name folowing
+-u --up    up vote delegate name folowing
+-d --down  down vote delegate name folowing
 
 Subcommands:
     link     : link to account using secret passphrases. If secret passphrases

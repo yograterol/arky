@@ -91,17 +91,42 @@ More on ``arky.core`` ?
 Easy way to use ``arky``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+``python -m arky-cli``
+
 >>> from arky import cli
 @ark>>> cli.start()
 ### arky-cli v2.0 - [arky 0.2.1 embeded]
 Available commands: escrow, network, delegate, account
 hot@dark/ >
 
+**Arky script**
+
+Here is an example of arky script
+
+::
+
+  network use dark
+  account link XxxxxxxXxxxXXxxxxXxxxxxxxXXxxxxx
+  send 40% DTywx2qNfefZZ2Z2bjbugQgUML7yhYEatX
+  delegate link XxxxxxxXxxxXXxxxxXxxxxxxxXXxxxxx
+  share 60%  -d 7 "weekly reward from delegate d_arky"
+
+To launch it :
+
+``python -m arky-cli /path/to/arky/script``
+
+or
+
+>>> from arky import cli
+>>> cli.launch("path/to/arky/script")
+
+**man pages**
+
 `escrow command set`_
 
 `network command set`_
 
-`delegate command set`_ : **1% mandatory fees on share command**
+`delegate command set`_
 
 `account command set`_
 
@@ -132,8 +157,13 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 
 Version
 =======
+
 **0.2.3**
-+ osx compatibility issue fix
+
++ ``core`` mod : 
+   * `toonsbuf protocol`_ implemented
+   * osx compatibility issue fix
++ ``cli`` can now execute arky scripts
 
 **0.2.2**
 
@@ -219,3 +249,4 @@ Version
 .. _network command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/network.md
 .. _delegate command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/delegate.md
 .. _account command set: https://github.com/ArkEcosystem/arky/blob/master/wiki/account.md
+.. _toonsbuf protocol: https://github.com/Moustikitos/AIPs/blob/master/AIPS/aip-8.md

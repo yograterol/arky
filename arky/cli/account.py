@@ -5,7 +5,7 @@
 #        account send <amount> <address> [-p <pkeys> <message>]
 
 '''
-Usage: account link [<secret>]
+Usage: account link [<secret> <2ndSecret>]
        account save <name>
        account unlink
        account status
@@ -58,6 +58,14 @@ def link(param):
 			ADDRESS, PUBLICKEY, KEY1 = common.loadToken(common.tokenPath(common.chooseItem("Delegate account(s) found:", *choices), "tok"))
 		else:
 			sys.stdout.write("No token found\n")
+			unlink({})
+
+	if param["<2ndSecret>"]:
+		keys = core.getKeys(param["<2ndSecret>"].encode("ascii"))
+		KEY2 = keys.signingKey
+
+	if ADDRESS:
+		common.BALANCES.register(ADDRESS)
 
 def save(param):
 	if KEY1 and PUBLICKEY and ADDRESS:
@@ -65,6 +73,7 @@ def save(param):
 
 def unlink(param):
 	global ADDRESS, PUBLICKEY, KEY1, KEY2
+	common.BALANCES.pop(ADDRESS, None)
 	ADDRESS, PUBLICKEY, KEY1, KEY2 = None, None, None, None
 
 def status(param):
@@ -72,70 +81,70 @@ def status(param):
 		common.prettyPrint(api.Account.getAccount(ADDRESS, returnKey="account"))
 
 def register(param):
-	if _checkKey1():
-		KEY2 = common.askSecondSignature(ADDRESS)
-		if KEY2 != False:
-			if param["2ndSecret"]:
-				newPublicKey = common.hexlify(core.getKeys(param["<secret>"].encode("ascii")).public)
-				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
-					type=1,
-					recipientId = ADDRESS,
-					asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))
-				)
-			else:
-				username = param["<username>"].encode("ascii").decode()
-				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
-					type=2,
-					asset=ArkyDict(delegate=ArkyDict(username=username))
-				)
-			tx.address = ADDRESS
-			if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
-				common.prettyPrint(api.broadcastSerial(tx), log=True)
-			else:
-				sys.stdout.write("Broadcast canceled\n")
+	global ADDRESS, PUBLICKEY, KEY1, KEY2
+
+	KEY2 = common.checkKeys(KEY1, KEY2, ADDRESS)
+	if KEY2 != False:
+		if param["2ndSecret"]:
+			newPublicKey = common.hexlify(core.getKeys(param["<secret>"].encode("ascii")).public)
+			tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+				type=1,
+				recipientId = ADDRESS,
+				asset=ArkyDict(signature=ArkyDict(publicKey=newPublicKey))
+			)
+		else:
+			username = param["<username>"].encode("ascii").decode()
+			tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+				type=2,
+				asset=ArkyDict(delegate=ArkyDict(username=username))
+			)
+		tx.address = ADDRESS
+		if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+			common.prettyPrint(api.broadcastSerial(tx), log=True)
+		else:
+			sys.stdout.write("Broadcast canceled\n")
 
 def vote(param):
-	if _checkKey1():
+	global ADDRESS, PUBLICKEY, KEY1, KEY2
+
+	KEY2 = common.checkKeys(KEY1, KEY2, ADDRESS)
+	if KEY2 != False:
 		candidates = api.Delegate.getCandidates() if param["--up"] else api.Account.getVotes(ADDRESS, returnKey="delegates")
 		if param["<delegate>"]:
 			delegate = param["<delegate>"].encode("ascii").decode()
 			delegates = [("+" if param["--up"] else "-")+d['publicKey'] for d in candidates if d['username'] == delegate]
 			if len(delegates):
-				KEY2 = common.askSecondSignature(ADDRESS)
-				if KEY2 != False:
-					tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
-						type=3,
-						recipientId = ADDRESS,
-						asset=ArkyDict(votes=delegates)
-					)
-					tx.address = ADDRESS
-					if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
-						common.prettyPrint(api.broadcastSerial(tx), log=True)
-					else:
-						sys.stdout.write("Broadcast canceled\n")
-			else:
-				sys.stdout.write("Nothing to vote\n")
-		elif len(candidates):
-			common.prettyPrint(candidates[0])
-
-# # asset = ArkyDict(multisignature=ArkyDict(min=minimum, lifetime=lifetime, keysgroup=[("+"+k if k[0] not in ["+","-"] else k) for k in keysgroup]))
-# 	if param["<pkeys>"]:
-# 		asset = {}
-
-def send(param):
-	if _checkKey1():
-		KEY2 = common.askSecondSignature(ADDRESS)
-		if KEY2 != False:
-			amount = common.floatAmount(param["<amount>"], ADDRESS)*100000000
-			if amount:
-				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
+				tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2,
+					type=3,
+					recipientId = ADDRESS,
+					asset=ArkyDict(votes=delegates)
+				)
 				tx.address = ADDRESS
 				if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
 					common.prettyPrint(api.broadcastSerial(tx), log=True)
 				else:
 					sys.stdout.write("Broadcast canceled\n")
 			else:
-				sys.stdout.write("No transaction defined\n")
+				sys.stdout.write("Nothing to vote\n")
+		elif len(candidates):
+			common.prettyPrint(candidates[0])
+
+def send(param):
+	global ADDRESS, PUBLICKEY, KEY1, KEY2
+
+	KEY2 = common.checkKeys(KEY1, KEY2, ADDRESS)
+	if KEY2 != False:
+		amount = common.floatAmount(param["<amount>"], ADDRESS)*100000000
+		if amount:
+			tx = common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amount, recipientId=param["<address>"], vendorField=param["<message>"])
+			tx.address = ADDRESS
+			if common.askYesOrNo("Broadcast %s?" % common.reprColdTx(tx)):
+				sys.stdout.write("Sending A%.8f to %s...\n" % (tx["amount"]/100000000, tx["recipientId"]))
+				common.prettyPrint(api.broadcastSerial(tx), log=True)
+			else:
+				sys.stdout.write("Broadcast canceled\n")
+		else:
+			sys.stdout.write("No transaction defined\n")
 
 # --------------
 def _whereami():
@@ -143,20 +152,3 @@ def _whereami():
 		return "account[%s]" % common.shortAddress(ADDRESS)
 	else:
 		return "account"
-
-def _checkKey1():
-	if not KEY1:
-		sys.stdout.write("No account linked\n")
-		return False
-	return True
-
-def _checkKeys():
-	global KEY2
-
-	if not KEY1:
-		sys.stdout.write("No account linked\n")
-	else:
-		KEY2 = common.askSecondSignature(ADDRESS)
-		if KEY2 != False:
-			return True
-	return False
