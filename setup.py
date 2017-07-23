@@ -30,7 +30,7 @@ kw.update(**{
 	"long_description": long_description.read(),
 	"packages": ["arky", "arky.api", "arky.util", "arky.cli"],
 	"scripts": ["arky-cli.py"],
-	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt"],
+	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt", "yawTtk"],
 	"license": "Copyright 2016-2017 Toons, Copyright 2017 ARK, MIT licence",
 	"classifiers": [
 		'Development Status :: 6 - Mature',
