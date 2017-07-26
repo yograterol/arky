@@ -175,3 +175,5 @@ arky/cli/private/_share.py
 arky/cli/private/pshare.py
 arky.blacklist
 arky/ui/concept.odt
+arky/ui/history.json
+arky/ui/history2.json
