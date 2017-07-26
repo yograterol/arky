@@ -28,8 +28,8 @@ kw.update(**{
 	"include_package_data": True,
 	"description": "Pythonic way to work with Ark.io EcoSystem.",
 	"long_description": long_description.read(),
-	"packages": ["arky", "arky.api", "arky.util", "arky.cli"],
-	"scripts": ["arky-cli.py"],
+	"packages": ["arky", "arky.api", "arky.util", "arky.cli", "arky.ui"],
+	"scripts": ["arky-cli.py", "arky-ui.py"],
 	"install_requires": ["requests", "ecdsa", "pytz", "base58", "docopt", "yawTtk"],
 	"license": "Copyright 2016-2017 Toons, Copyright 2017 ARK, MIT licence",
 	"classifiers": [
