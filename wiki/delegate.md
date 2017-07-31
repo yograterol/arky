@@ -40,28 +40,55 @@ ark according to their vote weight.
 
 you can specify ARK amount:
 ```
-hot@dark/delegate[arky]> share 600
+hot@dark/delegate[username]> share 600
 Checking 30-day-true-vote-weight in transaction history...
 ...
 ```
 
 percentage of delegate balance:
 ```
-hot@dark/delegate[arky]> share 60%
+hot@dark/delegate[username]> share 60%
 Checking 30-day-true-vote-weight in transaction history...
 ...
 ```
 
 fiat-currency amount:
 ```
-hot@ark/delegate[arky]> share $600
+hot@ark/delegate[username]> share $600
 $600=A716.633542 (A/$=0.837248) - Validate ? [y-n]> y
 Checking 30-day-true-vote-weight in transaction history...
 ...
 ```
 
-### True-vote-weight
+### --delay / -d :: True-vote-weight
 
+To deter vote hoppers using your pool, a true-vote-weight is computed over a number of day in transaction history.
 
+For each voter, `arky.cli` will integrate balance in ARK of the voting account over time in hours. It is actually the surface defined between balance curve and well known X-axis.
+
+So, a 50K hopper voting on your sharing pool 12 hour before sharing happen will represent: 50,000.0 * 12 = 600,000.0 ARK.hour.
+If you run a true-vote-weight:
+  * over 7 days, it is equivalent to 600,000.0 / (7*24) = 3571 ARK weight vote
+  * over 14 days, it is equivalent to 600,000.0 / (14*24) = 1785 ARK weight vote
+  * over 30 days, it is equivalent to 600,000.0 / (30*24) = 833 ARK weight vote
 
 ### --blacklist / -b
+
+For whatever reason you wish to ban ark account.
+
+You can specify coma-separated ARK addresses:
+```
+hot@dark/delegate[username]> share 600 -b ARKADDRESS001,ARKADDRESS002,ARKADDRESS003
+```
+
+You can specify a file containing new-line-separated addresses:
+
+```
+ARKADDRESS001
+ARKADDRESS002
+ARKADDRESS003
+```
+
+```
+hot@dark/delegate[username]> share 600 -b /path/to/file
+```
