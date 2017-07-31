@@ -128,7 +128,7 @@ def getVoteForce(address, **kw):
 		end = tx["timestamp"]
 
 	if cumulate:
-		sum_ += balance * (end - timestamp_limit)
+		sum_ += balance * (end - timestamp_limit)/3600
 
 	return sum_
 
