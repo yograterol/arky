@@ -387,7 +387,7 @@ requesterPublicKey (str)
 			self.secret = secret
 		# if no key_one attribute is set --> no secret defined, no owner defined
 		elif not hasattr(self, "key_one"):
-			raise NoSecretDefinedError("No secret defined for %r" % self)
+			raise NoSecretDefinedError("No secret defined")
 		# store signature under signature attribute
 		stamp1 = getattr(self, "key_one").signingKey.sign_deterministic(getBytes(self), hashlib.sha256, sigencode=sigencode_der_canonize)
 		object.__setattr__(self, "signature", _hexlify(stamp1))

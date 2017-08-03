@@ -127,6 +127,9 @@ def getVoteForce(address, **kw):
 				break
 		end = tx["timestamp"]
 
+	if cumulate:
+		sum_ += balance * (end - timestamp_limit)/3600
+
 	return sum_
 
 def getExVoters(delegate_pubk, **kw):
