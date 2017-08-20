@@ -109,11 +109,15 @@ def launch():
 
 	# main window
 	root = yawTtk.Tkinter.Tk()
+	if not __PY3__:
+		root.tk.eval("package require Img")
+
 	root.withdraw()
 	root.title(u"\u0466rky wallet")
 
 	Glob.getRootFolder()
-	loadHistory()
+	try: loadHistory()
+	except: pass
 	if cfg.__NET__ not in Glob.history:
 		Glob.history[cfg.__NET__] = {}
 
@@ -136,10 +140,10 @@ def launch():
 			walletmenu.entryconfigure(0, state="normal")
 			walletmenu.entryconfigure(1, state="normal")
 	walletmenu["postcommand"] = check_wm
-	walletmenu.add("cascade", ulabel=u"_Send \u0466", command=lambda m=toplevel:showSendPanel(m))
+	walletmenu.add("cascade", ulabel=u"_Send", command=lambda m=toplevel:showSendPanel(m))
 	walletmenu.add("cascade", ulabel=u"_Vote", command=lambda m=toplevel:showVotePanel(m))
 	walletmenu.add("separator")
-	walletmenu.add("command", image=_exit, compound="left", ulabel="_Close", command=sys.exit)
+	walletmenu.add("command", compound="left", image=_exit, ulabel="_Close", command=sys.exit)
 
 	networkmenu = yawTtk.Menu(menubar, tearoff=False, name="networkmenu")
 	for net in cli.common.findNetworks():
@@ -170,12 +174,11 @@ def launch():
 	networkUse("ark")
 	root.setvar("ui.network", cfg.__NET__)
 
+	toplevel.geometry("800x500+0+0")
 	toplevel.minsize(800, int(800/1.618033989))
 	toplevel.bind("<Escape>", lambda event:hidePanels())
 	toplevel.protocol('WM_DELETE_WINDOW', exit)
 	toplevel.configure(menu=menubar)
-	toplevel.update()
-	toplevel.winfo_geometry()
 	dialog.center(toplevel, True)
 	toplevel.deiconify()
 

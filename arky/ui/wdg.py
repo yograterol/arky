@@ -48,68 +48,6 @@ class DataView(yawTtk.Tree):
 			even = not even
 
 
-class KeyDialog(dialog.BaseDialog):
-
-	passphrase1 = None
-	passphrase2 = None
-	address = None
-	check = True
-
-	def fillMainFrame(self):
-		self.transient(self.master)
-		self.mainframe.columnconfigure(1, weight=1, minsize=300)
-		self.mainframe.rowconfigure(1, weight=1)
-
-		yawTtk.Label(self.mainframe, image=dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
-		yawTtk.Label(self.mainframe, text="Main passphrase").grid(row=0, column=1, sticky="nesw")
-		self.secret = yawTtk.Entry(self.mainframe, show="-").grid(row=1, column=1, sticky="new")
-		self.secret.focus()
-
-		self.secondsecret = yawTtk.Entry(self.mainframe, show="-")
-		if api.Account.getAccount(KeyDialog.address, returnKey="account").get('secondPublicKey', False):
-			yawTtk.Label(self.mainframe, text="Second passphrase").grid(row=2, column=1, sticky="nesw")
-			self.secondsecret.grid(row=3, column=1, sticky="nesw")
-			self.title("Two-secret secured account")
-		else:
-			self.title("Single-secret secured account")
-
-	def fillButton(self):
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.cross16, compound="image",
-		              background=self.background, style="Dialog.TButton", text="Cancel", width=-1,
-		              command=self.destroy).pack(side="right")
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.tick16, compound="left",
-		              background=self.background, style="Dialog.TButton", default="active", text="Sign transaction", width=-1,
-		              command=self.link).pack(side="right", padx=self.border)
-		b = yawTtk.Button(self.buttonframe, image=dialog.stop16, compound="left", text="Show",
-		                  background=self.background, style="Dialog.Toolbutton", padding=(self.border, 0))
-		b.pack(side="left", fill="y")
-		b.bind("<ButtonPress>", lambda e,o=self: [o.secret.configure(show=""), o.secondsecret.configure(show="")])
-		b.bind("<ButtonRelease>", lambda e,o=self: [o.secret.configure(show="-"), o.secondsecret.configure(show="-")])
-
-	def show(self):
-		KeyDialog.passphrase1 = None
-		KeyDialog.passphrase2 = None
-		dialog.BaseDialog.show(self)
-		self.winfo_toplevel().wait_window(self)
-
-	def link(self):
-		self.destroy()
-		if KeyDialog.passphrase1 == None:
-			sys.stdout.write("No passphrase given")
-		elif core.getAddress(core.getKeys(KeyDialog.passphrase1)) == KeyDialog.address:
-			KeyDialog.check = True
-		else:
-			sys.stdout.write("Main passphrase mismatch")
-
-	def destroy(self):
-		KeyDialog.check = False
-		passphrase1 = self.secret.get()
-		passphrase2 = self.secondsecret.get()
-		KeyDialog.passphrase1 = None if passphrase1 == "" else passphrase1
-		KeyDialog.passphrase2 = None if passphrase2 == "" else passphrase2
-		dialog.BaseDialog.destroy(self)
-
-
 class AddressPanel(yawTtk.Frame):
 
 	address = None
@@ -132,12 +70,13 @@ class AddressPanel(yawTtk.Frame):
 		else:
 			AddressPanel.address = None
 
+
 class AmountFrame(yawTtk.Frame):
 
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
-		self.columnconfigure(0, weight=0, minsize=35)
-		self.columnconfigure(1, weight=1)
+		self.columnconfigure(1, weight=0, minsize=35)
+		self.columnconfigure(0, weight=1)
 		self.columnconfigure(2, weight=0, minsize=120)
 
 		self.amount = yawTtk.DoubleVar(self, 0., "%s.amount"%self._w)
@@ -146,8 +85,8 @@ class AmountFrame(yawTtk.Frame):
 		self.satoshi = 0
 
 		yawTtk.Label(self, padding=2, text="amount", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, pady=4, sticky="nesw")
-		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(u"\u0466", "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=0, pady=4, sticky="nesw")
-		yawTtk.Entry(self, textvariable=self.amount, justify="right").grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
+		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(u"\u0466", "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
+		yawTtk.Entry(self, textvariable=self.amount, justify="right").grid(row=1, column=0, pady=4, sticky="nesw")
 		yawTtk.Label(self, textvariable=self.value, relief="solid").grid(row=1, column=2, pady=4, sticky="nesw")
 
 		self.amount.trace("w", self.update)
@@ -324,11 +263,66 @@ class TransactionPanel(yawTtk.Frame):
 		self._stop__update.set()
 		yawTtk.Frame.destroy(self)
 
-# # 
-# class SharePanel(yawTtk.Frame):
-	
-# 	def __init__(self, master=None, cnf={}, **kw):
-# 		AddressPanel.__init__(self, master, cnf={}, **kw)
+
+class KeyDialog(dialog.BaseDialog):
+
+	passphrase1 = None
+	passphrase2 = None
+	check = True
+
+	def fillMainFrame(self):
+		self.transient(self.master)
+		self.mainframe.columnconfigure(1, weight=1, minsize=300)
+		self.mainframe.rowconfigure(1, weight=1)
+
+		yawTtk.Label(self.mainframe, image=dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
+		yawTtk.Label(self.mainframe, text="Main passphrase").grid(row=0, column=1, sticky="nesw")
+		self.secret = yawTtk.Entry(self.mainframe, show="-").grid(row=1, column=1, sticky="new")
+		self.secret.focus()
+
+		self.secondsecret = yawTtk.Entry(self.mainframe, show="-")
+		if api.Account.getAccount(AddressPanel.address, returnKey="account").get('secondPublicKey', False):
+			yawTtk.Label(self.mainframe, text="Second passphrase").grid(row=2, column=1, sticky="nesw")
+			self.secondsecret.grid(row=3, column=1, sticky="nesw")
+			self.title("Two-secret secured account")
+		else:
+			self.title("Single-secret secured account")
+
+	def fillButton(self):
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.cross16, compound="image",
+		              background=self.background, style="Dialog.TButton", text="Cancel", width=-1,
+		              command=self.destroy).pack(side="right")
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.tick16, compound="left",
+		              background=self.background, style="Dialog.TButton", default="active", text="Sign transaction", width=-1,
+		              command=self.link).pack(side="right", padx=self.border)
+		b = yawTtk.Button(self.buttonframe, image=dialog.stop16, compound="left", text="Show",
+		                  background=self.background, style="Dialog.Toolbutton", padding=(self.border, 0))
+		b.pack(side="left", fill="y")
+		b.bind("<ButtonPress>", lambda e,o=self: [o.secret.configure(show=""), o.secondsecret.configure(show="")])
+		b.bind("<ButtonRelease>", lambda e,o=self: [o.secret.configure(show="-"), o.secondsecret.configure(show="-")])
+
+	def show(self):
+		KeyDialog.passphrase1 = None
+		KeyDialog.passphrase2 = None
+		dialog.BaseDialog.show(self)
+		self.winfo_toplevel().wait_window(self)
+
+	def link(self):
+		self.destroy()
+		if KeyDialog.passphrase1 == None:
+			sys.stdout.write("No passphrase given")
+		elif core.getAddress(core.getKeys(KeyDialog.passphrase1)) == AddressPanel.address:
+			KeyDialog.check = True
+		else:
+			sys.stdout.write("Main passphrase mismatch")
+
+	def destroy(self):
+		KeyDialog.check = False
+		passphrase1 = self.secret.get()
+		passphrase2 = self.secondsecret.get()
+		KeyDialog.passphrase1 = None if passphrase1 == "" else passphrase1
+		KeyDialog.passphrase2 = None if passphrase2 == "" else passphrase2
+		dialog.BaseDialog.destroy(self)
 
 
 class LogPanel(yawTtk.Frame):
