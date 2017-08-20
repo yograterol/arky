@@ -15,8 +15,18 @@ class DataView(yawTtk.Tree):
 		yawTtk.Tree.__init__(self, parent, cnf, **kw)
 		self.tag_configure("even", background="lavender")
 		self.tag_configure("odd", background="lightblue")
-		self.__data_headings = []
+		self.configureHeader()
 		self.__sort_meaning = ""
+
+	def configureHeader(self):
+		self.__data_headings = DataView.headers if len(DataView.headers) else \
+		                       list(rows[0].keys()) if len(DataView.rows) else \
+		                       []
+		self['columns'] = " ".join(["{%s}"%h for h in self.__data_headings])
+		for i in range(len(self.__data_headings)):
+			text = self.__data_headings[i]
+			self.heading("#%d"%(i+1), text=text, command=lambda o=self,k=text: o.populate(k,None))
+			self.column("#%d"%(i+1), anchor="center", stretch=1)
 
 	def populate(self, sortkey=None, meaning=None):
 		# clear data
@@ -32,15 +42,6 @@ class DataView(yawTtk.Tree):
 			rows = sorted(DataView.rows, key=lambda e:e.get(sortkey, ""), reverse=True if meaning == "ASC" else False)
 		else:
 			rows = DataView.rows
-		# manage headers
-		if not len(self.__data_headings):
-			if len(DataView.headers): self.__data_headings = DataView.headers
-			else: self.__data_headings = list(rows[0].keys())
-			self['columns'] = " ".join(["{%s}"%h for h in self.__data_headings])
-		for i in range(len(self.__data_headings)):
-			text = self.__data_headings[i]
-			self.heading("#%d"%(i+1), text=text, command=lambda o=self,k=text: o.populate(k,None))
-			self.column("#%d"%(i+1), anchor="center", stretch=1)
 		# populate data
 		even=False
 		for row in rows:
@@ -51,6 +52,8 @@ class DataView(yawTtk.Tree):
 class AddressPanel(yawTtk.Frame):
 
 	address = None
+	status = {}
+	vote = {}
 
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
@@ -59,24 +62,36 @@ class AddressPanel(yawTtk.Frame):
 		yawTtk.Label(self, font=("tahoma", 8, "bold"), text="Wallet address").grid(row=0, column=0, sticky="nesw", padx=4, pady=4)
 		self.combo = yawTtk.Combobox(self, width=45, font=("courrier", "8", "bold"), textvariable=self.wallet).grid(row=0, column=1, sticky="nesw", padx=4, pady=4)
 
+		self.update()
+		@setInterval(10)
+		def _update(obj): obj.update()
+		self.__stop_update = _update(self)
+
 	def update(self, *args, **kw):
 		value = self.wallet.get()
 		if len(value) == 34:
-			status = api.Account.getAccount(value)
-			if status.success:
+			AddressPanel.status = api.Account.getAccount(value)
+			if AddressPanel.status.success:
 				AddressPanel.address = value
+				AddressPanel.vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
 			else:
 				sys.stdout.write("Account does not exists")
 		else:
 			AddressPanel.address = None
+			AddressPanel.status = {}
+			AddressPanel.vote = {}
+
+	def destroy(self):
+		self.__stop_update.set()
+		yawTtk.Frame.destroy(self)
 
 
 class AmountFrame(yawTtk.Frame):
 
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
-		self.columnconfigure(1, weight=0, minsize=35)
 		self.columnconfigure(0, weight=1)
+		self.columnconfigure(1, weight=0, minsize=50)
 		self.columnconfigure(2, weight=0, minsize=120)
 
 		self.amount = yawTtk.DoubleVar(self, 0., "%s.amount"%self._w)
@@ -85,8 +100,8 @@ class AmountFrame(yawTtk.Frame):
 		self.satoshi = 0
 
 		yawTtk.Label(self, padding=2, text="amount", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, pady=4, sticky="nesw")
-		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(u"\u0466", "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
 		yawTtk.Entry(self, textvariable=self.amount, justify="right").grid(row=1, column=0, pady=4, sticky="nesw")
+		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(cfg.__SYMBOL__, "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
 		yawTtk.Label(self, textvariable=self.value, relief="solid").grid(row=1, column=2, pady=4, sticky="nesw")
 
 		self.amount.trace("w", self.update)
@@ -110,7 +125,8 @@ class AmountFrame(yawTtk.Frame):
 			self.satoshi = 100000000.*max(0., value)
 			self.value.set("\u0466 %.8f" % value)
 
-	def get(self): return self.satoshi
+	def get(self):
+		return self.satoshi
 
 
 class SendPanel(yawTtk.Frame):
@@ -129,6 +145,7 @@ class SendPanel(yawTtk.Frame):
 		
 		#
 		self.amount = AmountFrame(self, padding=(4,0,4,4), address=AddressPanel.address).grid(row=5, column=0, columnspan=3, sticky="nesw")
+	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, columnspan=3, sticky="esw")
 		yawTtk.Separator(frame).pack(side="top", fill="x", pady=8)
@@ -170,14 +187,13 @@ class VotePanel(yawTtk.Frame):
 		self.button = yawTtk.Button(frame, text="").pack(side="right")
 
 		self.update()
-		@setInterval(5)
+		@setInterval(2)
 		def _update(obj): obj.update()
-		self._stop__update = _update(self)
+		self.__stop_update = _update(self)
 
 	def update(self):
-		vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
-		if len(vote):
-			self.delegate.set(vote[0]["username"])
+		if len(AddressPanel.vote):
+			self.delegate.set(AddressPanel.vote[0]["username"])
 			self.delegate.state("disabled")
 			self.button["text"] = "Unvote"
 			self.button.state("!disabled")
@@ -202,7 +218,7 @@ class VotePanel(yawTtk.Frame):
 			)
 
 	def destroy(self):
-		self._stop__update.set()
+		self.__stop_update.set()
 		yawTtk.Frame.destroy(self)
 
 
@@ -219,12 +235,10 @@ class TransactionPanel(yawTtk.Frame):
 		yawTtk.Autoscrollbar(self, target=self.tree, orient="horizontal").grid(row=1, column=0, sticky="nesw")
 		yawTtk.Autoscrollbar(self, target=self.tree, orient="vertical").grid(row=0, column=1, sticky="nesw")
 
-		DataView.headers = ["id", "date", "type", "amount", "senderId", "recipientId", "vendorField"]
-
 		self.update()
-		@setInterval(20)
+		@setInterval(30)
 		def _update(obj): obj.update()
-		self._stop__update = _update(self)
+		self.__stop_update = _update(self)
 
 	def openTx(self, event):
 		widget = event.widget
@@ -235,32 +249,49 @@ class TransactionPanel(yawTtk.Frame):
 		if AddressPanel.address != None:
 			data1 = api.Transaction.getTransactionsList(senderId=AddressPanel.address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
 			data2 = api.Transaction.getTransactionsList(recipientId=AddressPanel.address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
-			if len(data1) + len(data2) > self.__last_number:
-				self.__last_number = len(data1) + len(data2)
-				typ = {0:"send", 1:"register 2nd secret", 2:"register delegate", 3:"vote", 4:""}
-				data = []
-				for row in data1:
-					row["amount"] /= 100000000.
-					row["date"] = slots.getRealTime(row.pop("timestamp"))
-					row["type"] = typ[row["type"]]
-					data.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
-				typ[0] = "receive"
-				for row in [d for d in data2 if d["recipientId"] != d["senderId"]]:
-					row["amount"] /= 100000000.
-					row["date"] = slots.getRealTime(row.pop("timestamp"))
-					row["type"] = typ[row["type"]]
-					data.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
 
-				DataView.rows = sorted(data, key=lambda e:e["date"], reverse=True)
-				self.tree.populate()
+			if len(data1):
+				last_timestamp = data1[0]["timestamp"]
+				if len(data2):
+					tmp = data2[0]["timestamp"]
+					last_timestamp = tmp if tmp > last_timestamp else last_timestamp
+			elif len(data2):
+				last_timestamp = data2[0]["timestamp"]
+			else:
+				return
+
+			if self.__last_timestamp < last_timestamp or AddressPanel.address != self.__last_address:
+				typ = {0:"send", 1:"register 2nd secret", 2:"register delegate", 3:"vote", 4:""}
+				for row in [d for d in data1 if d["timestamp"] > self.__last_timestamp]:
+					row["amount"] /= 100000000.
+					row["date"] = slots.getRealTime(row.pop("timestamp"))
+					row["type"] = typ[row["type"]]
+					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
+				typ[0] = "receive"
+				for row in [d for d in data2 if d["recipientId"] != d["senderId"] and d["timestamp"] > self.__last_timestamp]:
+					row["amount"] /= 100000000.
+					row["date"] = slots.getRealTime(row.pop("timestamp"))
+					row["type"] = typ[row["type"]]
+					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
+
+				self.tree.populate("date", None)
+
+				# ring a bell if new tx :o)
+				if AddressPanel.address == self.__last_address:
+					sys.stderr.write("\a")
+					sys.stderr.flush()
+
+				self.__last_address = AddressPanel.address
+				self.__last_timestamp = last_timestamp
+
 		else:
+			self.__last_address = ""
+			self.__last_timestamp = 0
 			self.tree.delete(*self.tree.xchildren())
 			DataView.rows = []
-			self.__last_number = 0
-
 
 	def destroy(self):
-		self._stop__update.set()
+		self.__stop_update.set()
 		yawTtk.Frame.destroy(self)
 
 
