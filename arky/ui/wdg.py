@@ -36,7 +36,7 @@ class DataView(yawTtk.Tree):
 		# check witch meaning use
 		if meaning == None:
 			meaning = "ASC" if self.__sort_meaning == "DESC" else "DESC"
-			self.__sort_meaning = meaning
+		self.__sort_meaning = meaning
 		# sort data if asked
 		if sortkey != None:
 			rows = sorted(DataView.rows, key=lambda e:e.get(sortkey, ""), reverse=True if meaning == "ASC" else False)
@@ -51,9 +51,10 @@ class DataView(yawTtk.Tree):
 
 class AddressPanel(yawTtk.Frame):
 
+	candidates = []
 	address = None
 	status = {}
-	vote = {}
+	vote = []
 
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
@@ -72,6 +73,7 @@ class AddressPanel(yawTtk.Frame):
 		if len(value) == 34:
 			AddressPanel.status = api.Account.getAccount(value)
 			if AddressPanel.status.success:
+				#AddressPanelcandidates = api.Delegate.getCandidates()
 				AddressPanel.address = value
 				AddressPanel.vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
 			else:
@@ -79,7 +81,7 @@ class AddressPanel(yawTtk.Frame):
 		else:
 			AddressPanel.address = None
 			AddressPanel.status = {}
-			AddressPanel.vote = {}
+			AddressPanel.vote = []
 
 	def destroy(self):
 		self.__stop_update.set()
@@ -177,9 +179,8 @@ class VotePanel(yawTtk.Frame):
 		self.username = yawTtk.StringVar(self, "", "vote.username")
 
 		#
-		self.candidates = api.Delegate.getCandidates()
 		yawTtk.Label(self, padding=2, text="delegate", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
-		self.delegate = yawTtk.Combobox(self, values=tuple(d["username"] for d in self.candidates), textvariable="vote.username").grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
+		self.delegate = yawTtk.Combobox(self, values=tuple(d["username"] for d in AddressPanel.candidates), textvariable="vote.username").grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
 	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, sticky="esw")
@@ -274,7 +275,7 @@ class TransactionPanel(yawTtk.Frame):
 					row["type"] = typ[row["type"]]
 					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
 
-				self.tree.populate("date", None)
+				self.tree.populate("date", "ASC")
 
 				# ring a bell if new tx :o)
 				if AddressPanel.address == self.__last_address:
