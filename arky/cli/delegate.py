@@ -132,19 +132,39 @@ def share(param):
 			else: maximum = amount
 
 			if amount > 1:
-				# sys.stdout.write("Checking voters\n")
+				# get contributions of ech voters
 				delay = int(param["--delay"])
 				delegate_pubk = common.hexlify(PUBLICKEY)
 				accounts = api.Delegate.getVoters(delegate_pubk, returnKey="accounts")
-				# hidden = stats.getExVoters(delegate_pubk, days=delay)
 				addresses = [a["address"] for a in accounts] # + hidden
-				# sys.stdout.write("Total voters:%d (%d voted out during payout period)\n" % (len(addresses), len(hidden)))
 				sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
-				contributions = dict([address, stats.getVoteForce(address, days=delay, delegate_pubk=delegate_pubk)] for address in [addr for addr in addresses if addr not in blacklist])
-				k = 1.0/max(1, sum(contributions.values()))
-				contributions = dict((a, round(s*k, 6)) for a,s in contributions.items())
+				contribution0 = dict([address, stats.getVoteForce(address, days=delay, delegate_pubk=delegate_pubk)] for address in [addr for addr in addresses if addr not in blacklist])
+				
+				# apply filters
+				C = sum(contribution0.values())
+				max_C = C*(maximum*1.01)/amount
+				min_C = C*(minimum*1.01)/amount
+				contribution = {}
+				cumul = 0
+				n = len(contribution0)
+				for address,force in contribution0.items():
+					if force > max_C:
+						contribution[address] = max_C
+						cumul += force - max_C
+						n -= 1
+					elif force <= min_C:
+						contribution[address] = 0
+						cumul += force
+						n -= 1
+				bounty = cumul/n
+				for address,force in [(a,f) for a,f in contribution0.items() if a not in contribution]:
+					contribution[address] = force + bounty
+				
+				# apply contribution
+				k = 1.0/max(1, sum(contribution.values()))
+				contribution = dict((a, s*k) for a,s in contribution.items())
 				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
-				pshare.applyContribution(USERNAME, amount, minimum, maximum, param["<message>"], txgen, **contributions)
+				pshare.applyContribution(USERNAME, amount, param["<message>"], txgen, **contribution)
 
 		else:
 			sys.stdout.write("Share feature not available\n")

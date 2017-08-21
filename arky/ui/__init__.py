@@ -17,6 +17,12 @@ _exit=\
 "oSEAfD5fDOD4+PgUsACUQppnZ2frUkoaGxvTTU1N91ZXV4uAwcFBYrFYRNO0x0IIDMN4eeMqLy0tuaWlpQWLm7Ztr5eVlXm8Xu8zv9/fcHR0hGVZ32Ox2O2CRrlqcXl52W9ZlqWqKnV1dQ+CweB0IBB4VVVV1aAo"\
 "Cvl8fqcgDoVC1x0kk0mSySQA4+PjEZ/P9wSoB346jvNpf39/PpPJvANoaWlhbW0NgF/89hAL3mpSPAAAAABJRU5ErkJggg=="\
 
+wdg.DataView.headers = ["id", "date", "type", "amount", "senderId", "recipientId", "vendorField"]
+
+@wdg.setInterval(60)
+def _update_candidates():
+	wdg.AddressPanel.candidates = api.Delegate.getCandidates()
+
 # class containing all global vars and functions
 # ----------------------
 class Glob:
@@ -39,6 +45,15 @@ def checkWalletMenu():
 	if wdg.AddressPanel.address:
 		pass
 
+def appendHistoryValue(key, value):
+	if key not in Glob.history[cfg.__NET__]:
+		Glob.history[cfg.__NET__][key] = [value]
+	elif value not in Glob.history[cfg.__NET__][key]:
+		Glob.history[cfg.__NET__][key].append(value)
+
+def getHistoryList(key):
+	return Glob.history.get(cfg.__NET__, {}).get(key, [])
+
 def dropHistory():
 	out = io.open(os.path.join(Glob.rootfolder, "history.json"), "w" if __PY3__ else "wb")
 	json.dump(Glob.history, out, indent=2)
@@ -49,7 +64,7 @@ def loadHistory():
 	Glob.history = json.load(in_)
 	in_.close()
 
-def signTransaction(widget):
+def signTransaction(widget, destroy=True):
 	wdg.KeyDialog.address = wdg.AddressPanel.address
 	wdg.KeyDialog(widget.winfo_toplevel(), border=8).show()
 	if wdg.KeyDialog.check:
@@ -58,12 +73,10 @@ def signTransaction(widget):
 		tx.sign(wdg.KeyDialog.passphrase1, wdg.KeyDialog.passphrase2)
 		answer = api.broadcast(tx)
 		cli.common.prettyPrint(answer, log=True)
-		widget.destroy()
+		if destroy:
+			widget.destroy()
 		if answer.success:
-			if "sendpanel.recipientId" not in Glob.history[cfg.__NET__]:
-				Glob.history[cfg.__NET__]["sendpanel.recipientId"] = [tx.recipientId]
-			elif tx.recipientId not in Glob.history[cfg.__NET__]["sendpanel.recipientId"]:
-				Glob.history[cfg.__NET__]["sendpanel.recipientId"].append(tx.recipientId)
+			appendHistoryValue("sendpanel.recipientId", tx.recipientId)
 
 def hidePanels():
 	try: Glob.sendpanel.destroy()
@@ -80,25 +93,24 @@ def showSendPanel(master):
 def showVotePanel(master):
 	hidePanels()
 	Glob.votepannel = wdg.VotePanel(master, relief="solid", padding=4).place(anchor="center", relx=0.5, rely=1-1/1.618033989)
-	Glob.votepannel.button["command"] = lambda w=Glob.votepannel: signTransaction(w)
+	Glob.votepannel.button["command"] = lambda w=Glob.votepannel: signTransaction(w, destroy=False)
 
 def loadTransaction(*args, **kwargs):
 	Glob.addresspanel.update()
 	Glob.transactionpanel.update()
 	if wdg.AddressPanel.address != None:
-		if "addresspanel.wallet" not in Glob.history[cfg.__NET__]:
-			Glob.history[cfg.__NET__]["addresspanel.wallet"] = [wdg.AddressPanel.address]
-		elif wdg.AddressPanel.address not in Glob.history[cfg.__NET__]["addresspanel.wallet"]:
-			Glob.history[cfg.__NET__]["addresspanel.wallet"].append(wdg.AddressPanel.address)
-		Glob.addresspanel.combo["values"] = tuple(Glob.history.get(cfg.__NET__, {}).get("addresspanel.wallet", []))
+		appendHistoryValue("addresspanel.wallet", wdg.AddressPanel.address)
+		Glob.addresspanel.combo["values"] = tuple(getHistoryList("addresspanel.wallet"))
 
 def networkUse(network):
-	api.use(network)
-	Glob.addresspanel.wallet.set("")
-	Glob.addresspanel.combo["values"] = tuple(Glob.history.get(cfg.__NET__, {}).get("addresspanel.wallet", []))
 	hidePanels()
+	api.use(network)
+	wdg.AddressPanel.candidates = api.Delegate.getCandidates()
 	if cfg.__NET__ not in Glob.history:
 		Glob.history[cfg.__NET__] = {}
+	Glob.addresspanel.wallet.set("")
+	Glob.addresspanel.combo["values"] = tuple(getHistoryList("addresspanel.wallet"))
+
 
 def exit():
 	dropHistory()
@@ -109,18 +121,22 @@ def launch():
 
 	# main window
 	root = yawTtk.Tkinter.Tk()
+	if not __PY3__:
+		root.tk.eval("package require Img")
+
 	root.withdraw()
 	root.title(u"\u0466rky wallet")
 
 	Glob.getRootFolder()
-	loadHistory()
+	try: loadHistory()
+	except: pass
 	if cfg.__NET__ not in Glob.history:
 		Glob.history[cfg.__NET__] = {}
 
 	style = yawTtk.Style()
+	style.layout("Treeview", "Treeview.treearea -sticky nswe")
 
 	toplevel = yawTtk.Toplevel(root)
-	# toplevel.iconbitmap('ark.ico')
 	toplevel.withdraw()
 	toplevel["border"] = 4
 
@@ -136,10 +152,10 @@ def launch():
 			walletmenu.entryconfigure(0, state="normal")
 			walletmenu.entryconfigure(1, state="normal")
 	walletmenu["postcommand"] = check_wm
-	walletmenu.add("cascade", ulabel=u"_Send \u0466", command=lambda m=toplevel:showSendPanel(m))
+	walletmenu.add("cascade", ulabel=u"_Send", command=lambda m=toplevel:showSendPanel(m))
 	walletmenu.add("cascade", ulabel=u"_Vote", command=lambda m=toplevel:showVotePanel(m))
 	walletmenu.add("separator")
-	walletmenu.add("command", image=_exit, compound="left", ulabel="_Close", command=sys.exit)
+	walletmenu.add("command", compound="left", image=_exit, ulabel="_Close", command=sys.exit)
 
 	networkmenu = yawTtk.Menu(menubar, tearoff=False, name="networkmenu")
 	for net in cli.common.findNetworks():
@@ -150,7 +166,7 @@ def launch():
 
 	Glob.addresspanel = wdg.AddressPanel(toplevel).grid(row=0, column=0, sticky="nesw")
 	Glob.addresspanel.wallet.trace("w", loadTransaction)
-	Glob.transactionpanel = wdg.TransactionPanel(toplevel, padding=4, width=0).grid(row=1, column=0, sticky="nesw")
+	Glob.transactionpanel = wdg.TransactionPanel(toplevel, padding=1, relief="solid", width=0).grid(row=1, column=0, padx=4, pady=4, sticky="nesw")
 	sys.stdout = wdg.LogPanel(
 		toplevel,
 		relief="flat", 
@@ -170,13 +186,14 @@ def launch():
 	networkUse("ark")
 	root.setvar("ui.network", cfg.__NET__)
 
+	if "win" in sys.platform: toplevel.iconbitmap('ark.ico')
+	toplevel.geometry("800x500+0+0")
 	toplevel.minsize(800, int(800/1.618033989))
 	toplevel.bind("<Escape>", lambda event:hidePanels())
 	toplevel.protocol('WM_DELETE_WINDOW', exit)
 	toplevel.configure(menu=menubar)
-	toplevel.update()
-	toplevel.winfo_geometry()
 	dialog.center(toplevel, True)
 	toplevel.deiconify()
 
+	__stop_update_candidates = _update_candidates()
 	root.mainloop()

@@ -15,8 +15,18 @@ class DataView(yawTtk.Tree):
 		yawTtk.Tree.__init__(self, parent, cnf, **kw)
 		self.tag_configure("even", background="lavender")
 		self.tag_configure("odd", background="lightblue")
-		self.__data_headings = []
+		self.configureHeader()
 		self.__sort_meaning = ""
+
+	def configureHeader(self):
+		self.__data_headings = DataView.headers if len(DataView.headers) else \
+		                       list(rows[0].keys()) if len(DataView.rows) else \
+		                       []
+		self['columns'] = " ".join(["{%s}"%h for h in self.__data_headings])
+		for i in range(len(self.__data_headings)):
+			text = self.__data_headings[i]
+			self.heading("#%d"%(i+1), text=text, command=lambda o=self,k=text: o.populate(k,None))
+			self.column("#%d"%(i+1), anchor="center", stretch=1)
 
 	def populate(self, sortkey=None, meaning=None):
 		# clear data
@@ -26,21 +36,12 @@ class DataView(yawTtk.Tree):
 		# check witch meaning use
 		if meaning == None:
 			meaning = "ASC" if self.__sort_meaning == "DESC" else "DESC"
-			self.__sort_meaning = meaning
+		self.__sort_meaning = meaning
 		# sort data if asked
 		if sortkey != None:
 			rows = sorted(DataView.rows, key=lambda e:e.get(sortkey, ""), reverse=True if meaning == "ASC" else False)
 		else:
 			rows = DataView.rows
-		# manage headers
-		if not len(self.__data_headings):
-			if len(DataView.headers): self.__data_headings = DataView.headers
-			else: self.__data_headings = list(rows[0].keys())
-			self['columns'] = " ".join(["{%s}"%h for h in self.__data_headings])
-		for i in range(len(self.__data_headings)):
-			text = self.__data_headings[i]
-			self.heading("#%d"%(i+1), text=text, command=lambda o=self,k=text: o.populate(k,None))
-			self.column("#%d"%(i+1), anchor="center", stretch=1)
 		# populate data
 		even=False
 		for row in rows:
@@ -48,96 +49,88 @@ class DataView(yawTtk.Tree):
 			even = not even
 
 
-class KeyDialog(dialog.BaseDialog):
-
-	passphrase1 = None
-	passphrase2 = None
-	address = None
-	check = True
-
-	def fillMainFrame(self):
-		self.transient(self.master)
-		self.mainframe.columnconfigure(1, weight=1, minsize=300)
-		self.mainframe.rowconfigure(1, weight=1)
-
-		yawTtk.Label(self.mainframe, image=dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
-		yawTtk.Label(self.mainframe, text="Main passphrase").grid(row=0, column=1, sticky="nesw")
-		self.secret = yawTtk.Entry(self.mainframe, show="-").grid(row=1, column=1, sticky="new")
-		self.secret.focus()
-
-		self.secondsecret = yawTtk.Entry(self.mainframe, show="-")
-		if api.Account.getAccount(KeyDialog.address, returnKey="account").get('secondPublicKey', False):
-			yawTtk.Label(self.mainframe, text="Second passphrase").grid(row=2, column=1, sticky="nesw")
-			self.secondsecret.grid(row=3, column=1, sticky="nesw")
-			self.title("Two-secret secured account")
-		else:
-			self.title("Single-secret secured account")
-
-	def fillButton(self):
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.cross16, compound="image",
-		              background=self.background, style="Dialog.TButton", text="Cancel", width=-1,
-		              command=self.destroy).pack(side="right")
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.tick16, compound="left",
-		              background=self.background, style="Dialog.TButton", default="active", text="Sign transaction", width=-1,
-		              command=self.link).pack(side="right", padx=self.border)
-		b = yawTtk.Button(self.buttonframe, image=dialog.stop16, compound="left", text="Show",
-		                  background=self.background, style="Dialog.Toolbutton", padding=(self.border, 0))
-		b.pack(side="left", fill="y")
-		b.bind("<ButtonPress>", lambda e,o=self: [o.secret.configure(show=""), o.secondsecret.configure(show="")])
-		b.bind("<ButtonRelease>", lambda e,o=self: [o.secret.configure(show="-"), o.secondsecret.configure(show="-")])
-
-	def show(self):
-		KeyDialog.passphrase1 = None
-		KeyDialog.passphrase2 = None
-		dialog.BaseDialog.show(self)
-		self.winfo_toplevel().wait_window(self)
-
-	def link(self):
-		self.destroy()
-		if KeyDialog.passphrase1 == None:
-			sys.stdout.write("No passphrase given")
-		elif core.getAddress(core.getKeys(KeyDialog.passphrase1)) == KeyDialog.address:
-			KeyDialog.check = True
-		else:
-			sys.stdout.write("Main passphrase mismatch")
-
-	def destroy(self):
-		KeyDialog.check = False
-		passphrase1 = self.secret.get()
-		passphrase2 = self.secondsecret.get()
-		KeyDialog.passphrase1 = None if passphrase1 == "" else passphrase1
-		KeyDialog.passphrase2 = None if passphrase2 == "" else passphrase2
-		dialog.BaseDialog.destroy(self)
-
-
 class AddressPanel(yawTtk.Frame):
 
+	candidates = []
 	address = None
+	status = {}
+	vote = []
 
 	def __init__(self, master=None, cnf={}, **kw):
+
+		self._bank=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgk3LIBEwwAAASxJREFUOMutkjtOA0EQRF+Vd8ESRoQQIFJO"\
+"wwGQA45BSAwS5+ASXIIEB0RkSBBhsEE2PQT0ovFHBMBIo+7tramZri5Ys2zJlqtv29JabAXC/sJElALs27qxNQIOsvaN67D1jW3mx7YebJWl/WjrJDFtnlkgObc1TvBsDUFXm9i66NqUrT4wBWZAL9sKQLkBSu7u"\
+"3wfQRhQ1QJOgttKmZKwJIgm8oB0wAbaBe2AO3AJbwLAiHEaUFrhOoldgt54Uti6zxzNbTdbmtp4zH9g6SszVyhiBzYwb2WPXgvOmOdCvMCsEv1r/SjCtYlOrH1Ein/2S9TeWfL6XBnm39WRrJ8XsTHSa9r1LYYut"\
+"Q1s9JUmpzEPm9QujErXDKKJItsbL5sin6wdjkVMZ/FVDPgFDQFnymyipTAAAAABJRU5ErkJggg=="
+
+		self._shield=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgYa7scEeQAAAPxJREFUOMuV0j1KBEEQhuFnmlnN/MHARBET"\
+"U6MNxRN4AwND8Qbew0jEC2ikCF7BGxhrKqIG7vo3Y1ILvcv2jn5QdHdR9XZVdVfGlbCFPaxhET284BFXuEdjhq7xjDtcYogPvONWh/poJ3yDuLEN65tS9jreIuAA1QxAi1dsItURvBS9VmFtR6ULkfOQwlHhK/Zd"\
+"ySM1o/LhE3UhsC1AB/kMVmfc3BZsBSnvuQSoCtAKVcoSfwqQuQySsJyDUna4wHfH4Grs42baX9go9DqqoM7K3y4N/SRrJQfMB+QJ513vexqJTTaTo9if/fGP2M0Aw7Ad/1Av1mMcTvjG9AuKU0sA0hz6OAAAAABJ"\
+"RU5ErkJggg=="
+
+		self._cloud=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAhwTJzZGBgAAAZxJREFUOMvFUz1Lm1EUfp5z33yQ2JhqJQ2C"\
+"2imQpWMHhxQShQQydXBw6OqigoMurp06tP+ii+DgkKEIUigOKejSqeigIEhtiZBi4k3ucfC+8hICbejggQOHwznPx7lc4D+DlcprAEAymUSj8RmqiiAIsLW1hsPDbyOBGQCM1PJPCmq1RdNut6XZPJrtdjurqiiQ"\
+"PMpkUu9brfbv6HCxWEjMzc30bm9tSKTil2c6nc4PVawAqKjqxvX1n18isklSSaqINC4vfybK5ZJa+wAgBACSXQCxiAUA6HsrfW+HAG6CIFiw1n6tVhdi1lpFOp3OexYXsvk8873vkV7Pqzk4Pv7C+flXAfL5508i"\
+"AI6kxuOJQjY7/tQYs+0VnpC0UYLJyYlMvV6NYWpqIjtEwXnoQ0TWB5SFsxe53LMxiMinyLIjqcaY5RAglUpNkzwdVOBzXwC8jByPAOCcKxtj3pI86/VsDsALf9DBKEFE3pHsD0H/a4rIRy4tvTE7O7vrzmkdgJKk"\
+"qhKA8zXu+xBVaDgDYO/q6uQDBt5+5L+ER487awatf6VW7KoAAAAASUVORK5CYII="
+
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
 
 		self.wallet = yawTtk.StringVar(self, "", "%s.wallet"%self._w)
+		self.balance = yawTtk.StringVar(self, "", "%s.balance"%self._w)
+
 		yawTtk.Label(self, font=("tahoma", 8, "bold"), text="Wallet address").grid(row=0, column=0, sticky="nesw", padx=4, pady=4)
 		self.combo = yawTtk.Combobox(self, width=45, font=("courrier", "8", "bold"), textvariable=self.wallet).grid(row=0, column=1, sticky="nesw", padx=4, pady=4)
+		yawTtk.Entry(self, font=("courrier", "8", "bold"), justify="right", textvariable=self.balance).grid(row=0, column=2, sticky="nesw", pady=4).state("disabled")
+		self.label = yawTtk.Label(self, compound="image", image=self._cloud).grid(row=0, column=3, sticky="nesw", padx=4, pady=4)
+
+		self.update()
+		@setInterval(10)
+		def _update(obj): obj.update()
+		self.__stop_update = _update(self)
 
 	def update(self, *args, **kw):
 		value = self.wallet.get()
 		if len(value) == 34:
-			status = api.Account.getAccount(value)
-			if status.success:
+			AddressPanel.status = api.Account.getAccount(value)
+			if AddressPanel.status.success:
 				AddressPanel.address = value
+				AddressPanel.vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
+				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, float(AddressPanel.status["account"]["balance"])/100000000.0))
+				search = [c for c in AddressPanel.candidates if AddressPanel.status["account"]["publicKey"] == c["publicKey"]]
+				if len(search):
+					self.label["image"] = self._shield 
+					self.label["background"] = "lightgreen" if search[0]["rate"] <= 51 else "red"
+				else:
+					self.label["image"] = self._bank
+					self.label["background"] = "SystemButtonFace"
 			else:
 				sys.stdout.write("Account does not exists")
+				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
+				self.label["image"] = self._cloud
+				self.label["background"] = "SystemButtonFace"
 		else:
+			self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
 			AddressPanel.address = None
+			AddressPanel.status = {}
+			AddressPanel.vote = []
+			self.label["image"] = self._cloud
+			self.label["background"] = "SystemButtonFace"
+
+	def destroy(self):
+		self.__stop_update.set()
+		yawTtk.Frame.destroy(self)
+
 
 class AmountFrame(yawTtk.Frame):
 
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
-		self.columnconfigure(0, weight=0, minsize=35)
-		self.columnconfigure(1, weight=1)
+		self.columnconfigure(0, weight=1)
+		self.columnconfigure(1, weight=0, minsize=50)
 		self.columnconfigure(2, weight=0, minsize=120)
 
 		self.amount = yawTtk.DoubleVar(self, 0., "%s.amount"%self._w)
@@ -146,8 +139,8 @@ class AmountFrame(yawTtk.Frame):
 		self.satoshi = 0
 
 		yawTtk.Label(self, padding=2, text="amount", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, pady=4, sticky="nesw")
-		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(u"\u0466", "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=0, pady=4, sticky="nesw")
-		yawTtk.Entry(self, textvariable=self.amount, justify="right").grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
+		yawTtk.Entry(self, textvariable=self.amount, justify="right").grid(row=1, column=0, pady=4, sticky="nesw")
+		yawTtk.Combobox(self, textvariable=self.what, state="readonly", values=(cfg.__SYMBOL__, "$", "€", "£", "¥", "%"), width=-1).grid(row=1, column=1, padx=4, pady=4, sticky="nesw")
 		yawTtk.Label(self, textvariable=self.value, relief="solid").grid(row=1, column=2, pady=4, sticky="nesw")
 
 		self.amount.trace("w", self.update)
@@ -171,7 +164,8 @@ class AmountFrame(yawTtk.Frame):
 			self.satoshi = 100000000.*max(0., value)
 			self.value.set("\u0466 %.8f" % value)
 
-	def get(self): return self.satoshi
+	def get(self):
+		return self.satoshi
 
 
 class SendPanel(yawTtk.Frame):
@@ -190,6 +184,7 @@ class SendPanel(yawTtk.Frame):
 		
 		#
 		self.amount = AmountFrame(self, padding=(4,0,4,4), address=AddressPanel.address).grid(row=5, column=0, columnspan=3, sticky="nesw")
+	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, columnspan=3, sticky="esw")
 		yawTtk.Separator(frame).pack(side="top", fill="x", pady=8)
@@ -221,9 +216,8 @@ class VotePanel(yawTtk.Frame):
 		self.username = yawTtk.StringVar(self, "", "vote.username")
 
 		#
-		self.candidates = api.Delegate.getCandidates()
 		yawTtk.Label(self, padding=2, text="delegate", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
-		self.delegate = yawTtk.Combobox(self, values=tuple(d["username"] for d in self.candidates), textvariable="vote.username").grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
+		self.delegate = yawTtk.Combobox(self, values=tuple(d["username"] for d in AddressPanel.candidates), textvariable="vote.username").grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
 	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, sticky="esw")
@@ -231,14 +225,13 @@ class VotePanel(yawTtk.Frame):
 		self.button = yawTtk.Button(frame, text="").pack(side="right")
 
 		self.update()
-		@setInterval(5)
+		@setInterval(2)
 		def _update(obj): obj.update()
-		self._stop__update = _update(self)
+		self.__stop_update = _update(self)
 
 	def update(self):
-		vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
-		if len(vote):
-			self.delegate.set(vote[0]["username"])
+		if len(AddressPanel.vote):
+			self.delegate.set(AddressPanel.vote[0]["username"])
 			self.delegate.state("disabled")
 			self.button["text"] = "Unvote"
 			self.button.state("!disabled")
@@ -253,17 +246,17 @@ class VotePanel(yawTtk.Frame):
 			return core.Transaction(
 				type=3,
 				recipientId = AddressPanel.address,
-				asset=ArkyDict(votes=["-"+d["publicKey"] for d in widget.candidates if d["username"] == username])
+				asset=ArkyDict(votes=["-"+d["publicKey"] for d in AddressPanel.candidates if d["username"] == username])
 			)
 		else:
 			return core.Transaction(
 				type=3,
 				recipientId = AddressPanel.address,
-				asset=ArkyDict(votes=["+"+d["publicKey"] for d in widget.candidates if d["username"] == username])
+				asset=ArkyDict(votes=["+"+d["publicKey"] for d in AddressPanel.candidates if d["username"] == username])
 			)
 
 	def destroy(self):
-		self._stop__update.set()
+		self.__stop_update.set()
 		yawTtk.Frame.destroy(self)
 
 
@@ -280,12 +273,10 @@ class TransactionPanel(yawTtk.Frame):
 		yawTtk.Autoscrollbar(self, target=self.tree, orient="horizontal").grid(row=1, column=0, sticky="nesw")
 		yawTtk.Autoscrollbar(self, target=self.tree, orient="vertical").grid(row=0, column=1, sticky="nesw")
 
-		DataView.headers = ["id", "date", "type", "amount", "senderId", "recipientId", "vendorField"]
-
 		self.update()
-		@setInterval(20)
+		@setInterval(30)
 		def _update(obj): obj.update()
-		self._stop__update = _update(self)
+		self.__stop_update = _update(self)
 
 	def openTx(self, event):
 		widget = event.widget
@@ -296,39 +287,115 @@ class TransactionPanel(yawTtk.Frame):
 		if AddressPanel.address != None:
 			data1 = api.Transaction.getTransactionsList(senderId=AddressPanel.address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
 			data2 = api.Transaction.getTransactionsList(recipientId=AddressPanel.address, returnKey="transactions", limit=50, orderBy="timestamp:desc")
-			if len(data1) + len(data2) > self.__last_number:
-				self.__last_number = len(data1) + len(data2)
-				typ = {0:"send", 1:"register 2nd secret", 2:"register delegate", 3:"vote", 4:""}
-				data = []
-				for row in data1:
-					row["amount"] /= 100000000.
-					row["date"] = slots.getRealTime(row.pop("timestamp"))
-					row["type"] = typ[row["type"]]
-					data.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
-				typ[0] = "receive"
-				for row in [d for d in data2 if d["recipientId"] != d["senderId"]]:
-					row["amount"] /= 100000000.
-					row["date"] = slots.getRealTime(row.pop("timestamp"))
-					row["type"] = typ[row["type"]]
-					data.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
 
-				DataView.rows = sorted(data, key=lambda e:e["date"], reverse=True)
-				self.tree.populate()
+			if len(data1):
+				last_timestamp = data1[0]["timestamp"]
+				if len(data2):
+					tmp = data2[0]["timestamp"]
+					last_timestamp = tmp if tmp > last_timestamp else last_timestamp
+			elif len(data2):
+				last_timestamp = data2[0]["timestamp"]
+			else:
+				return
+
+			if self.__last_timestamp < last_timestamp or AddressPanel.address != self.__last_address:
+				
+				# ring a bell if new tx :o)
+				if AddressPanel.address == self.__last_address:
+					sys.stderr.write("\a")
+					sys.stderr.flush()
+				else:
+					DataView.rows = []
+					self.__last_timestamp = 0
+
+				typ = {0:"send", 1:"register 2nd secret", 2:"register delegate", 3:"vote", 4:""}
+				for row in [d for d in data1 if d["timestamp"] > self.__last_timestamp]:
+					row["amount"] /= 100000000.
+					row["date"] = slots.getRealTime(row.pop("timestamp"))
+					row["type"] = typ[row["type"]]
+					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
+				typ[0] = "receive"
+				for row in [d for d in data2 if d["recipientId"] != d["senderId"] and d["timestamp"] > self.__last_timestamp]:
+					row["amount"] /= 100000000.
+					row["date"] = slots.getRealTime(row.pop("timestamp"))
+					row["type"] = typ[row["type"]]
+					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
+
+				self.tree.populate("date", "ASC")
+
+				self.__last_address = AddressPanel.address
+				self.__last_timestamp = last_timestamp
+
 		else:
+			self.__last_address = ""
+			self.__last_timestamp = 0
 			self.tree.delete(*self.tree.xchildren())
 			DataView.rows = []
-			self.__last_number = 0
-
 
 	def destroy(self):
-		self._stop__update.set()
+		self.__stop_update.set()
 		yawTtk.Frame.destroy(self)
 
-# # 
-# class SharePanel(yawTtk.Frame):
-	
-# 	def __init__(self, master=None, cnf={}, **kw):
-# 		AddressPanel.__init__(self, master, cnf={}, **kw)
+
+class KeyDialog(dialog.BaseDialog):
+
+	passphrase1 = None
+	passphrase2 = None
+	check = True
+
+	def fillMainFrame(self):
+		self.transient(self.master)
+		self.mainframe.columnconfigure(1, weight=1, minsize=300)
+		self.mainframe.rowconfigure(1, weight=1)
+
+		yawTtk.Label(self.mainframe, image=dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
+		yawTtk.Label(self.mainframe, text="Main passphrase").grid(row=0, column=1, sticky="nesw")
+		self.secret = yawTtk.Entry(self.mainframe, show="-").grid(row=1, column=1, sticky="new")
+		self.secret.focus()
+
+		self.secondsecret = yawTtk.Entry(self.mainframe, show="-")
+		if api.Account.getAccount(AddressPanel.address, returnKey="account").get('secondPublicKey', False):
+			yawTtk.Label(self.mainframe, text="Second passphrase").grid(row=2, column=1, sticky="nesw")
+			self.secondsecret.grid(row=3, column=1, sticky="nesw")
+			self.title("Two-secret secured account")
+		else:
+			self.title("Single-secret secured account")
+
+	def fillButton(self):
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.cross16, compound="image",
+		              background=self.background, style="Dialog.TButton", text="Cancel", width=-1,
+		              command=self.destroy).pack(side="right")
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.tick16, compound="left",
+		              background=self.background, style="Dialog.TButton", default="active", text="Sign transaction", width=-1,
+		              command=self.link).pack(side="right", padx=self.border)
+		b = yawTtk.Button(self.buttonframe, image=dialog.stop16, compound="left", text="Show",
+		                  background=self.background, style="Dialog.Toolbutton", padding=(self.border, 0))
+		b.pack(side="left", fill="y")
+		b.bind("<ButtonPress>", lambda e,o=self: [o.secret.configure(show=""), o.secondsecret.configure(show="")])
+		b.bind("<ButtonRelease>", lambda e,o=self: [o.secret.configure(show="-"), o.secondsecret.configure(show="-")])
+
+	def show(self):
+		KeyDialog.passphrase1 = None
+		KeyDialog.passphrase2 = None
+		dialog.BaseDialog.show(self)
+		self.winfo_toplevel().wait_window(self)
+
+	def link(self):
+		self.destroy()
+		if KeyDialog.passphrase1 == None:
+			sys.stdout.write("No passphrase given")
+		elif core.getAddress(core.getKeys(KeyDialog.passphrase1)) == AddressPanel.address:
+			KeyDialog.check = True
+		else:
+			sys.stdout.write("Main passphrase mismatch")
+
+	def destroy(self):
+		KeyDialog.check = False
+		passphrase1 = self.secret.get()
+		passphrase2 = self.secondsecret.get()
+		KeyDialog.passphrase1 = None if passphrase1 == "" else passphrase1
+		KeyDialog.passphrase2 = None if passphrase2 == "" else passphrase2
+		dialog.BaseDialog.destroy(self)
 
 
 class LogPanel(yawTtk.Frame):

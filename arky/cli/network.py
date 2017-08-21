@@ -8,8 +8,9 @@ Usage: network use [<name> -b <number> -s <seed> -l <ms>]
        network address <secret>
        network wif <secret>
        network delegates
-       network ping
+       network staking
        network update
+       network ping
 
 Options:
 -b <number> --broadcast <number> peer number to use for broadcast       [default: 10]
@@ -22,8 +23,9 @@ Subcommands:
     publickey : returns public key from secret.
     address   : returns address from secret.
     delegates : show delegate list.
-    ping      : print selected peer latency.
+    staking   : show coin-supply ratio used on delegate voting.
     update    : update balance of all linked account.
+    ping      : print selected peer latency.
 '''
 
 from .. import cfg, api, core
@@ -79,10 +81,14 @@ def wif(param):
 def delegates(param):
 	delegates = api.Delegate.getDelegates(limit=51, returnKey='delegates')
 	maxlen = max([len(d["username"]) for d in delegates])
+	i = 1
 	for name, vote in sorted([(d["username"],float(d["vote"])/100000000) for d in delegates], key=lambda e:e[-1], reverse=True):
-		sys.stdout.write("    %s: %.3f\n" % (name.ljust(maxlen), vote))
+		sys.stdout.write("    #%02d - %s: %.3f\n" % (i, name.ljust(maxlen), vote))
+		i += 1
 
 def update(param):
 	common.BALANCES.reset()
 	common.prettyPrint(common.BALANCES)
 	
+def staking(param):
+	sys.stdout.write("    %.2f%% of coin supply used to vote for delegates\n" % sum(d["approval"] for d in api.Delegate.getCandidates()))
