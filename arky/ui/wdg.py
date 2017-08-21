@@ -57,11 +57,35 @@ class AddressPanel(yawTtk.Frame):
 	vote = []
 
 	def __init__(self, master=None, cnf={}, **kw):
+
+		self._bank=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgk3LIBEwwAAASxJREFUOMutkjtOA0EQRF+Vd8ESRoQQIFJO"\
+"wwGQA45BSAwS5+ASXIIEB0RkSBBhsEE2PQT0ovFHBMBIo+7tramZri5Ys2zJlqtv29JabAXC/sJElALs27qxNQIOsvaN67D1jW3mx7YebJWl/WjrJDFtnlkgObc1TvBsDUFXm9i66NqUrT4wBWZAL9sKQLkBSu7u"\
+"3wfQRhQ1QJOgttKmZKwJIgm8oB0wAbaBe2AO3AJbwLAiHEaUFrhOoldgt54Uti6zxzNbTdbmtp4zH9g6SszVyhiBzYwb2WPXgvOmOdCvMCsEv1r/SjCtYlOrH1Ein/2S9TeWfL6XBnm39WRrJ8XsTHSa9r1LYYut"\
+"Q1s9JUmpzEPm9QujErXDKKJItsbL5sin6wdjkVMZ/FVDPgFDQFnymyipTAAAAABJRU5ErkJggg=="
+
+		self._shield=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgYa7scEeQAAAPxJREFUOMuV0j1KBEEQhuFnmlnN/MHARBET"\
+"U6MNxRN4AwND8Qbew0jEC2ikCF7BGxhrKqIG7vo3Y1ILvcv2jn5QdHdR9XZVdVfGlbCFPaxhET284BFXuEdjhq7xjDtcYogPvONWh/poJ3yDuLEN65tS9jreIuAA1QxAi1dsItURvBS9VmFtR6ULkfOQwlHhK/Zd"\
+"ySM1o/LhE3UhsC1AB/kMVmfc3BZsBSnvuQSoCtAKVcoSfwqQuQySsJyDUna4wHfH4Grs42baX9go9DqqoM7K3y4N/SRrJQfMB+QJ513vexqJTTaTo9if/fGP2M0Aw7Ad/1Av1mMcTvjG9AuKU0sA0hz6OAAAAABJ"\
+"RU5ErkJggg=="
+
+		self._cloud=\
+"iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAhwTJzZGBgAAAZxJREFUOMvFUz1Lm1EUfp5z33yQ2JhqJQ2C"\
+"2imQpWMHhxQShQQydXBw6OqigoMurp06tP+ii+DgkKEIUigOKejSqeigIEhtiZBi4k3ucfC+8hICbejggQOHwznPx7lc4D+DlcprAEAymUSj8RmqiiAIsLW1hsPDbyOBGQCM1PJPCmq1RdNut6XZPJrtdjurqiiQ"\
+"PMpkUu9brfbv6HCxWEjMzc30bm9tSKTil2c6nc4PVawAqKjqxvX1n18isklSSaqINC4vfybK5ZJa+wAgBACSXQCxiAUA6HsrfW+HAG6CIFiw1n6tVhdi1lpFOp3OexYXsvk8873vkV7Pqzk4Pv7C+flXAfL5508i"\
+"AI6kxuOJQjY7/tQYs+0VnpC0UYLJyYlMvV6NYWpqIjtEwXnoQ0TWB5SFsxe53LMxiMinyLIjqcaY5RAglUpNkzwdVOBzXwC8jByPAOCcKxtj3pI86/VsDsALf9DBKEFE3pHsD0H/a4rIRy4tvTE7O7vrzmkdgJKk"\
+"qhKA8zXu+xBVaDgDYO/q6uQDBt5+5L+ER487awatf6VW7KoAAAAASUVORK5CYII="
+
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
 
 		self.wallet = yawTtk.StringVar(self, "", "%s.wallet"%self._w)
+		self.balance = yawTtk.StringVar(self, "", "%s.balance"%self._w)
+
 		yawTtk.Label(self, font=("tahoma", 8, "bold"), text="Wallet address").grid(row=0, column=0, sticky="nesw", padx=4, pady=4)
 		self.combo = yawTtk.Combobox(self, width=45, font=("courrier", "8", "bold"), textvariable=self.wallet).grid(row=0, column=1, sticky="nesw", padx=4, pady=4)
+		yawTtk.Entry(self, font=("courrier", "8", "bold"), justify="right", textvariable=self.balance).grid(row=0, column=2, sticky="nesw", pady=4).state("disabled")
+		self.label = yawTtk.Label(self, compound="image", image=self._cloud).grid(row=0, column=3, sticky="nesw", padx=4, pady=4)
 
 		self.update()
 		@setInterval(10)
@@ -73,15 +97,28 @@ class AddressPanel(yawTtk.Frame):
 		if len(value) == 34:
 			AddressPanel.status = api.Account.getAccount(value)
 			if AddressPanel.status.success:
-				#AddressPanelcandidates = api.Delegate.getCandidates()
 				AddressPanel.address = value
 				AddressPanel.vote = api.Account.getVotes(AddressPanel.address, returnKey="delegates")
+				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, float(AddressPanel.status["account"]["balance"])/100000000.0))
+				search = [c for c in AddressPanel.candidates if AddressPanel.status["account"]["publicKey"] == c["publicKey"]]
+				if len(search):
+					self.label["image"] = self._shield 
+					self.label["background"] = "lightgreen" if search[0]["rate"] <= 51 else "red"
+				else:
+					self.label["image"] = self._bank
+					self.label["background"] = "SystemButtonFace"
 			else:
 				sys.stdout.write("Account does not exists")
+				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
+				self.label["image"] = self._cloud
+				self.label["background"] = "SystemButtonFace"
 		else:
+			self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
 			AddressPanel.address = None
 			AddressPanel.status = {}
 			AddressPanel.vote = []
+			self.label["image"] = self._cloud
+			self.label["background"] = "SystemButtonFace"
 
 	def destroy(self):
 		self.__stop_update.set()
@@ -209,13 +246,13 @@ class VotePanel(yawTtk.Frame):
 			return core.Transaction(
 				type=3,
 				recipientId = AddressPanel.address,
-				asset=ArkyDict(votes=["-"+d["publicKey"] for d in widget.candidates if d["username"] == username])
+				asset=ArkyDict(votes=["-"+d["publicKey"] for d in AddressPanel.candidates if d["username"] == username])
 			)
 		else:
 			return core.Transaction(
 				type=3,
 				recipientId = AddressPanel.address,
-				asset=ArkyDict(votes=["+"+d["publicKey"] for d in widget.candidates if d["username"] == username])
+				asset=ArkyDict(votes=["+"+d["publicKey"] for d in AddressPanel.candidates if d["username"] == username])
 			)
 
 	def destroy(self):
@@ -262,6 +299,15 @@ class TransactionPanel(yawTtk.Frame):
 				return
 
 			if self.__last_timestamp < last_timestamp or AddressPanel.address != self.__last_address:
+				
+				# ring a bell if new tx :o)
+				if AddressPanel.address == self.__last_address:
+					sys.stderr.write("\a")
+					sys.stderr.flush()
+				else:
+					DataView.rows = []
+					self.__last_timestamp = 0
+
 				typ = {0:"send", 1:"register 2nd secret", 2:"register delegate", 3:"vote", 4:""}
 				for row in [d for d in data1 if d["timestamp"] > self.__last_timestamp]:
 					row["amount"] /= 100000000.
@@ -276,11 +322,6 @@ class TransactionPanel(yawTtk.Frame):
 					DataView.rows.append(dict((k,v) for k,v in row.items() if k in DataView.headers))
 
 				self.tree.populate("date", "ASC")
-
-				# ring a bell if new tx :o)
-				if AddressPanel.address == self.__last_address:
-					sys.stderr.write("\a")
-					sys.stderr.flush()
 
 				self.__last_address = AddressPanel.address
 				self.__last_timestamp = last_timestamp

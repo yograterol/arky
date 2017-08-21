@@ -19,6 +19,10 @@ _exit=\
 
 wdg.DataView.headers = ["id", "date", "type", "amount", "senderId", "recipientId", "vendorField"]
 
+@wdg.setInterval(60)
+def _update_candidates():
+	wdg.AddressPanel.candidates = api.Delegate.getCandidates()
+
 # class containing all global vars and functions
 # ----------------------
 class Glob:
@@ -101,10 +105,12 @@ def loadTransaction(*args, **kwargs):
 def networkUse(network):
 	hidePanels()
 	api.use(network)
+	wdg.AddressPanel.candidates = api.Delegate.getCandidates()
 	if cfg.__NET__ not in Glob.history:
 		Glob.history[cfg.__NET__] = {}
 	Glob.addresspanel.wallet.set("")
 	Glob.addresspanel.combo["values"] = tuple(getHistoryList("addresspanel.wallet"))
+
 
 def exit():
 	dropHistory()
@@ -189,4 +195,5 @@ def launch():
 	dialog.center(toplevel, True)
 	toplevel.deiconify()
 
+	__stop_update_candidates = _update_candidates()
 	root.mainloop()
