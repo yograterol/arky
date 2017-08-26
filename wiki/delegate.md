@@ -92,3 +92,30 @@ ARKADDRESS003
 ```
 hot@dark/delegate[username]> share 600 -b /path/to/file
 ```
+
+### --highest / -h
+
+You can specify a maximum payout. The cutted reward is equally-distributed to all other voters.
+
+### --lowest / -l
+
+You can specify a minimum payout. All voters not reaching the lowest value are excluded from the round.
+
+### --complement / -c
+
+Use this option if you want to send a payout round thinking about what you want to keep on your delegate account.
+
+If you want to keep 600 ARK on your account :
+```
+hot@dark/delegate[username]> share 600 -c
+```
+
+If you want to keep $600 on your account :
+```
+hot@dark/delegate[username]> share $600 -c
+```
+
+If you want to keep 6% on your account :
+```
+hot@dark/delegate[username]> share 6% -c
+```
