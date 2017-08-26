@@ -138,28 +138,37 @@ def share(param):
 				accounts = api.Delegate.getVoters(delegate_pubk, returnKey="accounts")
 				addresses = [a["address"] for a in accounts] # + hidden
 				sys.stdout.write("Checking %s-day-true-vote-weight in transaction history...\n" % delay)
-				contribution0 = dict([address, stats.getVoteForce(address, days=delay, delegate_pubk=delegate_pubk)] for address in [addr for addr in addresses if addr not in blacklist])
+				contribution = dict([address, stats.getVoteForce(address, days=delay, delegate_pubk=delegate_pubk)] for address in [addr for addr in addresses if addr not in blacklist])
 				
 				# apply filters
-				C = sum(contribution0.values())
-				max_C = C*(maximum*1.01)/amount
-				min_C = C*(minimum*1.01)/amount
-				contribution = {}
+				C = sum(contribution.values())
+				max_C = C*maximum/amount
+				min_C = C*minimum/amount
 				cumul = 0
-				n = len(contribution0)
-				for address,force in contribution0.items():
-					if force > max_C:
+				# first filter
+				for address,force in [(a,f) for a,f in contribution.items() if f <= min_C]:
+					contribution[address] = 0
+					cumul += force
+				# second filter
+				for address,force in [(a,f) for a,f in contribution.items() if f >= max_C]:
+					contribution[address] = max_C
+					cumul += force - max_C
+				# report cutted share
+				untouched_pairs = sorted([(a,f) for a,f in contribution.items() if min_C < f < max_C], key=lambda e:e[-1], reverse=True)
+				n, i = len(untouched_pairs), 0
+				bounty = cumul / n
+				for address,force in untouched_pairs:
+					i += 1
+					n -= 1
+					if force + bounty > max_C:
 						contribution[address] = max_C
-						cumul += force - max_C
-						n -= 1
-					elif force <= min_C:
-						contribution[address] = 0
-						cumul += force
-						n -= 1
-				bounty = cumul/n
-				for address,force in [(a,f) for a,f in contribution0.items() if a not in contribution]:
-					contribution[address] = force + bounty
-				
+						cumul -= abs(C_max - force)
+						bounty = cumul / n
+					else:
+						break
+				for address,force in untouched_pairs[i:]:
+					contribution[address] += bounty
+
 				# apply contribution
 				k = 1.0/max(1, sum(contribution.values()))
 				contribution = dict((a, s*k) for a,s in contribution.items())
