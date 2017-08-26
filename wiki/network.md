@@ -9,8 +9,9 @@ Usage: network use [<name> -b <number> -s <seed> -l <ms>]
        network address <secret>
        network wif <secret>
        network delegates
-       network ping
+       network staking
        network update
+       network ping
 
 Options:
 -b <number> --broadcast <number> peer number to use for broadcast       [default: 10]
@@ -23,6 +24,7 @@ Subcommands:
     publickey : returns public key from secret.
     address   : returns address from secret.
     delegates : show delegate list.
-    ping      : print selected peer latency.
+    staking   : show coin-supply ratio used on delegate voting.
     update    : update balance of all linked account.
+    ping      : print selected peer latency.
 ```

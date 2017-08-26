@@ -6,6 +6,7 @@ from yawTtk import dialog
 
 import os, sys, yawTtk, json, webbrowser
 
+
 class DataView(yawTtk.Tree):
 
 	rows = []
@@ -57,35 +58,33 @@ class AddressPanel(yawTtk.Frame):
 	vote = []
 
 	def __init__(self, master=None, cnf={}, **kw):
-
 		self._bank=\
 "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgk3LIBEwwAAASxJREFUOMutkjtOA0EQRF+Vd8ESRoQQIFJO"\
 "wwGQA45BSAwS5+ASXIIEB0RkSBBhsEE2PQT0ovFHBMBIo+7tramZri5Ys2zJlqtv29JabAXC/sJElALs27qxNQIOsvaN67D1jW3mx7YebJWl/WjrJDFtnlkgObc1TvBsDUFXm9i66NqUrT4wBWZAL9sKQLkBSu7u"\
 "3wfQRhQ1QJOgttKmZKwJIgm8oB0wAbaBe2AO3AJbwLAiHEaUFrhOoldgt54Uti6zxzNbTdbmtp4zH9g6SszVyhiBzYwb2WPXgvOmOdCvMCsEv1r/SjCtYlOrH1Ein/2S9TeWfL6XBnm39WRrJ8XsTHSa9r1LYYut"\
 "Q1s9JUmpzEPm9QujErXDKKJItsbL5sin6wdjkVMZ/FVDPgFDQFnymyipTAAAAABJRU5ErkJggg=="
-
 		self._shield=\
 "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAgYa7scEeQAAAPxJREFUOMuV0j1KBEEQhuFnmlnN/MHARBET"\
 "U6MNxRN4AwND8Qbew0jEC2ikCF7BGxhrKqIG7vo3Y1ILvcv2jn5QdHdR9XZVdVfGlbCFPaxhET284BFXuEdjhq7xjDtcYogPvONWh/poJ3yDuLEN65tS9jreIuAA1QxAi1dsItURvBS9VmFtR6ULkfOQwlHhK/Zd"\
 "ySM1o/LhE3UhsC1AB/kMVmfc3BZsBSnvuQSoCtAKVcoSfwqQuQySsJyDUna4wHfH4Grs42baX9go9DqqoM7K3y4N/SRrJQfMB+QJ513vexqJTTaTo9if/fGP2M0Aw7Ad/1Av1mMcTvjG9AuKU0sA0hz6OAAAAABJ"\
 "RU5ErkJggg=="
-
 		self._cloud=\
 "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgVAhwTJzZGBgAAAZxJREFUOMvFUz1Lm1EUfp5z33yQ2JhqJQ2C"\
 "2imQpWMHhxQShQQydXBw6OqigoMurp06tP+ii+DgkKEIUigOKejSqeigIEhtiZBi4k3ucfC+8hICbejggQOHwznPx7lc4D+DlcprAEAymUSj8RmqiiAIsLW1hsPDbyOBGQCM1PJPCmq1RdNut6XZPJrtdjurqiiQ"\
 "PMpkUu9brfbv6HCxWEjMzc30bm9tSKTil2c6nc4PVawAqKjqxvX1n18isklSSaqINC4vfybK5ZJa+wAgBACSXQCxiAUA6HsrfW+HAG6CIFiw1n6tVhdi1lpFOp3OexYXsvk8873vkV7Pqzk4Pv7C+flXAfL5508i"\
 "AI6kxuOJQjY7/tQYs+0VnpC0UYLJyYlMvV6NYWpqIjtEwXnoQ0TWB5SFsxe53LMxiMinyLIjqcaY5RAglUpNkzwdVOBzXwC8jByPAOCcKxtj3pI86/VsDsALf9DBKEFE3pHsD0H/a4rIRy4tvTE7O7vrzmkdgJKk"\
 "qhKA8zXu+xBVaDgDYO/q6uQDBt5+5L+ER487awatf6VW7KoAAAAASUVORK5CYII="
-
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
+		self.columnconfigure(3, weight=1)
 
 		self.wallet = yawTtk.StringVar(self, "", "%s.wallet"%self._w)
 		self.balance = yawTtk.StringVar(self, "", "%s.balance"%self._w)
 
 		yawTtk.Label(self, font=("tahoma", 8, "bold"), text="Wallet address").grid(row=0, column=0, sticky="nesw", padx=4, pady=4)
 		self.combo = yawTtk.Combobox(self, width=45, font=("courrier", "8", "bold"), textvariable=self.wallet).grid(row=0, column=1, sticky="nesw", padx=4, pady=4)
-		yawTtk.Entry(self, font=("courrier", "8", "bold"), justify="right", textvariable=self.balance).grid(row=0, column=2, sticky="nesw", pady=4).state("disabled")
-		self.label = yawTtk.Label(self, compound="image", image=self._cloud).grid(row=0, column=3, sticky="nesw", padx=4, pady=4)
+		yawTtk.Entry(self, font=("courrier-new", "8", "bold"), state="readonly", justify="right", textvariable=self.balance).grid(row=0, column=2, sticky="nesw", pady=4)
+		self.label = yawTtk.Label(self, cursor="hand2", relief="solid", padding=(5,0), compound="image", image=self._cloud).grid(row=0, column=3, sticky="nes", padx=4, pady=4)
+		self.label.bind("<Button-1>", lambda e:webbrowser.open(cfg.__EXPLORER__+"/address/"+AddressPanel.status.get("account", {}).get("address", "")))
 
 		self.update()
 		@setInterval(10)
@@ -102,23 +101,36 @@ class AddressPanel(yawTtk.Frame):
 				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, float(AddressPanel.status["account"]["balance"])/100000000.0))
 				search = [c for c in AddressPanel.candidates if AddressPanel.status["account"]["publicKey"] == c["publicKey"]]
 				if len(search):
-					self.label["image"] = self._shield 
-					self.label["background"] = "lightgreen" if search[0]["rate"] <= 51 else "red"
+					self.label.configure(
+						image = self._shield,
+						background = "lightgreen" if search[0]["rate"] <= 51 else "yellow3",
+						compound = "left",
+						text = "#%(rate)s - %(username)s" % search[0]
+					)
 				else:
-					self.label["image"] = self._bank
-					self.label["background"] = "SystemButtonFace"
+					self.label.configure(
+						image = self._bank,
+						background = "steelblue",
+						compound = "image"
+					)
 			else:
 				sys.stdout.write("Account does not exists")
 				self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
-				self.label["image"] = self._cloud
-				self.label["background"] = "SystemButtonFace"
+				self.label.configure(
+					image = self._cloud,
+					background = "SystemButtonFace",
+					compound = "image"
+				)
 		else:
 			self.balance.set("%s %.8f" % (cfg.__SYMBOL__, 0.))
 			AddressPanel.address = None
 			AddressPanel.status = {}
 			AddressPanel.vote = []
-			self.label["image"] = self._cloud
-			self.label["background"] = "SystemButtonFace"
+			self.label.configure(
+				image = self._cloud,
+				background = "SystemButtonFace",
+				compound = "image"
+			)
 
 	def destroy(self):
 		self.__stop_update.set()
@@ -134,8 +146,8 @@ class AmountFrame(yawTtk.Frame):
 		self.columnconfigure(2, weight=0, minsize=120)
 
 		self.amount = yawTtk.DoubleVar(self, 0., "%s.amount"%self._w)
-		self.value = yawTtk.StringVar(self, u"\u0466 0.00000000", "%s.value"%self._w)
-		self.what = yawTtk.StringVar(self, u"\u0466", "%s.what"%self._w)
+		self.value = yawTtk.StringVar(self, "%s 0.00000000" % cfg.__SYMBOL__, "%s.value"%self._w)
+		self.what = yawTtk.StringVar(self, cfg.__SYMBOL__, "%s.what"%self._w)
 		self.satoshi = 0
 
 		yawTtk.Label(self, padding=2, text="amount", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, pady=4, sticky="nesw")
@@ -162,7 +174,7 @@ class AmountFrame(yawTtk.Frame):
 				value = amount
 		finally:
 			self.satoshi = 100000000.*max(0., value)
-			self.value.set("\u0466 %.8f" % value)
+			self.value.set("%s %.8f" % (cfg.__SYMBOL__, value))
 
 	def get(self):
 		return self.satoshi
@@ -172,19 +184,15 @@ class SendPanel(yawTtk.Frame):
 	
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
-
 		self.rowconfigure(6, weight=1)
 		#
 		yawTtk.Label(self, padding=2, text="recipientId", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
 		self.recipientId = yawTtk.Combobox(self).grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
-		
 		#
 		yawTtk.Label(self, padding=2, text="vendorField", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=2, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
 		self.vendorField = yawTtk.Entry(self).grid(row=3, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
-		
 		#
 		self.amount = AmountFrame(self, padding=(4,0,4,4), address=AddressPanel.address).grid(row=5, column=0, columnspan=3, sticky="nesw")
-	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, columnspan=3, sticky="esw")
 		yawTtk.Separator(frame).pack(side="top", fill="x", pady=8)
@@ -209,16 +217,13 @@ class VotePanel(yawTtk.Frame):
 	
 	def __init__(self, master=None, cnf={}, **kw):
 		yawTtk.Frame.__init__(self, master, cnf={}, **kw)
-
 		self.columnconfigure(0, weight=1)
 		self.rowconfigure(6, weight=1)
 
 		self.username = yawTtk.StringVar(self, "", "vote.username")
-
 		#
 		yawTtk.Label(self, padding=2, text="delegate", background="lightgreen", font=("tahoma", 8, "bold")).grid(row=0, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
 		self.delegate = yawTtk.Combobox(self, values=tuple(d["username"] for d in AddressPanel.candidates), textvariable="vote.username").grid(row=1, column=0, columnspan=3, padx=4, pady=4, sticky="nesw")
-	
 		#
 		frame = yawTtk.Frame(self, padding=4, text="Send").grid(row=6, column=0, sticky="esw")
 		yawTtk.Separator(frame).pack(side="top", fill="x", pady=8)

@@ -16,7 +16,7 @@ class PeerError(Exception): pass
 def get(api, dic={}, **kw):
 	"""
 ARK API call using requests lib. It returns server response as ArkyDict object.
-It uses default peer registered in cfg.__URL_BASE__ variable.
+It uses default peers registered in SEEDS list.
 
 Argument:
 api (str) -- api url path
@@ -34,7 +34,7 @@ Returns ArkyDict
 	returnKey = args.pop("returnKey", False)
 	args = dict([k.replace("and_", "AND:") if k.startswith("and_") else k, v] for k,v in args.items())
 	try:
-		text = requests.get(cfg.__URL_BASE__+api, params=args, headers=cfg.__HEADERS__, timeout=3).text
+		text = requests.get(random.choice(SEEDS)+api, params=args, headers=cfg.__HEADERS__, timeout=3).text
 		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		data = ArkyDict({"success":False, "error":error})
@@ -80,7 +80,7 @@ secondSecret (str) -- second secret of account sending the transaction
 Returns ArkyDict
 """
 	# use registered peer if no url_base is given
-	if url_base == None: url_base = cfg.__URL_BASE__
+	if url_base == None: url_base = random.choice(SEEDS)
 
 	if isinstance(tx, (list, tuple)):
 		tx = [_signTx(t, secret, secondSecret) for t in tx]
@@ -154,7 +154,7 @@ serail (dict) -- serialized transaction
 Returns ArkyDict server response
 """
 	data = json.dumps({"transactions": [serial]})
-	result = postData(cfg.__URL_BASE__, data)
+	result = postData(random.choice(SEEDS), data)
 	ratio = 0.
 	if result["success"]:
 		for peer in PEERS:
@@ -182,8 +182,10 @@ latency     (int) -- max latency you want in second
 
 Returns None
 """
-	global PEERS, ROOT
+	global SEEDS, PEERS, ROOT
 
+	# find network configuration files (*.net) and load it if a filename match asked 
+	# network else throw error
 	networks = [os.path.splitext(name)[0] for name in os.listdir(ROOT) if name.endswith(".net")]
 	if len(networks) and network in networks:
 		in_ = open(os.path.join(ROOT, network+".net"), "r")
@@ -195,6 +197,7 @@ Returns None
 	else:
 		raise NetworkError("Unknown %s network properties" % network)
 
+	# update logger data so network appear on log 
 	logger = logging.getLogger()
 	logger.handlers[0].setFormatter(logging.Formatter('[%s]'%network + '[%(asctime)s] %(message)s'))
 
@@ -213,37 +216,39 @@ Returns None
 		sys.ps2 = "cold@%s... " % network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
+		SEEDS = []
 		return
 
 	# select a valid seed
-	seed = None
-	while not seed and len(seedlist) >= 1:
+	SEEDS = []
+	while not len(SEEDS) >= min(5, len(seedlist)):
 		temp = random.choice(seedlist)
 		if checkPeerLatency(temp, timeout=latency):
-			seed = temp
-		else:
-			seedlist.pop(seedlist.index(temp))
-	if not seed:
+			SEEDS.append(temp)
+		seedlist.pop(seedlist.index(temp))
+	if not len(SEEDS):
 		sys.ps1 = "cold@%s>>> " % network
 		sys.ps2 = "cold@%s... " % network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
+		SEEDS = []
 		return
 
 	# get all valid peers
 	api_peers = []
 	while not len(api_peers):
 		try: 
-			api_peers = json.loads(requests.get(seed+"/api/peers", timeout=latency).text).get("peers", [])
+			api_peers = json.loads(requests.get(random.choice(SEEDS)+"/api/peers", timeout=latency).text).get("peers", [])
 		except requests.exceptions.ConnectionError:
 			sys.ps1 = "cold@%s>>> " % network
 			sys.ps2 = "cold@%s... " % network
 			cfg.__HOT_MODE__ = False
 			PEERS = []
+			SEEDS = []
 			return
 
 	peerlist = []
-	version = json.loads(requests.get(seed+'/api/peers/version', timeout=latency).text).get("version", '0.0.0')
+	version = json.loads(requests.get(random.choice(SEEDS)+'/api/peers/version', timeout=latency).text).get("version", '0.0.0')
 	goodpeers = ["http://%(ip)s:%(port)s"%p for p in api_peers if p["status"] == "OK" and p["version"] == version]
 	random.shuffle(goodpeers)
 	# select a set of peers for transaction broadcasting
@@ -256,11 +261,11 @@ Returns None
 		sys.ps2 = "cold@%s... " % network
 		cfg.__HOT_MODE__ = False
 		PEERS = []
+		SEEDS = []
 		return
 	PEERS = peerlist
 
 	# finish network conf
-	cfg.__URL_BASE__ = random.choice(peerlist) if not custom_seed else custom_seed
 	autoconf = get('/api/loader/autoconfigure', returnKey="network")
 	cfg.__EXPLORER__ = autoconf.get("explorer", False)
 	cfg.__SYMBOL__ = autoconf.get("symbol", False)

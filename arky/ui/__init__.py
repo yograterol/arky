@@ -181,7 +181,7 @@ def launch():
 	# show toplevel
 	toplevel.rowconfigure(1, weight=1)
 	toplevel.columnconfigure(0, weight=1)
-	toplevel.rowconfigure(2, minsize=150)
+	toplevel.rowconfigure(2, minsize=180)
 
 	networkUse("ark")
 	root.setvar("ui.network", cfg.__NET__)
@@ -197,3 +197,4 @@ def launch():
 
 	__stop_update_candidates = _update_candidates()
 	root.mainloop()
+	__stop_update_candidates.set()
