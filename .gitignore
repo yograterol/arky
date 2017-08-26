@@ -22,6 +22,7 @@ eggs/
 wrk/
 .js*/
 arky/arkjs/
+arky/ui/stock/
 lib/
 lib64/
 parts/

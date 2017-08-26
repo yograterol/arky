@@ -53,8 +53,8 @@ def use(param):
 
 def ping(param):
 	common.prettyPrint(dict(
-		[["api>"+cfg.__URL_BASE__,api.checkPeerLatency(cfg.__URL_BASE__)]]+\
-		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS]
+		[[peer,api.checkPeerLatency(peer)] for peer in api.PEERS] +\
+		[["api>"+seed,api.checkPeerLatency(seed)] for seed in api.SEEDS]
 	))
 
 def browse(param):

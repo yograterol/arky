@@ -12,7 +12,6 @@ __BEGIN_TIME__ = 0
 __NET__ = "..."
 __NETWORK__ = ArkyDict()
 __HEADERS__ = ArkyDict()
-__URL_BASE__ = ""
 
 # ARK fees according to transactions in SATOSHI
 __FEES__ = ArkyDict({
