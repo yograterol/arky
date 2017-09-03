@@ -143,19 +143,13 @@ def share(param):
 				# apply filters
 				C = sum(contribution.values())
 				max_C = C*maximum/amount
-				# min_C = C*minimum/amount
 				cumul = 0
-				# # first filter
-				# for address,force in [(a,f) for a,f in contribution.items() if f <= min_C]:
-				# 	contribution[address] = 0
-				# 	cumul += force
-				# second filter
+				# first filter
 				for address,force in [(a,f) for a,f in contribution.items() if f >= max_C]:
 					contribution[address] = max_C
 					cumul += force - max_C
 				# report cutted share
-				# untouched_pairs = sorted([(a,f) for a,f in contribution.items() if min_C < f < max_C], key=lambda e:e[-1], reverse=True)
-				untouched_pairs = sorted([(a,f) for a,f in contribution.items() if f < max_C], key=lambda e:e[-1], reverse=True)
+				untouched_pairs = sorted([(a,f) for a,f in contribution.items() if 0. < f < max_C], key=lambda e:e[-1], reverse=True)
 				n, i = len(untouched_pairs), 0
 				bounty = cumul / n
 				for address,force in untouched_pairs:
