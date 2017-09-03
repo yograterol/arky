@@ -34,7 +34,7 @@ Returns ArkyDict
 	returnKey = args.pop("returnKey", False)
 	args = dict([k.replace("and_", "AND:") if k.startswith("and_") else k, v] for k,v in args.items())
 	try:
-		text = requests.get(random.choice(SEEDS)+api, params=args, headers=cfg.__HEADERS__, timeout=3).text
+		text = requests.get(random.choice(SEEDS)+api, params=args, headers=cfg.__HEADERS__, timeout=10).text
 		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		data = ArkyDict({"success":False, "error":error})
@@ -92,7 +92,7 @@ Returns ArkyDict
 
 	if cfg.__HOT_MODE__:
 		try:
-			text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=3).text
+			text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=10).text
 			data = ArkyDict(json.loads(text))
 		except Exception as error:
 			data = ArkyDict({"success":False, "error":error})
@@ -140,7 +140,7 @@ Returns ArkyDict server response
 """
 	if cfg.__HOT_MODE__:
 		try:
-			text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=3).text
+			text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=10).text
 			data = ArkyDict(json.loads(text))
 		except Exception as error:
 			data = ArkyDict({"success":False, "error":error})
@@ -169,7 +169,7 @@ Returns ArkyDict server response
 	result["broadcast"] = "%.1f%%" % (ratio/len(PEERS)*100)
 	return result
 
-def checkPeerLatency(peer, timeout=3):
+def checkPeerLatency(peer, timeout=10):
 	"""
 Return peer latency in seconds.
 """

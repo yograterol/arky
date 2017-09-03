@@ -39,7 +39,8 @@ def checkKeys(key1, key2, address):
 				if EXECUTEMODE and isinstance(key2, SigningKey):
 					return key2
 				else:
-					keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					# keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					keys = core.getKeys(input("Enter second passphrase: ").encode("ascii"))
 					spk = hexlify(keys.public)
 					if spk == secondPublicKey:
 						return keys.signingKey
