@@ -143,24 +143,19 @@ def share(param):
 				# apply filters
 				C = sum(contribution.values())
 				max_C = C*maximum/amount
-				min_C = C*minimum/amount
 				cumul = 0
 				# first filter
-				for address,force in [(a,f) for a,f in contribution.items() if f <= min_C]:
-					contribution[address] = 0
-					cumul += force
-				# second filter
 				for address,force in [(a,f) for a,f in contribution.items() if f >= max_C]:
 					contribution[address] = max_C
 					cumul += force - max_C
 				# report cutted share
-				untouched_pairs = sorted([(a,f) for a,f in contribution.items() if min_C < f < max_C], key=lambda e:e[-1], reverse=True)
+				untouched_pairs = sorted([(a,f) for a,f in contribution.items() if 0. < f < max_C], key=lambda e:e[-1], reverse=True)
 				n, i = len(untouched_pairs), 0
 				bounty = cumul / n
 				for address,force in untouched_pairs:
-					i += 1
-					n -= 1
 					if force + bounty > max_C:
+						i += 1
+						n -= 1
 						contribution[address] = max_C
 						cumul -= abs(C_max - force)
 						bounty = cumul / n
@@ -173,7 +168,7 @@ def share(param):
 				k = 1.0/max(1, sum(contribution.values()))
 				contribution = dict((a, s*k) for a,s in contribution.items())
 				txgen = lambda addr,amnt,msg: common.generateColdTx(KEY1, PUBLICKEY, KEY2, type=0, amount=amnt, recipientId=addr, vendorField=msg)
-				pshare.applyContribution(USERNAME, amount, param["<message>"], txgen, **contribution)
+				pshare.applyContribution(USERNAME, amount, minimum, param["<message>"], txgen, **contribution)
 
 		else:
 			sys.stdout.write("Share feature not available\n")

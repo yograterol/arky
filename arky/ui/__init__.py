@@ -5,7 +5,6 @@ from . import wdg
 from .. import __PY3__
 from arky import cli, api, cfg, core
 
-from yawTtk import dialog
 import io, os, imp, sys, json, yawTtk
 
 _exit=\
@@ -186,13 +185,15 @@ def launch():
 	networkUse("ark")
 	root.setvar("ui.network", cfg.__NET__)
 
-	if "win" in sys.platform: toplevel.iconbitmap('ark.ico')
+	if "win" in sys.platform: 
+		try: toplevel.iconbitmap('ark.ico')
+		except: pass
 	toplevel.geometry("800x500+0+0")
 	toplevel.minsize(800, int(800/1.618033989))
 	toplevel.bind("<Escape>", lambda event:hidePanels())
 	toplevel.protocol('WM_DELETE_WINDOW', exit)
 	toplevel.configure(menu=menubar)
-	dialog.center(toplevel, True)
+	wdg.Dialog.center(toplevel, True)
 	toplevel.deiconify()
 
 	__stop_update_candidates = _update_candidates()

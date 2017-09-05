@@ -34,7 +34,7 @@ Returns ArkyDict
 	returnKey = args.pop("returnKey", False)
 	args = dict([k.replace("and_", "AND:") if k.startswith("and_") else k, v] for k,v in args.items())
 	try:
-		text = requests.get(random.choice(SEEDS)+api, params=args, headers=cfg.__HEADERS__, timeout=3).text
+		text = requests.get(random.choice(SEEDS)+api, params=args, headers=cfg.__HEADERS__, timeout=10).text
 		data = ArkyDict(json.loads(text))
 	except Exception as error:
 		data = ArkyDict({"success":False, "error":error})
@@ -90,16 +90,20 @@ Returns ArkyDict
 		raise TransactionError("Can not send %r into blockchain" % tx)
 	transactions = json.dumps({"transactions": [t.serialize() for t in tx if t]})
 
-	try:
-		text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=3).text
-		data = ArkyDict(json.loads(text))
-	except Exception as error:
-		data = ArkyDict({"success":False, "error":error})
-		if hasattr(error, "__traceback__"):
-			data.details = "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+	if cfg.__HOT_MODE__:
+		try:
+			text = requests.post(url_base + "/peer/transactions", data=transactions, headers=cfg.__HEADERS__, timeout=10).text
+			data = ArkyDict(json.loads(text))
+		except Exception as error:
+			data = ArkyDict({"success":False, "error":error})
+			if hasattr(error, "__traceback__"):
+				data.details = "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+		else:
+			if data.success:
+				data.transaction = "%r" % tx
 	else:
-		if data.success:
-			data.transaction = "%r" % tx
+		data = {"success":False, "error": "No connection found"}
+
 	return data
 
 def broadcast(tx, secret=None, secondSecret=None):
@@ -134,13 +138,16 @@ data (dict)    -- serialized transaction
 
 Returns ArkyDict server response
 """
-	try:
-		text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=3).text
-		data = ArkyDict(json.loads(text))
-	except Exception as error:
-		data = ArkyDict({"success":False, "error":error})
-		if hasattr(error, "__traceback__"):
-			data.details = "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+	if cfg.__HOT_MODE__:
+		try:
+			text = requests.post(url_base + "/peer/transactions", data=data, headers=cfg.__HEADERS__, timeout=10).text
+			data = ArkyDict(json.loads(text))
+		except Exception as error:
+			data = ArkyDict({"success":False, "error":error})
+			if hasattr(error, "__traceback__"):
+				data.details = "\n"+("".join(traceback.format_tb(error.__traceback__)).rstrip())
+	else:
+		data = {"success":False, "error": "No connection found"}
 	return data
 
 def broadcastSerial(serial):
@@ -162,7 +169,7 @@ Returns ArkyDict server response
 	result["broadcast"] = "%.1f%%" % (ratio/len(PEERS)*100)
 	return result
 
-def checkPeerLatency(peer, timeout=3):
+def checkPeerLatency(peer, timeout=10):
 	"""
 Return peer latency in seconds.
 """

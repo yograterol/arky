@@ -158,6 +158,18 @@ Toons Bitcoin address: ``3Jgib9SQiDLYML7QKBYtJUkHq2nyG6Z63D``
 Version
 =======
 
+**0.3-rc6**
+
++ Default timeout changed to 10s
++ ``stick-arky`` released : bring all arky every where on your usb stick
++ ``ui`` pkg added: this is arky wallet
++ ``cli`` pkg: arky-cli can now execute script
+   * ``input`` instead of ``getpass`` for secondsecret (encoding issue)
+   * ``delegate`` module improvement
+   * added ``network staking`` and ``network update`` command
++ ``api`` pkg:
+   * ``get`` method use different seed on each call
+
 **0.2.3**
 
 + ``core`` mod : 

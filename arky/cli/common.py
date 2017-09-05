@@ -39,7 +39,8 @@ def checkKeys(key1, key2, address):
 				if EXECUTEMODE and isinstance(key2, SigningKey):
 					return key2
 				else:
-					keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					# keys = core.getKeys(getpass.getpass("Enter second passphrase: ").encode("ascii"))
+					keys = core.getKeys(input("Enter second passphrase: ").encode("ascii"))
 					spk = hexlify(keys.public)
 					if spk == secondPublicKey:
 						return keys.signingKey
@@ -105,10 +106,10 @@ def floatAmount(amount, address):
 			return (float(amount[:-1])/100 * BALANCES[address] - cfg.__FEES__["send"])/100000000.
 		else:
 			return False
-	elif amount[0] in ["$", "EUR", "€", "£", "¥"]:
-		price = util.getArkPrice({"$":"usd", "EUR":"eur", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
+	elif amount[0] in ["$", "€", "£", "¥"]:
+		price = util.getTokenPrice(cfg.__TOKEN__, {"$":"usd", "EUR":"eur", "€":"eur", "£":"gbp", "¥":"cny"}[amount[0]])
 		result = float(amount[1:])/price
-		if askYesOrNo("%s=A%f (A/%s=%f) - Validate ?" % (amount, result, amount[0], price)):
+		if askYesOrNo(u"%s=%s%f (%s/%s=%f) - Validate ?" % (amount, cfg.__TOKEN__, result, cfg.__TOKEN__, amount[0], price)):
 			return result
 		else:
 			return False

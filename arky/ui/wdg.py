@@ -2,10 +2,9 @@
 # © Toons
 
 from .. import __PY3__, setInterval, ArkyDict, ROOT, cfg, api, core, util, cli, slots
-from yawTtk import dialog
 
 import os, sys, yawTtk, json, webbrowser
-
+import yawTtk.dialog as Dialog
 
 class DataView(yawTtk.Tree):
 
@@ -342,7 +341,7 @@ class TransactionPanel(yawTtk.Frame):
 		yawTtk.Frame.destroy(self)
 
 
-class KeyDialog(dialog.BaseDialog):
+class KeyDialog(Dialog.BaseDialog):
 
 	passphrase1 = None
 	passphrase2 = None
@@ -353,7 +352,7 @@ class KeyDialog(dialog.BaseDialog):
 		self.mainframe.columnconfigure(1, weight=1, minsize=300)
 		self.mainframe.rowconfigure(1, weight=1)
 
-		yawTtk.Label(self.mainframe, image=dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
+		yawTtk.Label(self.mainframe, image=Dialog.password, compound="image", padding=(0,0,4,0)).grid(row=0, rowspan=4, column=0, sticky="new")
 		yawTtk.Label(self.mainframe, text="Main passphrase").grid(row=0, column=1, sticky="nesw")
 		self.secret = yawTtk.Entry(self.mainframe, show="-").grid(row=1, column=1, sticky="new")
 		self.secret.focus()
@@ -367,13 +366,13 @@ class KeyDialog(dialog.BaseDialog):
 			self.title("Single-secret secured account")
 
 	def fillButton(self):
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.cross16, compound="image",
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=Dialog.cross16, compound="image",
 		              background=self.background, style="Dialog.TButton", text="Cancel", width=-1,
 		              command=self.destroy).pack(side="right")
-		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=dialog.tick16, compound="left",
+		yawTtk.Button(self.buttonframe, font=("tahoma", 8, "bold"), image=Dialog.tick16, compound="left",
 		              background=self.background, style="Dialog.TButton", default="active", text="Sign transaction", width=-1,
 		              command=self.link).pack(side="right", padx=self.border)
-		b = yawTtk.Button(self.buttonframe, image=dialog.stop16, compound="left", text="Show",
+		b = yawTtk.Button(self.buttonframe, image=Dialog.stop16, compound="left", text="Show",
 		                  background=self.background, style="Dialog.Toolbutton", padding=(self.border, 0))
 		b.pack(side="left", fill="y")
 		b.bind("<ButtonPress>", lambda e,o=self: [o.secret.configure(show=""), o.secondsecret.configure(show="")])
@@ -382,7 +381,7 @@ class KeyDialog(dialog.BaseDialog):
 	def show(self):
 		KeyDialog.passphrase1 = None
 		KeyDialog.passphrase2 = None
-		dialog.BaseDialog.show(self)
+		Dialog.BaseDialog.show(self)
 		self.winfo_toplevel().wait_window(self)
 
 	def link(self):
@@ -400,7 +399,7 @@ class KeyDialog(dialog.BaseDialog):
 		passphrase2 = self.secondsecret.get()
 		KeyDialog.passphrase1 = None if passphrase1 == "" else passphrase1
 		KeyDialog.passphrase2 = None if passphrase2 == "" else passphrase2
-		dialog.BaseDialog.destroy(self)
+		Dialog.BaseDialog.destroy(self)
 
 
 class LogPanel(yawTtk.Frame):
