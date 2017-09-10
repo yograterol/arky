@@ -130,6 +130,13 @@ or
 
 `account command set`_
 
+For Developers
+==============
+
+Install requirements
+
+``pip install -e .``
+
 Authors
 =======
 
