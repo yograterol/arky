@@ -198,8 +198,8 @@ Returns ArkyDict server response
 
 def checkPeerLatency(peer, timeout=10):
     """
-Return peer latency in seconds.
-"""
+    Return peer latency in seconds.
+    """
     try:
         r = requests.get(peer + '/api/blocks/getNethash', timeout=timeout)
     except:
